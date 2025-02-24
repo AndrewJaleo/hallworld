@@ -1,0 +1,330 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --glass-border: rgba(255, 255, 255, 0.95);
+    --glass-reflex: rgba(255, 255, 255, 0.99);
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-shadow: rgba(31, 38, 135, 0.15);
+    --card-shadow: rgba(0, 0, 0, 0.1);
+    --neon-glow: rgba(124, 58, 237, 0.8);
+    --menu-icon-from: rgba(139, 92, 246, 0.9);
+    --menu-icon-to: rgba(67, 56, 202, 0.9);
+    --glass-highlight: rgba(255, 255, 255, 0.98);
+    --glass-inner-shadow: rgba(255, 255, 255, 0.95);
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    font-family: "Inter", -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+.glossy {
+  background: var(--glass-bg);
+  backdrop-filter: blur(32px);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 
+    0 15px 40px -10px rgba(31, 38, 135, 0.25),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.8),
+    inset 0 2px 24px rgba(255, 255, 255, 0.9),
+    inset 0 -4px 12px rgba(255, 255, 255, 0.4),
+    0 0 20px rgba(124, 58, 237, 0.2);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.5)
+  );
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.glossy::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--glass-reflex);
+  border-radius: inherit;
+  opacity: 0.5;
+  pointer-events: none;
+  transform: translateZ(2px);
+}
+
+.glossy::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.25)
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  transform: translateZ(1px);
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(78, 169, 255, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(78, 169, 255, 0.5);
+}
+
+.embla {
+  overflow: hidden;
+  position: relative;
+  padding: 0.25rem;
+}
+
+.embla__container {
+  display: flex;
+  gap: 0.25rem;
+  cursor: grab;
+}
+
+.embla__container:active {
+  cursor: grabbing;
+}
+
+.embla__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  min-height: 0;
+  transition: opacity 0.2s ease;
+}
+
+.location-button {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e40af;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  border-radius: 16px;
+  border: 1px solid var(--glass-highlight);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(24px);
+  box-shadow: 
+    0 12px 36px rgba(0, 0, 0, 0.15),
+    inset 0 2px 8px rgba(255, 255, 255, 0.5),
+    inset 0 -2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 0 0 1px var(--glass-highlight);
+  transform-style: preserve-3d;
+  transform: translateZ(0);
+}
+
+.location-button.selected {
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.6) 0%,
+    rgba(37, 99, 235, 0.4) 100%
+  );
+  box-shadow: 
+    0 0 32px var(--neon-glow),
+    inset 0 2px 12px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(255, 255, 255, 0.3);
+  border-color: var(--glass-highlight);
+  transform: translateZ(2px);
+}
+
+.menu-item {
+  transition: all 0.3s ease;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(32px);
+  box-shadow:
+    0 25px 65px -15px rgba(31, 38, 135, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.98),
+    inset 0 2px 20px rgba(255, 255, 255, 0.95),
+    inset 0 -4px 10px rgba(255, 255, 255, 0.5);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.75),
+    rgba(255, 255, 255, 0.4)
+  );
+  transform-style: preserve-3d;
+  transform: translateZ(0);
+  overflow: hidden;
+}
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.8) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.25) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.menu-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%) rotate(45deg);
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.menu-item:hover {
+  transform: translateY(-3px) translateZ(12px);
+  box-shadow:
+    0 30px 70px -15px rgba(31, 38, 135, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.98),
+    inset 0 2px 24px rgba(255, 255, 255, 0.98),
+    inset 0 -4px 12px rgba(255, 255, 255, 0.6),
+    0 0 25px rgba(56, 189, 248, 0.5);
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.5)
+  );
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(45deg);
+  }
+}
+
+.menu-item:hover .menu-item-indicator {
+  opacity: 1;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+}
+
+.hall-button {
+  position: relative;
+  outline: none;
+  width: 100%;
+  border-radius: 1.5rem;
+  cursor: pointer;
+  border: 1px solid var(--glass-highlight);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(32px);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  box-shadow:
+    0 20px 60px -15px rgba(31, 38, 135, 0.25),
+    inset 0 0 0 1px var(--glass-highlight),
+    inset 0 2px 12px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 6px rgba(255, 255, 255, 0.3);
+}
+
+.hall-button:hover {
+  box-shadow:
+    0 25px 65px -15px rgba(31, 38, 135, 0.35),
+    inset 0 0 0 1px var(--glass-highlight),
+    inset 0 2px 16px rgba(255, 255, 255, 0.8),
+    inset 0 -2px 8px rgba(255, 255, 255, 0.4),
+    0 0 20px rgba(56, 189, 248, 0.4);
+  border-color: white;
+}
+
+.glass-button {
+  position: relative;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.99),
+    rgba(255, 255, 255, 0.85)
+  );
+  border: 2px solid var(--glass-highlight);
+  box-shadow:
+    0 20px 40px -10px rgba(31, 38, 135, 0.35),
+    inset 0 0 0 1px var(--glass-highlight),
+    inset 0 2px 30px var(--glass-inner-shadow),
+    inset 0 -4px 15px rgba(255, 255, 255, 0.7),
+    0 0 25px rgba(124, 58, 237, 0.4);
+  transform-style: preserve-3d;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.glass-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  transform: skewX(-15deg);
+  transition: transform 0.5s ease;
+}
+
+.glass-button:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 1),
+    rgba(255, 255, 255, 0.95)
+  );
+  box-shadow:
+    0 20px 40px -10px rgba(31, 38, 135, 0.4),
+    inset 0 0 0 1px var(--glass-highlight),
+    inset 0 2px 30px var(--glass-inner-shadow),
+    inset 0 -4px 15px rgba(255, 255, 255, 0.7),
+    0 0 30px rgba(124, 58, 237, 0.6);
+  transform: translateY(-3px) translateZ(12px);
+}
+
+.glass-button:hover::before {
+  transform: translateX(100%) skewX(-15deg);
+  transition: transform 0.7s ease;
+}
+
+.glass-button:active {
+  transform: translateY(0) translateZ(4px);
+  box-shadow:
+    0 6px 12px -3px rgba(31, 38, 135, 0.2),
+    inset 0 0 0 1px var(--glass-highlight),
+    inset 0 1px 8px var(--glass-inner-shadow),
+    inset 0 -1px 4px rgba(255, 255, 255, 0.4);
+}

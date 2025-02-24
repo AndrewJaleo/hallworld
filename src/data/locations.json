@@ -1,0 +1,214 @@
+{
+  "countries": [
+    {
+      "name": "España",
+      "code": "ES",
+      "cities": [
+        "Madrid",
+        "Barcelona",
+        "Valencia",
+        "Sevilla",
+        "Zaragoza",
+        "Málaga",
+        "Murcia",
+        "Palma",
+        "Las Palmas",
+        "Bilbao",
+        "Alicante",
+        "Córdoba",
+        "Valladolid",
+        "Vigo",
+        "Gijón"
+      ]
+    },
+    {
+      "name": "Francia",
+      "code": "FR",
+      "cities": [
+        "Paris",
+        "Marseille",
+        "Lyon",
+        "Toulouse",
+        "Nice",
+        "Nantes",
+        "Strasbourg",
+        "Montpellier",
+        "Bordeaux",
+        "Lille",
+        "Rennes",
+        "Reims",
+        "Saint-Étienne",
+        "Toulon",
+        "Le Havre"
+      ]
+    },
+    {
+      "name": "Italia",
+      "code": "IT",
+      "cities": [
+        "Roma",
+        "Milano",
+        "Napoli",
+        "Torino",
+        "Palermo",
+        "Genova",
+        "Bologna",
+        "Firenze",
+        "Bari",
+        "Catania",
+        "Venezia",
+        "Verona",
+        "Messina",
+        "Padova",
+        "Trieste"
+      ]
+    },
+    {
+      "name": "Portugal",
+      "code": "PT",
+      "cities": [
+        "Lisboa",
+        "Porto",
+        "Vila Nova de Gaia",
+        "Amadora",
+        "Braga",
+        "Setúbal",
+        "Coimbra",
+        "Funchal",
+        "Almada",
+        "Agualva-Cacém",
+        "Queluz",
+        "Aveiro",
+        "Viseu",
+        "Leiria",
+        "Évora"
+      ]
+    },
+    {
+      "name": "Alemania",
+      "code": "DE",
+      "cities": [
+        "Berlin",
+        "Hamburg",
+        "München",
+        "Köln",
+        "Frankfurt",
+        "Stuttgart",
+        "Düsseldorf",
+        "Leipzig",
+        "Dortmund",
+        "Essen",
+        "Bremen",
+        "Dresden",
+        "Hannover",
+        "Nürnberg",
+        "Duisburg"
+      ]
+    },
+    {
+      "name": "Reino Unido",
+      "code": "GB",
+      "cities": [
+        "London",
+        "Birmingham",
+        "Manchester",
+        "Leeds",
+        "Liverpool",
+        "Newcastle",
+        "Sheffield",
+        "Bristol",
+        "Edinburgh",
+        "Glasgow",
+        "Cardiff",
+        "Belfast",
+        "Nottingham",
+        "Southampton",
+        "Oxford"
+      ]
+    },
+    {
+      "name": "Países Bajos",
+      "code": "NL",
+      "cities": [
+        "Amsterdam",
+        "Rotterdam",
+        "The Hague",
+        "Utrecht",
+        "Eindhoven",
+        "Groningen",
+        "Tilburg",
+        "Almere",
+        "Breda",
+        "Nijmegen",
+        "Enschede",
+        "Haarlem",
+        "Arnhem",
+        "Zaanstad",
+        "Amersfoort"
+      ]
+    },
+    {
+      "name": "Bélgica",
+      "code": "BE",
+      "cities": [
+        "Brussels",
+        "Antwerp",
+        "Ghent",
+        "Charleroi",
+        "Liège",
+        "Bruges",
+        "Namur",
+        "Leuven",
+        "Mons",
+        "Aalst",
+        "Mechelen",
+        "Kortrijk",
+        "Hasselt",
+        "Ostend",
+        "Tournai"
+      ]
+    },
+    {
+      "name": "Suiza",
+      "code": "CH",
+      "cities": [
+        "Zürich",
+        "Geneva",
+        "Basel",
+        "Lausanne",
+        "Bern",
+        "Winterthur",
+        "Lucerne",
+        "St. Gallen",
+        "Lugano",
+        "Biel",
+        "Thun",
+        "Köniz",
+        "La Chaux-de-Fonds",
+        "Fribourg",
+        "Schaffhausen"
+      ]
+    },
+    {
+      "name": "Austria",
+      "code": "AT",
+      "cities": [
+        "Vienna",
+        "Graz",
+        "Linz",
+        "Salzburg",
+        "Innsbruck",
+        "Klagenfurt",
+        "Villach",
+        "Wels",
+        "Sankt Pölten",
+        "Dornbirn",
+        "Wiener Neustadt",
+        "Steyr",
+        "Feldkirch",
+        "Bregenz",
+        "Leonding"
+      ]
+    }
+  ]
+}
