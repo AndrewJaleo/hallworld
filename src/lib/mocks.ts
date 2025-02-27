@@ -1,4 +1,28 @@
-export const mockGroupChats = {
+interface GroupMessage {
+  id: string;
+  content: string;
+  sender_id: string;
+  sender_email: string;
+  created_at: string;
+}
+
+interface MockMessages {
+  [key: string]: GroupMessage[];
+}
+
+interface GroupChat {
+  id: string;
+  name: string;
+  category: string;
+  city: string;
+  type: string;
+}
+
+interface MockGroupChats {
+  [key: string]: GroupChat;
+}
+
+export const mockGroupChats: MockGroupChats = {
   "group-1": {
     id: "group-1",
     name: "HALL University - Madrid",
@@ -29,7 +53,7 @@ export const mockGroupChats = {
   }
 };
 
-export const mockMessages = {
+export const mockMessages: MockMessages = {
   "group-1": [
     {
       id: "msg1",
