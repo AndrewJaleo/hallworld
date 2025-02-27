@@ -1,20 +1,29 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, Sparkles } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { mockGroupChats } from '../lib/mocks';
 
-const hallColors = [
-  'from-violet-400 to-indigo-600',
-  'from-fuchsia-400 to-purple-600',
-  'from-rose-400 to-pink-600',
-  'from-amber-400 to-orange-600'
+const hallCategories = [
+  { id: 'group-1', name: 'University', color: 'from-violet-400 to-indigo-600' },
+  { id: 'group-2', name: 'Art', color: 'from-fuchsia-400 to-purple-600' },
+  { id: 'group-3', name: 'Plans', color: 'from-rose-400 to-pink-600' },
+  { id: 'group-4', name: 'Sports', color: 'from-amber-400 to-orange-600' }
 ];
 
 export function HallButtons() {
+  const navigate = useNavigate();
+
+  const handleHallClick = (groupId: string) => {
+    navigate({ to: `/group-chat/${groupId}` });
+  };
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-      {[1, 2, 3, 4].map((i, index) => (
+      {hallCategories.map((hall, index) => (
         <motion.button
-          key={i}
+          key={hall.id}
+          onClick={() => handleHallClick(hall.id)}
           className="hall-button group relative"
           whileHover={{ scale: 1.02, translateZ: 20 }}
           whileTap={{ scale: 0.98, translateZ: 10 }}
@@ -37,7 +46,7 @@ export function HallButtons() {
               <div className="relative">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 relative">
                   {/* Glass base */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${hallColors[index]} opacity-90 rounded-2xl`} />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${hall.color} opacity-90 rounded-2xl`} />
                   
                   {/* Glass reflections */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/50 via-transparent to-white/10" />
@@ -56,7 +65,7 @@ export function HallButtons() {
                   <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
                   
                   {/* Outer glow */}
-                  <div className={`absolute -inset-1 ${hallColors[index].replace('from-', '').replace('to-', '')} rounded-3xl blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300`} />
+                  <div className={`absolute -inset-1 ${hall.color.replace('from-', '').replace('to-', '')} rounded-3xl blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300`} />
                 </div>
                 <motion.div
                   className="absolute -top-1 -right-1"
@@ -68,11 +77,11 @@ export function HallButtons() {
                     ease: "easeInOut"
                   }}
                 >
-                  <Sparkles className={`w-3 h-3 sm:w-4 sm:h-4 ${hallColors[index].split(' ')[0].replace('from-', 'text-')}`} />
+                  <Sparkles className={`w-3 h-3 sm:w-4 sm:h-4 ${hall.color.split(' ')[0].replace('from-', 'text-')}`} />
                 </motion.div>
               </div>
-              <span className={`font-semibold bg-gradient-to-b ${hallColors[index]} bg-clip-text text-transparent transition-colors text-base sm:text-lg lg:text-xl opacity-90`}>
-                Hall {i}
+              <span className={`font-semibold bg-gradient-to-b ${hall.color} bg-clip-text text-transparent transition-colors text-base sm:text-lg lg:text-xl opacity-90`}>
+                {hall.name}
               </span>
             </div>
             
