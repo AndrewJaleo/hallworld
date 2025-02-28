@@ -59,7 +59,7 @@ export function HomePage() {
             }}
           >
             <div className="glossy p-4 sm:p-5 rounded-2xl">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-4">
                 <h2 className="text-sky-900 font-semibold">Ubicación</h2>
                 <motion.button
                   onClick={handleResetLocation}
@@ -71,7 +71,7 @@ export function HomePage() {
                   <span className="text-violet-600 font-medium">Reestablecer</span>
                 </motion.button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <CountrySelector
                   items={state.countries.map(c => c.name)}
                   selected={state.selectedCountry}
