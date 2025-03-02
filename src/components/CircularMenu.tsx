@@ -12,9 +12,27 @@ const menuItems = [
   { id: 'ciudad', label: 'Ciudad', icon: Building2, color: 'from-violet-500 via-indigo-500 to-purple-600' }
 ];
 
+// City item that will be displayed in the center
+const cityItem = { 
+  id: 'currentCity', 
+  label: 'Madrid', // This could be dynamic based on user's selected city
+  icon: Building2, 
+  color: 'from-blue-600 via-indigo-600 to-purple-700' 
+};
+
 export function CircularMenu() {
+  // Calculate positions for items in a circle
+  const calculateCirclePosition = (index: number, total: number, radius: number) => {
+    // Calculate angle in radians - offset by -Math.PI/2 to start from the top
+    const angle = (index / total) * 2 * Math.PI - Math.PI/2;
+    // Calculate x and y coordinates
+    const x = radius * Math.cos(angle);
+    const y = radius * Math.sin(angle);
+    return { x, y };
+  };
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6 pb-6 sm:pb-safe z-50 lg:max-w-7xl lg:mx-auto">
+    <div className="mt-8 bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6 pb-6 sm:pb-safe z-50 lg:max-w-7xl lg:mx-auto ">
       <div className="relative max-w-xl lg:max-w-full mx-auto">
         {/* Animated background glow */}
         <motion.div
@@ -43,7 +61,7 @@ export function CircularMenu() {
         />
 
         {/* Glass container */}
-        <div className="relative rounded-3xl overflow-hidden bg-transparent">
+        <div className="relative rounded-3xl  bg-transparent">
           {/* Glass base layer */}
           <div className="opacity-0 absolute inset-0 bg-transparent" />
 
@@ -75,7 +93,7 @@ export function CircularMenu() {
           {/* Content container */}
           <div className="relative p-4 sm:p-5">
             <motion.div
-              className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2 sm:gap-3 lg:gap-4"
+              className="relative"
               initial={{ y: 100, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{
@@ -84,55 +102,48 @@ export function CircularMenu() {
                 damping: 30
               }}
             >
-              {menuItems.map((item) => {
-                const Icon = item.icon;
+              {/* Circular menu container */}
+              <div className="relative h-[320px] sm:h-[380px] lg:h-[420px] flex items-center justify-center">
+                {/* Center city item */}
+                <motion.button
+                  key={cityItem.id}
+                  className="menu-item absolute z-20 overflow-hidden"
+                  style={{
+                    borderRadius: '50%',
+                  }}
+                  whileHover={{ scale: 1.05, translateZ: 30 }}
+                  whileTap={{ scale: 0.98, translateZ: 10 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 17
+                  }}
+                >
+                  {/* Rounded rectangle card for center city */}
+                  <div className="relative overflow-hidden rounded-3xl bg-white/20 backdrop-blur-md shadow-lg border border-white/30 w-32 sm:w-36 lg:w-40">
+                    {/* Glass effect layers */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-white/10" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/20" />
 
-                return (
-                  <motion.button
-                    key={item.id}
-                    className="menu-item relative overflow-hidden"
-                    whileHover={{ scale: 1.03, translateZ: 24 }}
-                    whileTap={{ scale: 0.98, translateZ: 10 }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 17
-                    }}
-                  >
-                    <div className="relative overflow-hidden rounded-2xl w-full bg-transparent">
-                      {/* Glass effect layers */}
-                      <div className="opacity-0 absolute inset-0 bg-transparent" />
-                      <div className="absolute inset-0 bg-transparent transition-opacity duration-300" />
+                    {/* Content */}
+                    <div className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5">
+                      {/* Circular icon */}
+                      <div className="relative">
+                        <div className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br from-blue-400/90 to-blue-600/90">
+                          {/* Glass reflections */}
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/90 via-transparent to-white/30" />
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-sky-200/30 to-white/50" />
 
-                      {/* Dynamic reflection */}
-                      <div className="opacity-0 absolute -inset-full bg-transparent" />
+                          {/* Top highlight */}
+                          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-full opacity-90" />
 
-                      {/* Content */}
-                      <div className="relative z-10 flex flex-col items-center gap-1.5 sm:gap-2 p-2.5 sm:p-4">
-                        <div className="relative">
-                          <div className="w-9 h-9 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 relative shadow-lg">
-                            {/* Glass base */}
-                            <div className={`opacity-0 absolute inset-0 bg-gradient-to-br ${item.color} rounded-2xl opacity-95`} />
+                          {/* Border */}
+                          <div className="absolute inset-0 rounded-full ring-2 ring-white/70" />
 
-                            {/* Glass reflections */}
-                            <div className="opacity-0 absolute inset-0 rounded-2xl bg-gradient-to-b from-white/90 via-transparent to-white/30" />
-                            <div className="opacity-0 absolute inset-0 rounded-2xl bg-gradient-to-t from-transparent via-sky-200/60 to-white/80 group-hover:opacity-100 transition-opacity duration-300" />
+                          {/* Icon */}
+                          <cityItem.icon className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white relative z-10" />
 
-                            {/* Top highlight */}
-                            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/95 to-transparent rounded-t-2xl opacity-90" />
-
-                            {/* Bottom glow */}
-                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-blue-400/80 to-transparent rounded-b-2xl" />
-
-                            {/* Border */}
-                            <div className="absolute inset-0 rounded-2xl ring-2 ring-white/98 shadow-[inset_0_2px_8px_rgba(255,255,255,0.95)]" />
-
-                            {/* Icon */}
-                            <Icon className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white relative z-10" />
-
-                            {/* Outer glow */}
-                            <div className={`absolute -inset-1.5 sm:-inset-2 ${item.color.split(' ')[0].replace('from-', '')} rounded-3xl blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-300`} />
-                          </div>
+                          {/* Sparkle */}
                           <motion.div
                             className="absolute -top-1 -right-1"
                             initial={{ opacity: 0, scale: 0 }}
@@ -143,20 +154,125 @@ export function CircularMenu() {
                               ease: "easeInOut"
                             }}
                           >
-                            <Sparkles className={`w-3 h-3 sm:w-4 sm:h-4 ${item.color.split(' ')[0].replace('from-', 'text-')}`} />
+                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
                           </motion.div>
                         </div>
-                        <span className={`text-xs sm:text-sm lg:text-base font-semibold bg-gradient-to-b ${item.color.replace('from-', 'from-').replace('to-', 'to-')} bg-clip-text text-transparent transition-colors line-clamp-1 opacity-90`}>
-                          {item.label}
-                        </span>
                       </div>
-
-                      {/* Bottom highlight */}
-                      <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-transparent group-hover:opacity-100 transition-opacity duration-300" />
+                      
+                      {/* Label */}
+                      <span className="text-lg sm:text-xl lg:text-2xl font-semibold text-blue-600 line-clamp-1">
+                        {cityItem.label}
+                      </span>
                     </div>
-                  </motion.button>
-                );
-              })}
+                  </div>
+                </motion.button>
+
+                {/* Circle arrangement of menu items */}
+                {menuItems.map((item, index) => {
+                  const Icon = item.icon;
+                  // Fixed radius for perfect circle
+                  const radius = 150;
+                  const position = calculateCirclePosition(index, menuItems.length, radius);
+                  
+                  // Determine text color based on item
+                  const textColorMap: Record<string, string> = {
+                    'politica': 'text-violet-500',
+                    'ligar': 'text-rose-500',
+                    'universidad': 'text-amber-500',
+                    'planes': 'text-emerald-500',
+                    'cerca': 'text-sky-500',
+                    'amistad': 'text-fuchsia-500',
+                    'arte': 'text-cyan-500',
+                    'ciudad': 'text-violet-500'
+                  };
+                  
+                  // Determine icon background color
+                  const bgColorMap: Record<string, string> = {
+                    'politica': 'from-violet-400/90 to-violet-600/90',
+                    'ligar': 'from-rose-400/90 to-rose-600/90',
+                    'universidad': 'from-amber-400/90 to-amber-600/90',
+                    'planes': 'from-emerald-400/90 to-emerald-600/90',
+                    'cerca': 'from-sky-400/90 to-sky-600/90',
+                    'amistad': 'from-fuchsia-400/90 to-fuchsia-600/90',
+                    'arte': 'from-cyan-400/90 to-cyan-600/90',
+                    'ciudad': 'from-violet-400/90 to-violet-600/90'
+                  };
+                  
+                  const textColor = textColorMap[item.id] || 'text-blue-500';
+                  const bgColor = bgColorMap[item.id] || 'from-blue-400/90 to-blue-600/90';
+                  
+                  return (
+                    <motion.button
+                      key={item.id}
+                      className="menu-item absolute overflow-hidden"
+                      style={{
+                        borderRadius: '50%',
+                      }}
+                      initial={{ x: 0, y: 0, opacity: 0 }}
+                      animate={{
+                        x: position.x,
+                        y: position.y,
+                        opacity: 1,
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25,
+                        delay: index * 0.05, // Staggered animation
+                      }}
+                      whileHover={{ scale: 1.1, translateZ: 24 }}
+                      whileTap={{ scale: 0.95, translateZ: 10 }}
+                    >
+                      {/* Rounded rectangle card */}
+                      <div className="relative overflow-hidden rounded-3xl bg-white/20 backdrop-blur-md shadow-lg border border-white/30 w-24 sm:w-28">
+                        {/* Glass effect layers */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-white/10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/20" />
+
+                        {/* Content */}
+                        <div className="relative z-10 flex flex-col items-center gap-2 p-3 sm:p-4">
+                          {/* Circular icon */}
+                          <div className="relative">
+                            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br ${bgColor}`}>
+                              {/* Glass reflections */}
+                              <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/90 via-transparent to-white/30" />
+                              <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-white/50" />
+
+                              {/* Top highlight */}
+                              <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-full opacity-90" />
+
+                              {/* Border */}
+                              <div className="absolute inset-0 rounded-full ring-2 ring-white/70" />
+
+                              {/* Icon */}
+                              <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white relative z-10" />
+
+                              {/* Sparkle */}
+                              <motion.div
+                                className="absolute -top-1 -right-1"
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 0.8] }}
+                                transition={{
+                                  duration: 2,
+                                  repeat: Infinity,
+                                  ease: "easeInOut"
+                                }}
+                              >
+                                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
+                              </motion.div>
+                            </div>
+                          </div>
+                          
+                          {/* Label */}
+                          <span className={`text-sm sm:text-base font-semibold ${textColor} line-clamp-1`}>
+                            {item.label}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
             </motion.div>
           </div>
         </div>

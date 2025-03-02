@@ -98,9 +98,10 @@ export function HomePage() {
           }}
         >
           <HallButtons />
+          <CircularMenu />
+
         </motion.div>
       </div>
-      <CircularMenu />
     </>
   );
 } 
