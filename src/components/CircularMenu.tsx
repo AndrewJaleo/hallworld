@@ -1,6 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Heart, GraduationCap, Calendar, MapPin, UserPlus, Palette, Building2, Sparkles } from 'lucide-react';
 import { getCountries } from '../lib/location';
+import { useNavigate } from '@tanstack/react-router';
+import { getOrCreateTopicGroupChat } from '../lib/chat';
+import { useState } from 'react';
 
 // Define interface for component props
 interface CircularMenuProps {
@@ -32,6 +35,8 @@ const findCountryForCity = (city: string): string => {
 export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
   // Get the country based on the selected city
   const countryName = findCountryForCity(selectedCity);
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   
   // City item that will be displayed in the center
   const cityItem = { 
@@ -50,6 +55,34 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
     const x = radius * Math.cos(angle);
     const y = radius * Math.sin(angle);
     return { x, y };
+  };
+
+  // Handle navigation to group chat when a topic is clicked
+  const handleTopicClick = async (topicId: string) => {
+    try {
+      // Set loading state for this topic
+      setIsLoading(prev => ({ ...prev, [topicId]: true }));
+      
+      // Get or create the group chat for this topic and city
+      const groupChatId = await getOrCreateTopicGroupChat(topicId, selectedCity);
+      
+      // Navigate to the group chat page with the group chat ID
+      navigate({ 
+        to: '/group-chat/$id', 
+        params: { id: groupChatId }
+      });
+    } catch (error) {
+      console.error('Error creating group chat:', error);
+      // If there's an error, fall back to the mock implementation
+      navigate({ 
+        to: '/group-chat/$id', 
+        params: { id: topicId },
+        search: { city: selectedCity }
+      });
+    } finally {
+      // Clear loading state
+      setIsLoading(prev => ({ ...prev, [topicId]: false }));
+    }
   };
 
   // Animation variants for the menu items
@@ -319,6 +352,8 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                       animate="cityChange"
                       whileHover={{ scale: 1.1, translateZ: 24 }}
                       whileTap={{ scale: 0.95, translateZ: 10 }}
+                      onClick={() => handleTopicClick(item.id)}
+                      disabled={isLoading[item.id]}
                     >
                       {/* Rounded rectangle card */}
                       <div className="relative overflow-hidden rounded-3xl bg-white/20 backdrop-blur-md shadow-lg border border-white/30 w-24 sm:w-28">
@@ -347,6 +382,13 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                           {/* Circular icon */}
                           <div className="relative">
                             <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br ${bgColor}`}>
+                              {/* Loading indicator */}
+                              {isLoading[item.id] && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
+                                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                              )}
+                              
                               {/* Glass reflections */}
                               <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/90 via-transparent to-white/30" />
                               <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-white/50" />
