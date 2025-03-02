@@ -98,7 +98,7 @@ export function HomePage() {
           }}
         >
           <HallButtons />
-          <CircularMenu />
+          <CircularMenu selectedCity={state.selectedCity} />
 
         </motion.div>
       </div>

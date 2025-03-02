@@ -1,5 +1,11 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Heart, GraduationCap, Calendar, MapPin, UserPlus, Palette, Building2, Sparkles } from 'lucide-react';
+import { getCountries } from '../lib/location';
+
+// Define interface for component props
+interface CircularMenuProps {
+  selectedCity?: string;
+}
 
 const menuItems = [
   { id: 'politica', label: 'Política', icon: Users, color: 'from-violet-500 via-purple-500 to-indigo-600' },
@@ -12,15 +18,30 @@ const menuItems = [
   { id: 'ciudad', label: 'Ciudad', icon: Building2, color: 'from-violet-500 via-indigo-500 to-purple-600' }
 ];
 
-// City item that will be displayed in the center
-const cityItem = { 
-  id: 'currentCity', 
-  label: 'Madrid', // This could be dynamic based on user's selected city
-  icon: Building2, 
-  color: 'from-blue-600 via-indigo-600 to-purple-700' 
+// Function to find the country for a given city
+const findCountryForCity = (city: string): string => {
+  const countries = getCountries();
+  for (const country of countries) {
+    if (country.cities.includes(city)) {
+      return country.name;
+    }
+  }
+  return 'España'; // Default country if city not found
 };
 
-export function CircularMenu() {
+export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
+  // Get the country based on the selected city
+  const countryName = findCountryForCity(selectedCity);
+  
+  // City item that will be displayed in the center
+  const cityItem = { 
+    id: 'currentCity', 
+    label: selectedCity, // Use the selected city from props
+    icon: Building2, 
+    color: 'from-blue-600 via-indigo-600 to-purple-700',
+    country: countryName // Store the country name
+  };
+
   // Calculate positions for items in a circle
   const calculateCirclePosition = (index: number, total: number, radius: number) => {
     // Calculate angle in radians - offset by -Math.PI/2 to start from the top
@@ -29,6 +50,54 @@ export function CircularMenu() {
     const x = radius * Math.cos(angle);
     const y = radius * Math.sin(angle);
     return { x, y };
+  };
+
+  // Animation variants for the menu items
+  const menuItemVariants = {
+    initial: (index: number) => ({
+      x: 0,
+      y: 0,
+      opacity: 0,
+      scale: 0.8,
+      rotate: -5,
+    }),
+    animate: (index: number) => {
+      // Fixed radius for perfect circle
+      const radius = 150;
+      const position = calculateCirclePosition(index, menuItems.length, radius);
+      
+      return {
+        x: position.x,
+        y: position.y,
+        opacity: 1,
+        scale: 1,
+        rotate: 0,
+        transition: {
+          type: "spring",
+          stiffness: 300,
+          damping: 25,
+          delay: index * 0.05, // Staggered animation
+        }
+      };
+    },
+    cityChange: (index: number) => {
+      // Fixed radius for perfect circle
+      const radius = 150;
+      const position = calculateCirclePosition(index, menuItems.length, radius);
+      
+      return {
+        x: position.x,
+        y: position.y,
+        opacity: 1,
+        scale: [0.95, 1.1, 1],
+        rotate: [-2, 2, 0],
+        transition: {
+          duration: 0.5,
+          times: [0, 0.6, 1],
+          delay: index * 0.03, // Faster staggered animation
+        }
+      };
+    }
   };
 
   return (
@@ -124,12 +193,37 @@ export function CircularMenu() {
                     {/* Glass effect layers */}
                     <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-white/10" />
                     <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/20" />
+                    
+                    {/* Pulse animation on city change */}
+                    <motion.div 
+                      key={`pulse-${cityItem.label}`}
+                      initial={{ opacity: 0.7, scale: 0.95 }}
+                      animate={{ 
+                        opacity: [0.7, 0, 0],
+                        scale: [0.95, 1.2, 1.2]
+                      }}
+                      transition={{ 
+                        duration: 1.5,
+                        times: [0, 0.7, 1]
+                      }}
+                      className="absolute inset-0 rounded-3xl bg-blue-400/30 z-0"
+                    />
 
                     {/* Content */}
                     <div className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5">
                       {/* Circular icon */}
                       <div className="relative">
-                        <div className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br from-blue-400/90 to-blue-600/90">
+                        <motion.div 
+                          key={`icon-${cityItem.label}`}
+                          initial={{ scale: 0.9, rotate: -5 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ 
+                            type: "spring", 
+                            stiffness: 300, 
+                            damping: 15 
+                          }}
+                          className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br from-blue-400/90 to-blue-600/90"
+                        >
                           {/* Glass reflections */}
                           <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/90 via-transparent to-white/30" />
                           <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-sky-200/30 to-white/50" />
@@ -156,13 +250,27 @@ export function CircularMenu() {
                           >
                             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
                           </motion.div>
-                        </div>
+                        </motion.div>
                       </div>
                       
-                      {/* Label */}
-                      <span className="text-lg sm:text-xl lg:text-2xl font-semibold text-blue-600 line-clamp-1">
-                        {cityItem.label}
-                      </span>
+                      {/* City Label */}
+                      <AnimatePresence mode="wait">
+                        <motion.span 
+                          key={`city-${cityItem.label}`}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.3 }}
+                          className="text-lg sm:text-xl lg:text-2xl font-semibold text-blue-600 line-clamp-1"
+                        >
+                          {cityItem.label}
+                        </motion.span>
+                      </AnimatePresence>
+                      
+                      {/* Country Label */}
+                      <AnimatePresence mode="wait">
+                      
+                      </AnimatePresence>
                     </div>
                   </div>
                 </motion.button>
@@ -170,9 +278,6 @@ export function CircularMenu() {
                 {/* Circle arrangement of menu items */}
                 {menuItems.map((item, index) => {
                   const Icon = item.icon;
-                  // Fixed radius for perfect circle
-                  const radius = 150;
-                  const position = calculateCirclePosition(index, menuItems.length, radius);
                   
                   // Determine text color based on item
                   const textColorMap: Record<string, string> = {
@@ -203,23 +308,15 @@ export function CircularMenu() {
                   
                   return (
                     <motion.button
-                      key={item.id}
+                      key={`${item.id}-${cityItem.label}`}
                       className="menu-item absolute overflow-hidden"
                       style={{
                         borderRadius: '50%',
                       }}
-                      initial={{ x: 0, y: 0, opacity: 0 }}
-                      animate={{
-                        x: position.x,
-                        y: position.y,
-                        opacity: 1,
-                      }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 25,
-                        delay: index * 0.05, // Staggered animation
-                      }}
+                      custom={index}
+                      variants={menuItemVariants}
+                      initial="initial"
+                      animate="cityChange"
                       whileHover={{ scale: 1.1, translateZ: 24 }}
                       whileTap={{ scale: 0.95, translateZ: 10 }}
                     >
@@ -228,6 +325,22 @@ export function CircularMenu() {
                         {/* Glass effect layers */}
                         <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-white/10" />
                         <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/20" />
+
+                        {/* Ripple effect on city change */}
+                        <motion.div 
+                          key={`ripple-${item.id}-${cityItem.label}`}
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ 
+                            opacity: [0.5, 0, 0],
+                            scale: [0.5, 1.3, 1.3]
+                          }}
+                          transition={{ 
+                            duration: 1,
+                            delay: index * 0.05,
+                            times: [0, 0.7, 1]
+                          }}
+                          className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${bgColor.replace('/90', '/20')} z-0`}
+                        />
 
                         {/* Content */}
                         <div className="relative z-10 flex flex-col items-center gap-2 p-3 sm:p-4">
@@ -245,7 +358,21 @@ export function CircularMenu() {
                               <div className="absolute inset-0 rounded-full ring-2 ring-white/70" />
 
                               {/* Icon */}
-                              <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white relative z-10" />
+                              <motion.div
+                                key={`icon-${item.id}-${cityItem.label}`}
+                                initial={{ scale: 1 }}
+                                animate={{ 
+                                  scale: [1, 1.2, 1],
+                                  rotate: [0, index % 2 === 0 ? 10 : -10, 0]
+                                }}
+                                transition={{ 
+                                  duration: 0.5,
+                                  delay: 0.1 + index * 0.04,
+                                  times: [0, 0.5, 1]
+                                }}
+                              >
+                                <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white relative z-10" />
+                              </motion.div>
 
                               {/* Sparkle */}
                               <motion.div
@@ -264,9 +391,22 @@ export function CircularMenu() {
                           </div>
                           
                           {/* Label */}
-                          <span className={`text-sm sm:text-base font-semibold ${textColor} line-clamp-1`}>
+                          <motion.span 
+                            key={`label-${item.id}-${cityItem.label}`}
+                            initial={{ opacity: 1 }}
+                            animate={{ 
+                              opacity: [1, 0.7, 1],
+                              y: [0, -2, 0]
+                            }}
+                            transition={{ 
+                              duration: 0.5,
+                              delay: 0.2 + index * 0.04,
+                              times: [0, 0.5, 1]
+                            }}
+                            className={`text-sm sm:text-base font-semibold ${textColor} line-clamp-1`}
+                          >
                             {item.label}
-                          </span>
+                          </motion.span>
                         </div>
                       </div>
                     </motion.button>
