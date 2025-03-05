@@ -2,6 +2,7 @@ import { createRouter, Route, RootRoute } from '@tanstack/react-router';
 import App from './App';
 import { HomePage } from './pages/HomePage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ProfileViewPage } from './pages/ProfileViewPage';
 import { ChatPage } from './pages/ChatPage';
 import { GroupChatPage } from './pages/GroupChatPage';
 
@@ -24,6 +25,13 @@ const profileRoute = new Route({
   component: ProfilePage,
 });
 
+// Create the profile view route
+const profileViewRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: '/profile/$id',
+  component: ProfileViewPage,
+});
+
 // Create the chat route
 const chatRoute = new Route({
   getParentRoute: () => rootRoute,
@@ -42,6 +50,7 @@ const groupChatRoute = new Route({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   profileRoute,
+  profileViewRoute,
   chatRoute,
   groupChatRoute,
 ]);

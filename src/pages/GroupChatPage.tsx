@@ -13,6 +13,8 @@ interface Message {
   sender_id: string;
   created_at: string;
   sender_email?: string;
+  sender_name?: string;
+  sender_avatar?: string;
 }
 
 interface Member {
@@ -50,6 +52,11 @@ export function GroupChatPage() {
   
   // Use a ref to track message IDs to prevent duplicates
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
+  
+  // Debug: Log members whenever they change
+  useEffect(() => {
+    console.log("Members state updated:", members);
+  }, [members]);
   
   // Get current user and authenticate
   useEffect(() => {
@@ -111,44 +118,162 @@ export function GroupChatPage() {
         
         // Get unique sender IDs from messages
         const senderIds = [...new Set(messagesData.map((msg: any) => msg.sender_id))];
+        console.log("Unique sender IDs:", senderIds);
+        console.log("Messages data:", messagesData);
         
-        // Fetch profiles for all senders in a single query
-        const { data: profilesData, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, email")
-          .in("id", senderIds);
-          
-        if (profilesError) throw profilesError;
+        // If there are no messages yet, we'll still need to show the current user
+        let memberIds = [...senderIds]; // Create a new array to avoid modifying senderIds
         
-        // Create a map of sender_id to email for quick lookup
+        // Always include the current user's ID if authenticated
+        if (userId && !memberIds.includes(userId)) {
+          memberIds.push(userId);
+        }
+        
+        console.log("Member IDs including current user:", memberIds);
+        
+        // Fetch profiles for all members in a single query
+        let profilesData = null;
+        let profilesError = null;
+        
+        if (memberIds.length > 0) {
+          const response = await supabase
+            .from("profiles")
+            .select("id, email, avatar_url")
+            .in("id", memberIds);
+            
+          profilesData = response.data;
+          profilesError = response.error;
+          console.log("Fetched profiles data:", profilesData);
+        } else {
+          // If no member IDs, we'll just create an empty array
+          profilesData = [];
+        }
+        
+        // Create maps for sender information lookup
         const senderEmailMap: Record<string, string> = {};
+        const senderNameMap: Record<string, string> = {};
+        const senderAvatarMap: Record<string, string> = {};
+        
+        // Create a map of user IDs to their full profile data for easy lookup
+        const userProfileMap: Record<string, any> = {};
+        
         profilesData?.forEach((profile: any) => {
-          senderEmailMap[profile.id] = profile.email;
+          // Store the full profile in our map
+          userProfileMap[profile.id] = profile;
+          
+          // Also maintain the individual field maps for backward compatibility
+          senderEmailMap[profile.id] = profile.email || "";
+          // Use email username as display name since name field doesn't exist
+          senderNameMap[profile.id] = profile.email ? profile.email.split('@')[0] : "";
+          senderAvatarMap[profile.id] = profile.avatar_url || "";
         });
         
-        // Format messages with sender email
-        const formattedMessages = messagesData.map((msg: any) => ({
-          id: msg.id,
-          content: msg.content,
-          sender_id: msg.sender_id,
-          created_at: msg.created_at,
-          sender_email: senderEmailMap[msg.sender_id] || ""
-        }));
+        console.log("User profile map:", userProfileMap);
+        
+        // Format messages with sender information
+        const formattedMessages = messagesData.map((msg: any) => {
+          // Get the sender profile from our map
+          const senderProfile = userProfileMap[msg.sender_id];
+          console.log(`Sender profile for message ${msg.id}:`, senderProfile);
+          
+          // If sender profile is not found, log a warning
+          if (!senderProfile) {
+            console.warn(`Sender profile not found for message ${msg.id} with sender ID ${msg.sender_id}`);
+          }
+          
+          // If we have the sender profile, use it; otherwise, use empty values
+          const senderEmail = senderProfile?.email || "";
+          // Use email username as display name since name field doesn't exist
+          const senderName = senderProfile?.email ? senderProfile.email.split('@')[0] : "";
+          const senderAvatar = senderProfile?.avatar_url || "";
+          
+          const formattedMessage = {
+            id: msg.id,
+            content: msg.content,
+            sender_id: msg.sender_id,
+            created_at: msg.created_at,
+            sender_email: senderEmail,
+            sender_name: senderName,
+            sender_avatar: senderAvatar
+          };
+          
+          console.log(`Formatted message ${msg.id}:`, formattedMessage);
+          return formattedMessage;
+        });
+        
+        console.log("Formatted messages with sender information:", formattedMessages);
         
         // Initialize processed message IDs in our ref
         processedMessageIdsRef.current = new Set(formattedMessages.map(msg => msg.id));
         
         setMessages(formattedMessages);
         
-        // Fetch members of this group chat
-        const { data: membersData, error: membersError } = await supabase
-          .from("profiles")
-          .select("id, email, avatar_url")
-          .order("email", { ascending: true })
-          .limit(20); // Limit to 20 members for now
+        // Fetch members of this group chat based on message senders and current user
+        // This ensures we show users who have participated in the chat and the current user
+        let membersData = null;
+        let membersError = null;
+        
+        if (memberIds.length > 0) {
+          const response = await supabase
+            .from("profiles")
+            .select("id, email, avatar_url")
+            .in("id", memberIds);
+            
+          membersData = response.data;
+          membersError = response.error;
+        } else {
+          // If no member IDs, we'll just create an empty array
+          membersData = [];
+        }
+        
+        console.log("Members data from senders:", membersData);
         
         if (membersError) throw membersError;
-        setMembers(membersData || []);
+        
+        // Add the current user to the members list if they're not already included
+        let membersList: Member[] = membersData || [];
+        const isCurrentUserInMembers = membersList.some(member => member.id === userId);
+        console.log("Current user ID:", userId);
+        console.log("Is current user in members:", isCurrentUserInMembers);
+        
+        if (!isCurrentUserInMembers && userId) {
+          const { data: currentUserProfile, error: currentUserError } = await supabase
+            .from("profiles")
+            .select("id, email, avatar_url")
+            .eq("id", userId);
+            
+          console.log("Current user profile:", currentUserProfile);
+            
+          if (!currentUserError && currentUserProfile && currentUserProfile.length > 0) {
+            membersList = [...membersList, currentUserProfile[0]];
+          }
+        }
+        
+        // If we still have no members (which shouldn't happen since we added the current user),
+        // make sure to add the current user profile
+        if (membersList.length === 0 && userId) {
+          const { data: currentUserProfile, error: currentUserError } = await supabase
+            .from("profiles")
+            .select("id, email, avatar_url")
+            .eq("id", userId);
+            
+          if (!currentUserError && currentUserProfile && currentUserProfile.length > 0) {
+            membersList = [currentUserProfile[0]];
+          }
+        }
+        
+        // Ensure members list has no duplicates
+        const uniqueMemberIds = new Set();
+        const uniqueMembers = membersList.filter(member => {
+          if (uniqueMemberIds.has(member.id)) {
+            return false; // Skip this member as it's a duplicate
+          }
+          uniqueMemberIds.add(member.id);
+          return true;
+        });
+        
+        console.log("Final members list:", uniqueMembers);
+        setMembers(uniqueMembers);
         
         setIsLoading(false);
       } catch (error) {
@@ -160,6 +285,7 @@ export function GroupChatPage() {
     fetchGroupChatData();
     
     // Subscribe to new messages
+    console.log(`Setting up real-time subscription for group chat: ${id}`);
     const subscription = supabase
       .channel(`group-chat:${id}`)
       .on(
@@ -171,71 +297,128 @@ export function GroupChatPage() {
           filter: `group_id=eq.${id}`
         },
         async (payload) => {
-          console.log("Realtime message received:", payload.new);
+          console.log("Received real-time message:", payload.new);
           
-          // If we already have this message ID in our processed set, ignore it
+          // Skip if we've already processed this message
           if (processedMessageIdsRef.current.has(payload.new.id)) {
-            console.log(`Ignoring already processed message: ${payload.new.id}`);
+            console.log("Skipping already processed message:", payload.new.id);
             return;
           }
           
-          // Get sender email separately
-          const { data: profileData, error: profileError } = await supabase
-            .from("profiles")
-            .select("email")
-            .eq("id", payload.new.sender_id)
-            .single();
+          // Add this message ID to our processed set
+          processedMessageIdsRef.current.add(payload.new.id);
           
-          if (profileError) {
-            console.error("Error fetching sender profile:", profileError);
-          }
-          
-          const newMsg: Message = {
-            id: payload.new.id,
-            content: payload.new.content,
-            sender_id: payload.new.sender_id,
-            created_at: payload.new.created_at,
-            sender_email: profileData?.email || ""
-          };
-          
-          // Add the message ID to our processed set
-          processedMessageIdsRef.current.add(newMsg.id);
-          
-          // Check if this message is from the current user
-          const isFromCurrentUser = newMsg.sender_id === userId;
-          
-          // Check if we have a temporary message with the same content
-          if (isFromCurrentUser) {
+          try {
+            // Fetch the sender's complete profile information
+            const { data: senderData, error: senderError } = await supabase
+              .from("profiles")
+              .select("id, email, avatar_url")
+              .eq("id", payload.new.sender_id);
+            
+            if (senderError) {
+              console.error("Error fetching sender data:", senderError);
+              return;
+            }
+            
+            // Get the sender profile from the response
+            const senderProfile = senderData && senderData.length > 0 ? senderData[0] : null;
+            console.log("Sender profile for new message:", senderProfile);
+            
+            if (!senderProfile) {
+              console.error("Sender profile not found for ID:", payload.new.sender_id);
+              return;
+            }
+            
+            // Extract sender information from the profile
+            const senderEmail = senderProfile.email || "";
+            // Use email username as display name since name field doesn't exist
+            const senderName = senderEmail ? senderEmail.split('@')[0] : "";
+            const senderAvatar = senderProfile.avatar_url || "";
+            
+            // Create the new message object with sender information
+            const newMsg: Message = {
+              id: payload.new.id,
+              content: payload.new.content,
+              sender_id: payload.new.sender_id,
+              created_at: payload.new.created_at,
+              sender_email: senderEmail,
+              sender_name: senderName,
+              sender_avatar: senderAvatar
+            };
+            
+            // Check if this message is from the current user
+            const isFromCurrentUser = newMsg.sender_id === userId;
+            console.log("Is message from current user:", isFromCurrentUser);
+            
+            // Update messages state
             setMessages(prev => {
-              // Look for a temporary message with the same content
-              const tempIndex = prev.findIndex(
-                msg => msg.id.startsWith('temp-') && 
-                      msg.content === newMsg.content &&
-                      msg.sender_id === userId
-              );
-              
-              // If we found a matching temporary message, replace it
-              if (tempIndex >= 0) {
-                const newMessages = [...prev];
-                newMessages[tempIndex] = newMsg;
-                return newMessages;
+              // For messages from the current user, try to replace any temporary message
+              if (isFromCurrentUser) {
+                // Look for a temporary message with the same content
+                const tempIndex = prev.findIndex(
+                  msg => msg.id.startsWith('temp-') && 
+                        msg.content === newMsg.content &&
+                        msg.sender_id === userId
+                );
+                
+                // If we found a matching temporary message, replace it
+                if (tempIndex >= 0) {
+                  console.log("Replacing temporary message at index:", tempIndex);
+                  const newMessages = [...prev];
+                  newMessages[tempIndex] = newMsg;
+                  return newMessages;
+                }
               }
               
               // Otherwise, just add the new message
+              console.log("Adding new message to state");
               return [...prev, newMsg];
             });
-          } else {
-            // For messages from other users, just add them
-            setMessages(prev => [...prev, newMsg]);
+            
+            // Check if this sender is already in our members list
+            // If not, add them to the members list
+            setMembers(prevMembers => {
+              const senderExists = prevMembers.some(member => member.id === payload.new.sender_id);
+              console.log("Sender exists in members list:", senderExists);
+              
+              if (!senderExists) {
+                // Fetch the complete profile of the new member
+                supabase
+                  .from("profiles")
+                  .select("id, email, avatar_url")
+                  .eq("id", payload.new.sender_id)
+                  .then(({ data, error }) => {
+                    if (!error && data && data.length > 0) {
+                      console.log("Adding new member to state:", data[0]);
+                      // Ensure we don't add duplicates by checking again before adding
+                      setMembers(prev => {
+                        // Check if this member already exists in the list
+                        if (prev.some(member => member.id === data[0].id)) {
+                          return prev; // Don't add if already exists
+                        }
+                        return [...prev, data[0]]; // Add if it's new
+                      });
+                    } else {
+                      console.error("Error fetching new member profile:", error);
+                    }
+                  });
+              }
+              
+              return prevMembers;
+            });
+          } catch (error) {
+            console.error("Error processing real-time message:", error);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Subscription status for group chat ${id}:`, status);
+      });
     
     return () => {
       subscription.unsubscribe();
     };
-  }, [id, isAuthenticated, navigate, userId]);
+  }, [id, isAuthenticated, navigate, userId, userEmail]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -257,6 +440,22 @@ export function GroupChatPage() {
     try {
       console.log("Sending message:", messageContent);
       
+      // Find the current user's profile in the members list
+      const currentUserProfile = members.find(member => member.id === userId);
+      console.log("Current user profile from members:", currentUserProfile);
+      
+      if (!currentUserProfile) {
+        console.warn("Current user profile not found in members list. Using fallback values.");
+      }
+      
+      // Use profile data if available, otherwise fallback to basic info
+      // Use email username as display name since name field doesn't exist
+      const userName = currentUserProfile?.email ? currentUserProfile.email.split('@')[0] : userEmail.split('@')[0];
+      const userAvatar = currentUserProfile?.avatar_url || "";
+      
+      console.log("Using sender name:", userName);
+      console.log("Using sender avatar:", userAvatar);
+      
       // Create a temporary local message to show immediately
       const tempId = `temp-${Date.now()}`;
       const tempMessage: Message = {
@@ -264,11 +463,18 @@ export function GroupChatPage() {
         content: messageContent,
         sender_id: userId,
         sender_email: userEmail,
+        sender_name: userName,
+        sender_avatar: userAvatar,
         created_at: new Date().toISOString()
       };
       
       // Add the temporary message to the UI immediately
       setMessages(prev => [...prev, tempMessage]);
+      
+      // Scroll to bottom after adding the temporary message
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
       
       // Insert the message into the group_messages table
       const { data, error } = await supabase.from("group_messages").insert({
@@ -277,7 +483,10 @@ export function GroupChatPage() {
         content: messageContent
       }).select();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error sending message:", error);
+        return;
+      }
       
       console.log("Message sent successfully:", data);
       
@@ -288,7 +497,9 @@ export function GroupChatPage() {
           content: data[0].content,
           sender_id: data[0].sender_id,
           created_at: data[0].created_at,
-          sender_email: userEmail
+          sender_email: userEmail,
+          sender_name: userName,
+          sender_avatar: userAvatar
         };
         
         // Add the real message ID to our processed set to prevent duplicates from realtime
@@ -305,11 +516,6 @@ export function GroupChatPage() {
       // If there was an error, keep the temporary message as is
       // It will at least show the user their message was sent locally
     }
-    
-    // Scroll to bottom after sending message
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
   };
 
   const formatTime = (dateString: string) => {
@@ -392,10 +598,26 @@ export function GroupChatPage() {
                   key={message.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${
+                  className={`flex items-start ${
                     message.sender_id === userId ? "justify-end" : "justify-start"
                   }`}
                 >
+                  {message.sender_id !== userId && (
+                    <div className="flex-shrink-0 mr-2 mt-1">
+                      {message.sender_avatar ? (
+                        <img 
+                          src={message.sender_avatar} 
+                          alt={(message.sender_email || "").split('@')[0]} 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-sky-400 to-sky-600 flex items-center justify-center text-white text-xs font-medium">
+                          {(message.sender_email || "").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   <div
                     className={`max-w-xs sm:max-w-md rounded-xl p-3 ${
                       message.sender_id === userId
@@ -404,8 +626,8 @@ export function GroupChatPage() {
                     }`}
                   >
                     {message.sender_id !== userId && (
-                      <div className="text-xs text-sky-600 mb-1">
-                        {message.sender_email}
+                      <div className="text-xs font-medium text-sky-700 mb-1">
+                        {(message.sender_email || "").split('@')[0]}
                       </div>
                     )}
                     <div className="text-sm">{message.content}</div>
@@ -417,6 +639,22 @@ export function GroupChatPage() {
                       {formatTime(message.created_at)}
                     </div>
                   </div>
+                  
+                  {message.sender_id === userId && (
+                    <div className="flex-shrink-0 ml-2 mt-1">
+                      {message.sender_avatar ? (
+                        <img 
+                          src={message.sender_avatar} 
+                          alt={(message.sender_email || "").split('@')[0]} 
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center text-white text-xs font-medium">
+                          {(message.sender_email || "").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               ))
             )}
@@ -467,6 +705,7 @@ export function GroupChatPage() {
           onClose={() => setShowMembers(false)}
           members={members}
           isMobile={isMobile}
+          currentUserId={userId}
         />
       </div>
     </div>
