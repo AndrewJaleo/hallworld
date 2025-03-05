@@ -53,7 +53,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.group_messages;
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
+  name TEXT,
+  likings TEXT,
+  age INTEGER,
+  gender TEXT,
   avatar_url TEXT,
+  biography TEXT,
+  canvas_state JSONB,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
 
