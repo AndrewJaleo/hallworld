@@ -284,21 +284,28 @@ export function ProfileForm({ userId }: ProfileFormProps) {
 
   if (loading) {
     return (
-      <div className="glossy p-6 rounded-2xl flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-t-transparent border-blue-500 rounded-full animate-spin"></div>
+      <div className="glossy p-8 rounded-2xl flex justify-center items-center min-h-[400px]">
+        <div className="w-12 h-12 border-4 border-t-transparent border-white rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="glossy p-6 rounded-2xl">
-      <h2 className="text-sky-900 text-xl font-semibold mb-6">Editar Perfil</h2>
+    <div className="glossy p-8 rounded-2xl shadow-xl backdrop-blur-sm bg-white/20 border border-white/30">
+      <h2 className="text-gray-900 text-2xl font-bold mb-8 text-center relative">
+        Información Personal
+        {saving && (
+          <div className="absolute right-0 top-1">
+            <div className="w-5 h-5 border-2 border-t-transparent border-gray-900 rounded-full animate-spin"></div>
+          </div>
+        )}
+      </h2>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Avatar Upload */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="relative">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 mb-2">
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-100/30 to-sky-200/30 mb-3 border-4 border-white/70 shadow-lg transition-transform duration-300 group-hover:scale-105">
               {avatarPreview ? (
                 <img 
                   src={avatarPreview} 
@@ -306,8 +313,8 @@ export function ProfileForm({ userId }: ProfileFormProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                  Sin Imagen
+                <div className="w-full h-full flex items-center justify-center bg-white/20 text-gray-900">
+                  <span className="text-4xl font-light">+</span>
                 </div>
               )}
             </div>
@@ -316,7 +323,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               <button
                 type="button"
                 onClick={clearAvatar}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -326,10 +333,10 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="glass-button px-3 py-1.5 text-sm flex items-center gap-1.5"
+            className="glass-button px-4 py-2 text-sm flex items-center gap-2 bg-white/20 hover:bg-white/30 border border-white/30 shadow-md transition-all duration-300 hover:shadow-lg"
           >
-            <Upload size={14} />
-            <span className="text-violet-600 font-medium">Subir Foto</span>
+            <Upload size={16} className="text-gray-900" />
+            <span className="text-gray-900 font-medium">Subir Foto</span>
           </button>
           
           <input
@@ -341,96 +348,104 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           />
         </div>
         
-        {/* Name */}
-        <div>
-          <label htmlFor="name" className="block text-sky-900 text-sm font-medium mb-1">
-            Nombre
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            value={profile.name}
-            onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg bg-white/70 border border-sky-200 text-sky-900 placeholder-sky-500/50 focus:outline-none focus:ring-2 focus:ring-sky-300"
-            placeholder="Tu nombre"
-          />
-        </div>
-        
-        {/* Age */}
-        <div>
-          <label htmlFor="age" className="block text-sky-900 text-sm font-medium mb-1">
-            Edad
-          </label>
-          <input
-            id="age"
-            name="age"
-            type="number"
-            min="1"
-            max="120"
-            value={profile.age || ''}
-            onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg bg-white/70 border border-sky-200 text-sky-900 placeholder-sky-500/50 focus:outline-none focus:ring-2 focus:ring-sky-300"
-            placeholder="Tu edad"
-          />
-        </div>
-        
-        {/* Gender */}
-        <div>
-          <label htmlFor="gender" className="block text-sky-900 text-sm font-medium mb-1">
-            Género
-          </label>
-          <select
-            id="gender"
-            name="gender"
-            value={profile.gender}
-            onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg bg-white/70 border border-sky-200 text-sky-900 focus:outline-none focus:ring-2 focus:ring-sky-300"
-          >
-            <option value="">Seleccionar género</option>
-            <option value="male">Masculino</option>
-            <option value="female">Femenino</option>
-            <option value="non-binary">No binario</option>
-            <option value="other">Otro</option>
-            <option value="prefer-not-to-say">Prefiero no decirlo</option>
-          </select>
-        </div>
-        
-        {/* Likings */}
-        <div>
-          <label htmlFor="likings" className="block text-sky-900 text-sm font-medium mb-1">
-            Gustos
-          </label>
-          <input
-            id="likings"
-            name="likings"
-            type="text"
-            value={profile.likings}
-            onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg bg-white/70 border border-sky-200 text-sky-900 placeholder-sky-500/50 focus:outline-none focus:ring-2 focus:ring-sky-300"
-            placeholder="¿Qué te gusta? (ej. música, deportes, libros)"
-          />
-        </div>
-        
-        {/* Biography */}
-        <div>
-          <label htmlFor="biography" className="block text-sky-900 text-sm font-medium mb-1">
-            Biografía
-          </label>
-          <textarea
-            id="biography"
-            name="biography"
-            rows={4}
-            value={profile.biography}
-            onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg bg-white/70 border border-sky-200 text-sky-900 placeholder-sky-500/50 focus:outline-none focus:ring-2 focus:ring-sky-300 resize-none"
-            placeholder="Cuéntanos sobre ti..."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Name */}
+          <div className="col-span-2 md:col-span-1">
+            <label htmlFor="name" className="block text-gray-900 text-sm font-medium mb-2">
+              Nombre
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              value={profile.name}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+              placeholder="Tu nombre"
+            />
+          </div>
+          
+          {/* Age */}
+          <div className="col-span-2 md:col-span-1">
+            <label htmlFor="age" className="block text-gray-900 text-sm font-medium mb-2">
+              Edad
+            </label>
+            <input
+              id="age"
+              name="age"
+              type="number"
+              min="13"
+              max="120"
+              value={profile.age || ''}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+              placeholder="Tu edad"
+            />
+          </div>
+          
+          {/* Gender */}
+          <div className="col-span-2 md:col-span-1">
+            <label htmlFor="gender" className="block text-gray-900 text-sm font-medium mb-2">
+              Género
+            </label>
+            <select
+              id="gender"
+              name="gender"
+              value={profile.gender}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+            >
+              <option value="">Seleccionar</option>
+              <option value="male">Masculino</option>
+              <option value="female">Femenino</option>
+              <option value="non-binary">No binario</option>
+              <option value="other">Otro</option>
+              <option value="prefer-not-to-say">Prefiero no decirlo</option>
+            </select>
+          </div>
+          
+          {/* Likings */}
+          <div className="col-span-2 md:col-span-1">
+            <label htmlFor="likings" className="block text-gray-900 text-sm font-medium mb-2">
+              Gustos
+            </label>
+            <input
+              id="likings"
+              name="likings"
+              type="text"
+              value={profile.likings}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+              placeholder="Tus gustos e intereses"
+            />
+          </div>
+          
+          {/* Biography */}
+          <div className="col-span-2">
+            <label htmlFor="biography" className="block text-gray-900 text-sm font-medium mb-2">
+              Biografía
+            </label>
+            <textarea
+              id="biography"
+              name="biography"
+              rows={4}
+              value={profile.biography}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm resize-none"
+              placeholder="Cuéntanos sobre ti..."
+            ></textarea>
+          </div>
         </div>
         
         {/* Status Message */}
         {message && (
-          <div className={`p-3 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : message.type === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+          <div className={`p-4 rounded-lg ${
+            message.type === 'success' 
+              ? 'bg-green-500/20 text-gray-900 border-l-4 border-green-400' 
+              : message.type === 'warning' 
+                ? 'bg-yellow-500/20 text-gray-900 border-l-4 border-yellow-400' 
+                : 'bg-red-500/20 text-gray-900 border-l-4 border-red-400'
+          }`}>
             {message.type === 'success' && 'Perfil actualizado con éxito!'}
             {message.type === 'warning' && 'Perfil actualizado parcialmente. Algunos campos no pudieron guardarse debido a un problema en la base de datos. Por favor, contacta con soporte.'}
             {message.type === 'error' && 'Error al actualizar el perfil. Por favor, inténtalo de nuevo.'}
@@ -441,7 +456,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
         <motion.button
           type="submit"
           disabled={saving}
-          className="w-full px-6 py-3 bg-gradient-to-r from-violet-500 to-violet-600 rounded-lg text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-70 flex items-center justify-center gap-2"
+          className="w-full px-6 py-3.5 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:translate-y-[-2px] disabled:hover:translate-y-0 disabled:hover:shadow-lg"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -453,7 +468,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           ) : (
             <>
               <Save size={18} />
-              <span>Guardar Perfil</span>
+              <span>Guardar Cambios</span>
             </>
           )}
         </motion.button>

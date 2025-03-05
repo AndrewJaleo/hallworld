@@ -5,6 +5,7 @@ import { Header } from '../components/Header';
 import { ProfileEditor } from '../components/ProfileEditor';
 import { ProfileForm } from '../components/ProfileForm';
 import { motion } from 'framer-motion';
+import { UserCircle, PaintBucket, Home } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -139,45 +140,51 @@ export function ProfileViewPage() {
 
   return (
     <div 
-      className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex flex-col fixed inset-0"
+      className="min-h-screen flex flex-col fixed inset-0 overflow-auto"
       style={{
         backgroundImage: `
           linear-gradient(135deg, 
-            rgba(56, 189, 248, 0.8),
-            rgba(14, 165, 233, 0.8),
+            rgba(56, 189, 248, 0.9),
+            rgba(14, 165, 233, 0.85),
             rgba(2, 132, 199, 0.8)
           ),
           url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop')
         `,
         backgroundSize: 'cover',
-        backgroundPosition: 'center'
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
       }}
     >
       <Header unreadChats={3} userEmail={userEmail} />
       
-      <div className="mt-24 pb-8 px-4 max-w-4xl mx-auto w-full">
+      <div className="mt-24 pb-12 px-4 max-w-4xl mx-auto w-full relative z-10">
+        {/* Decorative elements */}
+        <div className="absolute top-[-50px] right-[-80px] w-64 h-64 bg-gradient-to-br from-purple-300/20 to-pink-300/20 rounded-full blur-3xl -z-10"></div>
+        <div className="absolute bottom-[-30px] left-[-60px] w-72 h-72 bg-gradient-to-tr from-blue-300/20 to-cyan-300/20 rounded-full blur-3xl -z-10"></div>
+        
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="glossy p-8 rounded-2xl flex flex-col items-center">
-              <div className="w-12 h-12 border-4 border-t-transparent border-blue-500 rounded-full animate-spin mb-4"></div>
-              <p className="text-sky-900 font-medium">Cargando perfil...</p>
+            <div className="glossy p-8 rounded-2xl flex flex-col items-center shadow-xl">
+              <div className="w-12 h-12 border-4 border-t-transparent border-gray-700 rounded-full animate-spin mb-4"></div>
+              <p className="text-gray-900 font-medium">Cargando perfil...</p>
             </div>
           </div>
         ) : error ? (
-          <div className="glossy p-8 rounded-2xl text-center">
-            <p className="text-sky-900 font-medium text-xl mb-2">{error}</p>
-            <p className="text-sky-800/70 mb-6">El perfil que estás buscando podría no existir.</p>
+          <div className="glossy p-8 rounded-2xl text-center shadow-xl backdrop-blur-sm bg-white/20 border border-white/30">
+            <p className="text-gray-900 font-medium text-xl mb-2">{error}</p>
+            <p className="text-gray-800 mb-6">El perfil que estás buscando podría no existir.</p>
             <button 
               onClick={() => navigate({ to: '/' })}
-              className="px-6 py-2.5 bg-white/10 hover:bg-white/20 transition-colors rounded-lg text-sky-900 font-medium"
+              className="px-6 py-2.5 bg-white/10 hover:bg-white/20 transition-colors rounded-lg text-gray-900 font-medium flex items-center gap-2 mx-auto"
             >
-              Ir a Inicio
+              <Home size={18} />
+              <span>Ir a Inicio</span>
             </button>
           </div>
         ) : profile ? (
           <>
             <motion.div 
-              className="glossy p-6 rounded-2xl mb-6"
+              className="glossy p-8 rounded-2xl mb-8 shadow-xl backdrop-blur-sm bg-white/20 border border-white/30"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -185,39 +192,50 @@ export function ProfileViewPage() {
                 ease: [0.6, -0.05, 0.01, 0.99]
               }}
             >
-              <div className="flex items-center gap-4 mb-4">
-                {profile.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={profile.name || 'Perfil'} 
-                    className="w-20 h-20 rounded-full object-cover border-2 border-white/30"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-sky-900 text-xl font-bold">
-                    {(profile.name || profile.email.split('@')[0]).charAt(0).toUpperCase()}
-                  </div>
-                )}
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6">
+                <div className="relative">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.name || 'Perfil'} 
+                      className="w-32 h-32 rounded-full object-cover border-4 border-white/70 shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-white/20 flex items-center justify-center text-gray-900 text-4xl font-bold border-4 border-white/70 shadow-lg">
+                      {(profile.name || profile.email.split('@')[0]).charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
                 
-                <div>
-                  <h1 className="text-sky-900 text-2xl font-semibold">
+                <div className="text-center md:text-left flex-1">
+                  <h1 className="text-gray-900 text-3xl font-bold mb-1">
                     {profile.name || profile.email.split('@')[0]}
                   </h1>
-                  <p className="text-sky-800/70">{profile.email}</p>
+                  <p className="text-gray-800 mb-4">{profile.email}</p>
+                  
+                  {currentUserId !== profile.id && (
+                    <button
+                      onClick={handleSendMessage}
+                      className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px]"
+                    >
+                      Enviar Mensaje
+                    </button>
+                  )}
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-white/10 p-6 rounded-xl">
                 {profile.age && (
                   <div>
-                    <h3 className="text-sky-800/70 text-sm">Edad</h3>
-                    <p className="text-sky-900">{profile.age}</p>
+                    <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Edad</h3>
+                    <p className="text-gray-900 text-lg">{profile.age}</p>
                   </div>
                 )}
                 
                 {profile.gender && (
                   <div>
-                    <h3 className="text-sky-800/70 text-sm">Género</h3>
-                    <p className="text-sky-900 capitalize">
+                    <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Género</h3>
+                    <p className="text-gray-900 text-lg capitalize">
                       {profile.gender === 'male' ? 'Masculino' : 
                        profile.gender === 'female' ? 'Femenino' : 
                        profile.gender === 'non-binary' ? 'No binario' : 
@@ -229,26 +247,19 @@ export function ProfileViewPage() {
                 
                 {profile.likings && (
                   <div className="md:col-span-2">
-                    <h3 className="text-sky-800/70 text-sm">Gustos</h3>
-                    <p className="text-sky-900">{profile.likings}</p>
+                    <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Gustos</h3>
+                    <p className="text-gray-900 text-lg">{profile.likings}</p>
                   </div>
                 )}
               </div>
               
               {profile.biography && (
-                <div className="mb-6">
-                  <h3 className="text-sky-800/70 text-sm mb-1">Biografía</h3>
-                  <p className="text-sky-900 whitespace-pre-line">{profile.biography}</p>
+                <div>
+                  <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-2">Biografía</h3>
+                  <div className="bg-white/10 p-6 rounded-xl">
+                    <p className="text-gray-900 whitespace-pre-line">{profile.biography}</p>
+                  </div>
                 </div>
-              )}
-              
-              {currentUserId !== profile.id && (
-                <button
-                  onClick={handleSendMessage}
-                  className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-violet-600 rounded-lg text-white font-medium hover:opacity-90 transition-opacity"
-                >
-                  Enviar Mensaje
-                </button>
               )}
             </motion.div>
             
@@ -256,7 +267,7 @@ export function ProfileViewPage() {
             {currentUserId === profile.id ? (
               <>
                 <motion.div 
-                  className="flex justify-center mb-6"
+                  className="flex justify-center mb-8"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -265,26 +276,28 @@ export function ProfileViewPage() {
                     ease: [0.6, -0.05, 0.01, 0.99]
                   }}
                 >
-                  <div className="glossy p-1 rounded-xl flex">
+                  <div className="glossy p-1.5 rounded-xl flex shadow-lg">
                     <button
                       onClick={() => setActiveTab('info')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
                         activeTab === 'info' 
-                          ? 'bg-white/20 text-sky-900' 
-                          : 'text-sky-900/70 hover:text-sky-900'
+                          ? 'bg-white/30 text-gray-900 shadow-sm' 
+                          : 'text-gray-800 hover:text-gray-900 hover:bg-white/10'
                       }`}
                     >
-                      Editar Perfil
+                      <UserCircle size={18} />
+                      <span>Editar Perfil</span>
                     </button>
                     <button
                       onClick={() => setActiveTab('canvas')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
                         activeTab === 'canvas' 
-                          ? 'bg-white/20 text-sky-900' 
-                          : 'text-sky-900/70 hover:text-sky-900'
+                          ? 'bg-white/30 text-gray-900 shadow-sm' 
+                          : 'text-gray-800 hover:text-gray-900 hover:bg-white/10'
                       }`}
                     >
-                      Editor de Canvas
+                      <PaintBucket size={18} />
+                      <span>Editor de Canvas</span>
                     </button>
                   </div>
                 </motion.div>
@@ -297,6 +310,7 @@ export function ProfileViewPage() {
                     delay: 0.4,
                     ease: [0.6, -0.05, 0.01, 0.99]
                   }}
+                  className="relative"
                 >
                   {activeTab === 'info' ? (
                     <ProfileForm userId={profile.id} />
@@ -314,6 +328,7 @@ export function ProfileViewPage() {
                   delay: 0.2,
                   ease: [0.6, -0.05, 0.01, 0.99]
                 }}
+                className="relative"
               >
                 <ProfileEditor userId={profile.id} isOwner={false} />
               </motion.div>
