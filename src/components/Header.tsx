@@ -1,43 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, User, LogOut, Settings } from 'lucide-react';
+import { Bell, User, LogOut, Settings, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 interface HeaderProps {
   unreadChats: number;
   userEmail: string;
 }
 
+interface ChatNotification {
+  id: string;
+  sender_email: string;
+  content: string;
+  created_at: string;
+  chat_id: string;
+}
+
 export function Header({ unreadChats, userEmail }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [notifications, setNotifications] = useState<ChatNotification[]>([]);
+  const [loading, setLoading] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-
-  const mockChats = [
-    {
-      id: 1,
-      user: 'Laura García',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&h=256&auto=format&fit=crop',
-      message: 'Hola! ¿Qué tal todo?',
-      time: '2min'
-    },
-    {
-      id: 2,
-      user: 'Carlos Ruiz',
-      avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=256&h=256&auto=format&fit=crop',
-      message: '¿Te apuntas al evento?',
-      time: '5min'
-    },
-    {
-      id: 3,
-      user: 'Ana Martínez',
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=256&h=256&auto=format&fit=crop',
-      message: 'El concierto estuvo genial!',
-      time: '15min'
-    }
-  ];
+  const navigate = useNavigate();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -52,6 +39,118 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (showNotifications) {
+      fetchUnreadMessages();
+    }
+  }, [showNotifications]);
+
+  const fetchUnreadMessages = async () => {
+    try {
+      setLoading(true);
+      
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      
+      const userId = session.user.id;
+      
+      // Get all chats where the current user is either user1 or user2
+      const { data: chatsData, error: chatsError } = await supabase
+        .from('private_chats')
+        .select('id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+      
+      if (chatsError) throw chatsError;
+      
+      if (chatsData && chatsData.length > 0) {
+        // Get all unread messages in these chats
+        const chatIds = chatsData.map(chat => chat.id);
+        
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('private_messages')
+          .select(`
+            id,
+            chat_id,
+            content,
+            created_at,
+            sender_id
+          `)
+          .in('chat_id', chatIds)
+          .neq('sender_id', userId)
+          .is('read_at', null)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (messagesError) throw messagesError;
+        
+        if (!messagesData || messagesData.length === 0) {
+          setNotifications([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Get all sender IDs
+        const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
+        
+        // Fetch profiles for all senders in a single query
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', senderIds);
+          
+        if (profilesError) {
+          console.error('Error fetching sender profiles:', profilesError);
+          setLoading(false);
+          return;
+        }
+        
+        // Create a map of user IDs to emails for quick lookup
+        const userEmailMap = profilesData.reduce((map, profile) => {
+          map[profile.id] = profile.email;
+          return map;
+        }, {} as Record<string, string>);
+        
+        // Format notifications
+        const formattedNotifications = messagesData.map((msg) => ({
+          id: msg.id,
+          sender_email: userEmailMap[msg.sender_id] || 'Unknown User',
+          content: msg.content,
+          created_at: msg.created_at,
+          chat_id: msg.chat_id
+        }));
+        
+        setNotifications(formattedNotifications);
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching unread messages:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleNotificationClick = (chatId: string) => {
+    setShowNotifications(false);
+    navigate({ to: `/chat/${chatId}` });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+      return 'now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}min`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)}h`;
+    } else {
+      return `${Math.floor(diffInMinutes / 1440)}d`;
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -207,7 +306,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                             <div className="p-4 border-b border-white/20">
                               <div className="flex items-center justify-between">
                                 <h3 className="font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                                  Notificaciones
+                                  Mensajes
                                 </h3>
                                 <span className="text-xs font-medium px-2 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-600">
                                   {unreadChats} nuevos
@@ -216,33 +315,61 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                             </div>
 
                             <div className="divide-y divide-white/10">
-                              {mockChats.map(chat => (
-                                <motion.div
-                                  key={chat.id}
-                                  className="relative group cursor-pointer"
-                                  whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                                >
-                                  <div className="p-4">
-                                    <div className="flex items-center gap-3">
-                                      <div className="relative">
-                                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 blur-sm" />
-                                        <img loading="lazy"
-                                          src={chat.avatar}
-                                          alt={chat.user}
-                                          className="w-10 h-10 rounded-full object-cover border-2 border-white/80 relative"
-                                        />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                          <p className="font-medium text-gray-800 truncate text-sm sm:text-base">{chat.user}</p>
-                                          <span className="text-[10px] sm:text-xs text-violet-600 ml-2">{chat.time}</span>
+                              {loading ? (
+                                <div className="p-4 text-center text-sm text-gray-600">
+                                  Cargando mensajes...
+                                </div>
+                              ) : notifications.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-gray-600">
+                                  No tienes mensajes nuevos
+                                </div>
+                              ) : (
+                                notifications.map(notification => (
+                                  <motion.div
+                                    key={notification.id}
+                                    className="relative group cursor-pointer"
+                                    whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                                    onClick={() => handleNotificationClick(notification.chat_id)}
+                                  >
+                                    <div className="p-4">
+                                      <div className="flex items-center gap-3">
+                                        <div className="relative">
+                                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 blur-sm" />
+                                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white font-semibold border-2 border-white/80 relative">
+                                            {notification.sender_email.charAt(0).toUpperCase()}
+                                          </div>
                                         </div>
-                                        <p className="text-sm text-gray-600 truncate">{chat.message}</p>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center justify-between">
+                                            <p className="font-medium text-gray-800 truncate text-sm sm:text-base">
+                                              {notification.sender_email}
+                                            </p>
+                                            <span className="text-[10px] sm:text-xs text-violet-600 ml-2">
+                                              {formatTime(notification.created_at)}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-gray-600 truncate">
+                                            {notification.content}
+                                          </p>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </motion.div>
-                              ))}
+                                  </motion.div>
+                                ))
+                              )}
+                            </div>
+                            
+                            <div className="p-3 border-t border-white/20">
+                              <button 
+                                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-medium flex items-center justify-center gap-2"
+                                onClick={() => {
+                                  setShowNotifications(false);
+                                  navigate({ to: '/' });
+                                }}
+                              >
+                                <MessageSquare className="w-4 h-4" />
+                                Ver todos los mensajes
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -252,7 +379,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                 </AnimatePresence>
               </div>
 
-              {/* Profile */}
+              {/* User Profile */}
               <div className="relative" ref={profileRef}>
                 <motion.button
                   onClick={() => setShowProfile(!showProfile)}
@@ -260,11 +387,10 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/30 via-fuchsia-400/30 to-pink-400/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
-                  <div className="relative p-0.5 sm:p-1 rounded-full bg-gradient-to-b from-white/90 to-white/40 border border-white/80 shadow-lg backdrop-blur-xl">
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-violet-400 via-fuchsia-500 to-pink-500 flex items-center justify-center text-white text-xs sm:text-sm font-medium shadow-inner">
-                      {userEmail.charAt(0).toUpperCase()}
-                    </div>
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/30 via-fuchsia-400/30 to-pink-400/30 blur-sm sm:blur-md transform-gpu" />
+                  <div className="relative p-1.5 sm:p-2 rounded-full bg-gradient-to-b from-white/90 to-white/40 border border-white/80 shadow-lg backdrop-blur-xl">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-white/40" />
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-violet-500" />
                   </div>
                 </motion.button>
 
@@ -275,57 +401,50 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="fixed right-2 sm:right-4 mt-2 w-[calc(100vw-1rem)] sm:w-72 max-w-[18rem] sm:max-w-none z-[200]"
+                      className="fixed right-2 sm:right-4 mt-2 w-48 z-[200]"
                     >
                       <div className="relative">
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-xl transform-gpu" />
                         <div className="relative rounded-2xl border border-white/40 overflow-hidden backdrop-blur-xl">
                           <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-transparent" />
 
-                          <div className="relative">
-                            <div className="p-4 border-b border-white/20">
-                              <div className="flex items-center gap-3">
-                                <div className="relative">
-                                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 blur-sm" />
-                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 via-fuchsia-500 to-pink-500 flex items-center justify-center text-white text-xl font-medium border-2 border-white/80 relative">
-                                    {userEmail.charAt(0).toUpperCase()}
-                                  </div>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent truncate">
-                                    {userEmail}
-                                  </div>
-                                  <div className="text-sm text-gray-500">Usuario</div>
-                                </div>
-                              </div>
+                          <div className="relative p-2">
+                            <div className="p-2 text-center border-b border-white/20">
+                              <p className="text-sm font-medium text-gray-800 truncate">
+                                {userEmail}
+                              </p>
                             </div>
 
-                            <div className="p-1">
-                              <Link
-                                to="/profile"
-                                onClick={() => setShowProfile(false)}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-700 rounded-lg relative group"
-                              >
-                                <User className="w-4 h-4 text-violet-500" />
-                                Mi perfil
+                            <div className="mt-2 space-y-1">
+                              <Link to="/profile" className="block">
+                                <motion.div
+                                  className="flex items-center gap-2 p-2 rounded-xl text-sm text-gray-700 hover:bg-white/20"
+                                  whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                                  onClick={() => setShowProfile(false)}
+                                >
+                                  <User className="w-4 h-4 text-violet-500" />
+                                  <span>Perfil</span>
+                                </motion.div>
                               </Link>
-
-                              <motion.button
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-700 rounded-lg relative group"
-                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                              <motion.div
+                                className="flex items-center gap-2 p-2 rounded-xl text-sm text-gray-700 hover:bg-white/20 cursor-pointer"
+                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                                onClick={() => setShowProfile(false)}
                               >
                                 <Settings className="w-4 h-4 text-violet-500" />
-                                Ajustes
-                              </motion.button>
-
-                              <motion.button
-                                onClick={handleLogout}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-rose-600 rounded-lg relative group"
-                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                                <span>Ajustes</span>
+                              </motion.div>
+                              <motion.div
+                                className="flex items-center gap-2 p-2 rounded-xl text-sm text-rose-600 hover:bg-white/20 cursor-pointer"
+                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
+                                onClick={() => {
+                                  setShowProfile(false);
+                                  handleLogout();
+                                }}
                               >
-                                <LogOut className="w-4 h-4 text-rose-500" />
-                                Cerrar sesión
-                              </motion.button>
+                                <LogOut className="w-4 h-4" />
+                                <span>Cerrar sesión</span>
+                              </motion.div>
                             </div>
                           </div>
                         </div>

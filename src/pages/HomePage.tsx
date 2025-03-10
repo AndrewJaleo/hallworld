@@ -6,7 +6,10 @@ import { CountrySelector } from '../components/CountrySelector';
 import { CitySelector } from '../components/CitySelector';
 import { CircularMenu } from '../components/CircularMenu';
 import { HallButtons } from '../components/HallButtons';
+import { PrivateChatsList } from '../components/PrivateChatsList';
+import { UsersList } from '../components/UsersList';
 import { getCountries, getCitiesByCountry, Country } from '../lib/location';
+import { supabase } from '../lib/supabase';
 
 interface LocationState {
   countries: Country[];
@@ -22,6 +25,65 @@ export function HomePage() {
     selectedCountry: getCountries()[0].name,
     selectedCity: getCountries()[0].cities[0]
   });
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [unreadChats, setUnreadChats] = useState<number>(0);
+
+  useEffect(() => {
+    // Get current user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserEmail(session.user.email || "");
+        fetchUnreadChatsCount(session.user.id);
+      }
+    });
+
+    // Subscribe to changes in private_messages
+    const messageSubscription = supabase
+      .channel('unread_messages_homepage')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'private_messages'
+        },
+        () => {
+          // Refresh unread count when there's a new message
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+              fetchUnreadChatsCount(session.user.id);
+            }
+          });
+        }
+      )
+      .subscribe();
+      
+    // Also subscribe to updates (when messages are marked as read)
+    const updateSubscription = supabase
+      .channel('read_messages_homepage')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'private_messages'
+        },
+        () => {
+          // Refresh unread count when messages are marked as read
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+              fetchUnreadChatsCount(session.user.id);
+            }
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      messageSubscription.unsubscribe();
+      updateSubscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (state.selectedCountry) {
@@ -29,6 +91,36 @@ export function HomePage() {
       setState(prev => ({ ...prev, cities, selectedCity: cities[0] }));
     }
   }, [state.selectedCountry]);
+
+  const fetchUnreadChatsCount = async (userId: string) => {
+    try {
+      // Get all chats where the current user is either user1 or user2
+      const { data: chatsData, error: chatsError } = await supabase
+        .from('private_chats')
+        .select('id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+      
+      if (chatsError) throw chatsError;
+      
+      if (chatsData && chatsData.length > 0) {
+        // Get all unread messages in these chats
+        const chatIds = chatsData.map(chat => chat.id);
+        
+        const { count, error: countError } = await supabase
+          .from('private_messages')
+          .select('*', { count: 'exact', head: true })
+          .in('chat_id', chatIds)
+          .neq('sender_id', userId)
+          .is('read_at', null);
+        
+        if (countError) throw countError;
+        
+        setUnreadChats(count || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching unread chats count:', error);
+    }
+  };
 
   function handleCountrySelect(country: string) {
     setState(prev => ({ ...prev, selectedCountry: country }));
@@ -48,8 +140,10 @@ export function HomePage() {
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row lg:items-center p-3 sm:p-6 lg:p-8 mt-24 sm:mt-20 mb-32 sm:mb-28 lg:mb-32">
-        <div className="flex flex-col gap-2 mb-4 lg:mb-0 max-w-md lg:max-w-xl mx-auto lg:mx-0 lg:ml-auto w-full">
+      <Header unreadChats={unreadChats} userEmail={userEmail} />
+      
+      <div className="flex flex-col lg:flex-row lg:items-start p-3 sm:p-6 lg:p-8 mt-24 sm:mt-20 mb-32 sm:mb-28 lg:mb-32">
+        <div className="flex flex-col gap-4 mb-4 lg:mb-0 max-w-md lg:max-w-xl mx-auto lg:mx-0 lg:ml-auto w-full">
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,6 +179,30 @@ export function HomePage() {
               </div>
             </div>
           </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.6,
+              delay: 0.1,
+              ease: [0.6, -0.05, 0.01, 0.99]
+            }}
+          >
+            <PrivateChatsList />
+          </motion.div>
+          
+          {/* <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.6,
+              delay: 0.2,
+              ease: [0.6, -0.05, 0.01, 0.99]
+            }}
+          >
+            <UsersList />
+          </motion.div> */}
         </div>
         
         <motion.div
@@ -99,7 +217,6 @@ export function HomePage() {
         >
           <HallButtons />
           <CircularMenu selectedCity={state.selectedCity} />
-
         </motion.div>
       </div>
     </>

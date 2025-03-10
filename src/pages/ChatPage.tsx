@@ -11,6 +11,7 @@ interface Message {
   sender_id: string;
   created_at: string;
   sender_email?: string;
+  read_at?: string | null;
 }
 
 interface ChatUser {
@@ -20,7 +21,7 @@ interface ChatUser {
 }
 
 export function ChatPage() {
-  const { id } = useParams({ from: "/chat/:id" });
+  const { id } = useParams({ from: "/chat/$id" });
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
@@ -29,6 +30,7 @@ export function ChatPage() {
   const [chatPartner, setChatPartner] = useState<ChatUser | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     // Get current user
@@ -40,13 +42,18 @@ export function ChatPage() {
         navigate({ to: "/" });
       }
     });
+  }, [navigate]);
 
-    // Get chat details
+  // Separate useEffect for fetching chat details when userId or id changes
+  useEffect(() => {
+    if (!userId || !id) return;
+    
     const fetchChatDetails = async () => {
       try {
+        setIsLoading(true);
         // Fetch the chat to get the other user's ID
         const { data: chatData, error: chatError } = await supabase
-          .from("chats")
+          .from("private_chats")
           .select("*")
           .eq("id", id)
           .single();
@@ -71,29 +78,62 @@ export function ChatPage() {
 
         // Load chat messages
         const { data: messagesData, error: messagesError } = await supabase
-          .from("messages")
+          .from("private_messages")
           .select(`
             id,
             content,
             sender_id,
             created_at,
-            profiles(email)
+            read_at
           `)
           .eq("chat_id", id)
           .order("created_at", { ascending: true });
 
         if (messagesError) throw messagesError;
 
+        // Get all unique sender IDs
+        const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
+        
+        // Fetch profiles for all senders in a single query
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, email")
+          .in("id", senderIds);
+          
+        if (profilesError) throw profilesError;
+        
+        // Create a map of user IDs to emails for quick lookup
+        const userEmailMap = profilesData.reduce((map, profile) => {
+          map[profile.id] = profile.email;
+          return map;
+        }, {} as Record<string, string>);
+
         // Format messages with sender email
-        const formattedMessages = messagesData.map((msg: any) => ({
+        const formattedMessages = messagesData.map((msg) => ({
           id: msg.id,
           content: msg.content,
           sender_id: msg.sender_id,
           created_at: msg.created_at,
-          sender_email: msg.profiles?.email || ""
+          read_at: msg.read_at,
+          sender_email: userEmailMap[msg.sender_id] || ""
         }));
 
         setMessages(formattedMessages);
+        
+        // Mark unread messages as read
+        const unreadMessages = formattedMessages.filter(
+          msg => msg.sender_id !== userId && !msg.read_at
+        );
+        
+        if (unreadMessages.length > 0) {
+          const unreadIds = unreadMessages.map(msg => msg.id);
+          
+          await supabase
+            .from("private_messages")
+            .update({ read_at: new Date().toISOString() })
+            .in("id", unreadIds);
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching chat details:", error);
@@ -101,35 +141,58 @@ export function ChatPage() {
       }
     };
 
-    if (userId) {
-      fetchChatDetails();
-    }
+    fetchChatDetails();
 
     // Subscribe to new messages
     const subscription = supabase
-      .channel(`chat:${id}`)
+      .channel(`private_chat:${id}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: "messages",
+          table: "private_messages",
           filter: `chat_id=eq.${id}`
         },
         async (payload) => {
+          // Skip if we've already processed this message
+          if (processedMessageIdsRef.current.has(payload.new.id)) {
+            return;
+          }
+          
+          // Add this message ID to our processed set
+          processedMessageIdsRef.current.add(payload.new.id);
+          
           // Get sender email
-          const { data } = await supabase
+          const { data: senderData, error: senderError } = await supabase
             .from("profiles")
             .select("email")
             .eq("id", payload.new.sender_id)
             .single();
 
-          const newMsg = {
-            ...payload.new,
-            sender_email: data?.email || ""
+          if (senderError) {
+            console.error("Error fetching sender data:", senderError);
+            return;
+          }
+
+          const newMsg: Message = {
+            id: payload.new.id,
+            content: payload.new.content,
+            sender_id: payload.new.sender_id,
+            created_at: payload.new.created_at,
+            read_at: payload.new.read_at,
+            sender_email: senderData?.email || ""
           };
 
           setMessages((prev) => [...prev, newMsg]);
+          
+          // Mark message as read if it's from the partner
+          if (payload.new.sender_id !== userId) {
+            await supabase
+              .from("private_messages")
+              .update({ read_at: new Date().toISOString() })
+              .eq("id", payload.new.id);
+          }
         }
       )
       .subscribe();
@@ -137,7 +200,7 @@ export function ChatPage() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [id, userId, navigate]);
+  }, [id, userId]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -153,14 +216,52 @@ export function ChatPage() {
     if (!newMessage.trim()) return;
 
     try {
-      const { error } = await supabase.from("messages").insert({
-        chat_id: id,
+      // Create a temporary ID for optimistic UI update
+      const tempId = `temp-${Date.now()}`;
+      
+      // Add message to UI immediately (optimistic update)
+      const tempMessage: Message = {
+        id: tempId,
+        content: newMessage,
         sender_id: userId,
-        content: newMessage
-      });
+        created_at: new Date().toISOString(),
+        sender_email: userEmail
+      };
+      
+      setMessages(prev => [...prev, tempMessage]);
+      setNewMessage("");
+      
+      // Add the temp ID to our processed set to prevent duplicates
+      processedMessageIdsRef.current.add(tempId);
+      
+      // Send message to server
+      const { data, error } = await supabase
+        .from("private_messages")
+        .insert({
+          chat_id: id,
+          sender_id: userId,
+          content: newMessage
+        })
+        .select();
 
       if (error) throw error;
-      setNewMessage("");
+      
+      if (data && data.length > 0) {
+        // Add the real message ID to our processed set
+        processedMessageIdsRef.current.add(data[0].id);
+        
+        // Replace the temporary message with the real one
+        setMessages(prev => 
+          prev.map(msg => msg.id === tempId ? {
+            id: data[0].id,
+            content: data[0].content,
+            sender_id: data[0].sender_id,
+            created_at: data[0].created_at,
+            read_at: data[0].read_at,
+            sender_email: userEmail
+          } as Message : msg)
+        );
+      }
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -240,12 +341,20 @@ export function ChatPage() {
                   }`}
                 >
                   <div className="text-sm">{message.content}</div>
-                  <div
-                    className={`text-xs mt-1 ${
-                      message.sender_id === userId ? "text-violet-200" : "text-sky-700"
-                    }`}
-                  >
-                    {formatTime(message.created_at)}
+                  <div className="flex items-center justify-between mt-1">
+                    <div
+                      className={`text-xs ${
+                        message.sender_id === userId ? "text-violet-200" : "text-sky-700"
+                      }`}
+                    >
+                      {formatTime(message.created_at)}
+                    </div>
+                    
+                    {message.sender_id === userId && (
+                      <div className="text-xs text-violet-200 ml-2">
+                        {message.read_at ? "Read" : "Sent"}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -256,19 +365,16 @@ export function ChatPage() {
 
         {/* Message Input */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 sticky bottom-0"
+          className="p-3 sticky bottom-0"
         >
-          <form
-            onSubmit={handleSendMessage}
-            className="glossy p-2 rounded-full flex items-center gap-2"
-          >
+          <form onSubmit={handleSendMessage} className="flex gap-2">
             <button
               type="button"
-              className="glass-button p-2 rounded-full text-sky-800"
+              className="glass-button p-3 rounded-full"
             >
-              <Paperclip className="w-5 h-5" />
+              <Paperclip className="w-5 h-5 text-sky-800" />
             </button>
             
             <input
@@ -276,17 +382,17 @@ export function ChatPage() {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
-              className="bg-transparent flex-grow px-3 py-2 outline-none text-sky-900 placeholder:text-sky-600"
+              className="glass-input flex-grow px-4 py-3 rounded-xl"
             />
             
             <button
               type="submit"
               disabled={!newMessage.trim()}
-              className={`glass-button p-2 rounded-full ${
-                newMessage.trim() ? "bg-gradient-to-r from-violet-500 to-violet-600" : "opacity-50"
+              className={`glass-button p-3 rounded-full ${
+                !newMessage.trim() ? "opacity-50" : ""
               }`}
             >
-              <Send className={`w-5 h-5 ${newMessage.trim() ? "text-white" : "text-sky-800"}`} />
+              <Send className="w-5 h-5 text-sky-800" />
             </button>
           </form>
         </motion.div>

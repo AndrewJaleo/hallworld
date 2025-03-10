@@ -5,7 +5,7 @@ import { Header } from '../components/Header';
 import { ProfileEditor } from '../components/ProfileEditor';
 import { ProfileForm } from '../components/ProfileForm';
 import { motion } from 'framer-motion';
-import { UserCircle, PaintBucket, Home } from 'lucide-react';
+import { UserCircle, PaintBucket, Home, Mail, Calendar, User, Heart, Info } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -16,6 +16,10 @@ interface Profile {
   gender: string | null;
   avatar_url: string | null;
   biography: string | null;
+  location: string | null;
+  interests: string[] | null;
+  social_links: Record<string, string> | null;
+  joined_date: string | null;
 }
 
 export function ProfileViewPage() {
@@ -69,7 +73,7 @@ export function ProfileViewPage() {
         // First try to get the basic profile info that's guaranteed to exist
         const { data: basicData, error: basicError } = await supabase
           .from('profiles')
-          .select('id, email, avatar_url')
+          .select('id, email, avatar_url, created_at')
           .eq('id', id)
           .single();
         
@@ -90,11 +94,15 @@ export function ProfileViewPage() {
           age: null,
           gender: null,
           avatar_url: basicData.avatar_url,
-          biography: null
+          biography: null,
+          location: null,
+          interests: null,
+          social_links: null,
+          joined_date: basicData.created_at
         };
         
         // Try to fetch each additional field individually
-        const additionalFields = ['name', 'likings', 'age', 'gender', 'biography'];
+        const additionalFields = ['name', 'likings', 'age', 'gender', 'biography', 'location', 'interests', 'social_links'];
         
         for (const field of additionalFields) {
           try {
@@ -211,7 +219,19 @@ export function ProfileViewPage() {
                   <h1 className="text-gray-900 text-3xl font-bold mb-1">
                     {profile.name || profile.email.split('@')[0]}
                   </h1>
-                  <p className="text-gray-800 mb-4">{profile.email}</p>
+                  <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                    <Mail size={16} className="text-gray-700" />
+                    <p className="text-gray-800">{profile.email}</p>
+                  </div>
+                  
+                  {profile.joined_date && (
+                    <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
+                      <Calendar size={16} className="text-gray-700" />
+                      <p className="text-gray-800">
+                        Se unió el {new Date(profile.joined_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
                   
                   {currentUserId !== profile.id && (
                     <button
@@ -226,38 +246,101 @@ export function ProfileViewPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-white/10 p-6 rounded-xl">
                 {profile.age && (
-                  <div>
-                    <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Edad</h3>
-                    <p className="text-gray-900 text-lg">{profile.age}</p>
+                  <div className="flex items-start gap-3">
+                    <User className="w-5 h-5 text-gray-700 mt-0.5" />
+                    <div>
+                      <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Edad</h3>
+                      <p className="text-gray-900 text-lg">{profile.age} años</p>
+                    </div>
                   </div>
                 )}
                 
                 {profile.gender && (
-                  <div>
-                    <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Género</h3>
-                    <p className="text-gray-900 text-lg capitalize">
-                      {profile.gender === 'male' ? 'Masculino' : 
-                       profile.gender === 'female' ? 'Femenino' : 
-                       profile.gender === 'non-binary' ? 'No binario' : 
-                       profile.gender === 'prefer-not-to-say' ? 'Prefiero no decirlo' : 
-                       profile.gender === 'other' ? 'Otro' : profile.gender}
-                    </p>
+                  <div className="flex items-start gap-3">
+                    <User className="w-5 h-5 text-gray-700 mt-0.5" />
+                    <div>
+                      <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Género</h3>
+                      <p className="text-gray-900 text-lg capitalize">
+                        {profile.gender === 'male' ? 'Masculino' : 
+                         profile.gender === 'female' ? 'Femenino' : 
+                         profile.gender === 'non-binary' ? 'No binario' : 
+                         profile.gender === 'prefer-not-to-say' ? 'Prefiero no decirlo' : 
+                         profile.gender === 'other' ? 'Otro' : profile.gender}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {profile.location && (
+                  <div className="flex items-start gap-3">
+                    <Home className="w-5 h-5 text-gray-700 mt-0.5" />
+                    <div>
+                      <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Ubicación</h3>
+                      <p className="text-gray-900 text-lg">{profile.location}</p>
+                    </div>
                   </div>
                 )}
                 
                 {profile.likings && (
-                  <div className="md:col-span-2">
-                    <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Gustos</h3>
-                    <p className="text-gray-900 text-lg">{profile.likings}</p>
+                  <div className="flex items-start gap-3 md:col-span-2">
+                    <Heart className="w-5 h-5 text-gray-700 mt-0.5" />
+                    <div>
+                      <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Gustos</h3>
+                      <p className="text-gray-900 text-lg">{profile.likings}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {profile.interests && profile.interests.length > 0 && (
+                  <div className="flex items-start gap-3 md:col-span-2">
+                    <Heart className="w-5 h-5 text-gray-700 mt-0.5" />
+                    <div>
+                      <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Intereses</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.interests.map((interest, index) => (
+                          <span 
+                            key={index}
+                            className="px-3 py-1 bg-white/20 rounded-full text-gray-900"
+                          >
+                            {interest}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {profile.social_links && Object.keys(profile.social_links).length > 0 && (
+                  <div className="flex items-start gap-3 md:col-span-2">
+                    <Info className="w-5 h-5 text-gray-700 mt-0.5" />
+                    <div>
+                      <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-1">Redes Sociales</h3>
+                      <div className="flex flex-col gap-2">
+                        {Object.entries(profile.social_links).map(([platform, url]) => (
+                          <a 
+                            key={platform}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-700 hover:text-blue-900 transition-colors"
+                          >
+                            {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
               
               {profile.biography && (
-                <div>
-                  <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-2">Biografía</h3>
-                  <div className="bg-white/10 p-6 rounded-xl">
-                    <p className="text-gray-900 whitespace-pre-line">{profile.biography}</p>
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-gray-700 mt-1.5" />
+                  <div className="flex-1">
+                    <h3 className="text-gray-800 text-sm uppercase tracking-wider mb-2">Biografía</h3>
+                    <div className="bg-white/10 p-6 rounded-xl">
+                      <p className="text-gray-900 whitespace-pre-line">{profile.biography}</p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -315,7 +398,9 @@ export function ProfileViewPage() {
                   {activeTab === 'info' ? (
                     <ProfileForm userId={profile.id} />
                   ) : (
-                    <ProfileEditor userId={profile.id} isOwner={true} />
+                    <div className="overflow-x-hidden max-w-full">
+                      <ProfileEditor userId={profile.id} isOwner={true} />
+                    </div>
                   )}
                 </motion.div>
               </>
@@ -328,7 +413,7 @@ export function ProfileViewPage() {
                   delay: 0.2,
                   ease: [0.6, -0.05, 0.01, 0.99]
                 }}
-                className="relative"
+                className="relative overflow-x-hidden max-w-full"
               >
                 <ProfileEditor userId={profile.id} isOwner={false} />
               </motion.div>
