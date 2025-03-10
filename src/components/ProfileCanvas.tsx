@@ -81,6 +81,11 @@ interface ProfileCanvasProps {
   setHistoryIndex: (index: number) => void;
 }
 
+// Add a constant for the canvas aspect ratio
+const CANVAS_ASPECT_RATIO = 4/3; // 4:3 aspect ratio
+const MAX_CANVAS_WIDTH = 800;
+const CANVAS_PADDING = 32;
+
 export function ProfileCanvas({ 
   userId, 
   isOwner, 
@@ -123,12 +128,14 @@ export function ProfileCanvas({
     if (!canvasRef.current || canvas) return;
     
     try {
-      // First, make sure the canvas element has the right dimensions
+      // Calculate the optimal canvas dimensions based on container width
+      const containerWidth = Math.min(MAX_CANVAS_WIDTH, window.innerWidth - CANVAS_PADDING);
+      const containerHeight = containerWidth / CANVAS_ASPECT_RATIO;
+      
+      // Set canvas dimensions
       if (canvasRef.current) {
-        // Set a maximum width for the canvas to ensure it doesn't exceed screen width
-        const maxWidth = Math.min(800, window.innerWidth - 32);
-        canvasRef.current.width = maxWidth;
-        canvasRef.current.height = Math.min(600, maxWidth * 0.75); // Maintain aspect ratio
+        canvasRef.current.width = containerWidth;
+        canvasRef.current.height = containerHeight;
       }
       
       // Initialize as StaticCanvas first
@@ -144,7 +151,9 @@ export function ProfileCanvas({
         selectionColor: 'rgba(100, 100, 255, 0.3)',
         selectionBorderColor: 'rgba(100, 100, 255, 0.8)',
         selectionLineWidth: 1,
-        isDrawingMode: false
+        isDrawingMode: false,
+        width: containerWidth,
+        height: containerHeight
       });
 
       // Configure brush
@@ -152,15 +161,33 @@ export function ProfileCanvas({
         newCanvas.freeDrawingBrush.color = brushColor;
         newCanvas.freeDrawingBrush.width = brushSize;
       }
-
-    
+      
       // Handle window resize
       const handleResize = () => {
-        // Set a maximum width for the canvas to ensure it doesn't exceed screen width
-        const maxWidth = Math.min(800, window.innerWidth - 32);
-        newCanvas.setWidth(maxWidth);
-        newCanvas.setHeight(Math.min(600, maxWidth * 0.75)); // Maintain aspect ratio
+        // Calculate new dimensions while maintaining aspect ratio
+        const newWidth = Math.min(MAX_CANVAS_WIDTH, window.innerWidth - CANVAS_PADDING);
+        const newHeight = newWidth / CANVAS_ASPECT_RATIO;
+        
+        // Update canvas dimensions
+        newCanvas.setWidth(newWidth);
+        newCanvas.setHeight(newHeight);
+        
+        // Scale canvas content to fit new dimensions
+        const scaleX = newWidth / newCanvas.getWidth();
+        const scaleY = newHeight / newCanvas.getHeight();
+        const objects = newCanvas.getObjects();
+        
+        for (const obj of objects) {
+          // Check if properties exist before accessing them
+          if (obj.scaleX !== undefined) obj.scaleX *= scaleX;
+          if (obj.scaleY !== undefined) obj.scaleY *= scaleY;
+          if (obj.left !== undefined) obj.left *= scaleX;
+          if (obj.top !== undefined) obj.top *= scaleY;
+          obj.setCoords();
+        }
+        
         newCanvas.renderAll();
+        console.log(`Canvas resized to ${newWidth}x${newHeight}`);
       };
 
       window.addEventListener('resize', handleResize);
@@ -571,15 +598,15 @@ export function ProfileCanvas({
       {/* Add style tag for range input styling */}
       <style>{rangeInputStyles}</style>
       
-      {/* Canvas container */}
-      <div className="flex-grow overflow-hidden">
+      {/* Canvas container - updated for better mobile centering */}
+      <div className="w-full flex justify-center px-0 sm:px-4">
         <div 
           className={`relative rounded-2xl overflow-hidden ${isEditing ? 'border-2 border-dashed border-violet-300' : ''}`} 
           style={{ 
-            zIndex: 0, 
-            minHeight: '300px',
-            maxHeight: '600px',
+            zIndex: 0,
             width: '100%',
+            maxWidth: `${MAX_CANVAS_WIDTH}px`,
+            aspectRatio: `${CANVAS_ASPECT_RATIO}`,
             marginBottom: isEditing && isMobile ? '70px' : '0'
           }}
           id="canvas-container"
@@ -592,7 +619,7 @@ export function ProfileCanvas({
           <canvas 
             ref={canvasRef} 
             id="fabric-canvas"
-            className="max-w-full"
+            className="w-full h-full"
           />
         </div>
       </div>

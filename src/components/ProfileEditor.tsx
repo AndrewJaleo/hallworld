@@ -92,7 +92,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
   }, [historyIndex, canvasHistory]);
 
   return (
-    <div className="w-full mx-auto p-4 ">
+    <div className="w-full mx-auto p-2 sm:p-4 overflow-hidden">
       <div className="relative">
         {/* Editor Controls */}
         {isOwner && (
@@ -172,25 +172,27 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
         )}
 
         {/* Main content container with proper positioning */}
-        <div className="relative flex">
+        <div className="relative flex flex-col items-center">
           {/* Left sidebar space for desktop */}
           {isEditing && !isMobile && (
-            <div className="w-16 flex-shrink-0"></div>
+            <div className="absolute left-0 top-0 bottom-0 w-16 flex-shrink-0"></div>
           )}
           
           {/* Canvas component */}
-          <ProfileCanvas 
-            userId={userId}
-            isOwner={isOwner}
-            isEditing={isEditing}
-            isLoading={isLoading}
-            setIsLoading={setIsLoading}
-            onSave={handleSaveComplete}
-            canvasHistory={canvasHistory}
-            setCanvasHistory={setCanvasHistory}
-            historyIndex={historyIndex}
-            setHistoryIndex={setHistoryIndex}
-          />
+          <div className="w-full">
+            <ProfileCanvas 
+              userId={userId}
+              isOwner={isOwner}
+              isEditing={isEditing}
+              isLoading={isLoading}
+              setIsLoading={setIsLoading}
+              onSave={handleSaveComplete}
+              canvasHistory={canvasHistory}
+              setCanvasHistory={setCanvasHistory}
+              historyIndex={historyIndex}
+              setHistoryIndex={setHistoryIndex}
+            />
+          </div>
         </div>
       </div>
     </div>

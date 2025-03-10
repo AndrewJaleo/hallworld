@@ -33,7 +33,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex flex-col fixed inset-0">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex flex-col">
       <Header unreadChats={3} userEmail={userEmail} />
       <Outlet />
     </div>
