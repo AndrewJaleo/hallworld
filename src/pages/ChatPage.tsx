@@ -315,71 +315,74 @@ export function ChatPage() {
           </motion.div>
 
           {/* Chat Messages */}
-          <div className="flex-grow overflow-y-auto p-4 space-y-4 w-full pb-20">
+          <div className="flex-grow overflow-y-auto p-4 w-full pb-20 flex flex-col space-y-1">
             {isLoading ? (
               <div className="flex justify-center items-center h-32">
                 <div className="animate-pulse text-sky-700">Loading messages...</div>
               </div>
             ) : messages.length === 0 ? (
               <div className="text-center py-10 text-sky-700 glossy rounded-2xl p-8 backdrop-blur-sm">
-                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/10 shadow-md">
-                  <MessageSquare className="w-8 h-8 text-white/40" />
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-3 border border-white/20 shadow-md">
+                  <MessageSquare className="w-8 h-8 text-white" />
                 </div>
-                <p className="font-medium text-white/80 text-lg">No messages yet</p>
-                <p className="text-sm mt-1 text-white/60">Start the conversation!</p>
+                <p className="font-medium text-sky-900 text-lg">No messages yet</p>
+                <p className="text-sm mt-1 text-sky-700">Start the conversation!</p>
               </div>
             ) : (
-              messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex items-start ${
-                    message.sender_id === userId ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {message.sender_id !== userId && (
-                    <div className="flex-shrink-0 mr-2 mt-1">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-sky-400 to-sky-600 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
-                        {message.sender_email?.charAt(0).toUpperCase() || "?"}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div
-                    className={`max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg rounded-2xl p-3 shadow-lg ${
-                      message.sender_id === userId
-                        ? "bg-gradient-to-r from-violet-500 to-violet-600 text-white border border-white/10"
-                        : "glossy text-sky-900 border border-white/20"
-                    }`}
+              messages.map((message) => {
+                // Generate a consistent color based on the sender's ID
+                const colorOptions = [
+                  "from-pink-500 to-rose-500",
+                  "from-orange-500 to-amber-500",
+                  "from-green-500 to-emerald-500",
+                  "from-teal-500 to-cyan-500",
+                  "from-blue-500 to-indigo-500",
+                  "from-indigo-500 to-purple-500",
+                  "from-purple-500 to-fuchsia-500",
+                  "from-rose-500 to-pink-500"
+                ];
+                
+                // Use the sender ID to deterministically select a color
+                const colorIndex = message.sender_id ? 
+                  message.sender_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length : 0;
+                
+                const senderColor = colorOptions[colorIndex];
+                
+                return (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full"
                   >
-                    <div className="text-sm">{message.content}</div>
-                    <div className="flex items-center justify-between mt-1">
-                      <div
-                        className={`text-xs ${
-                          message.sender_id === userId ? "text-violet-200" : "text-sky-700"
-                        }`}
-                      >
-                        {formatTime(message.created_at)}
-                      </div>
-                      
-                      {message.sender_id === userId && (
-                        <div className="text-xs text-violet-200 ml-2">
-                          {message.read_at ? "Read" : "Sent"}
+                    <div
+                      className={`w-full rounded-2xl p-3 shadow-lg bg-gradient-to-r ${senderColor} text-white border border-white/10`}
+                    >
+                      <div className="flex items-center mb-1">
+                        <div className="flex-shrink-0 mr-2">
+                          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
+                            {message.sender_id === userId ? userEmail.charAt(0).toUpperCase() : message.sender_email?.charAt(0).toUpperCase() || "?"}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {message.sender_id === userId && (
-                    <div className="flex-shrink-0 ml-2 mt-1">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
-                        {userEmail.charAt(0).toUpperCase()}
+                        <span className="text-xs font-medium text-white">
+                          {message.sender_id === userId ? "You" : message.sender_email?.split('@')[0] || "Unknown"}
+                        </span>
+                        <div className="flex items-center ml-auto">
+                          <span className="text-xs text-white/70">
+                            {formatTime(message.created_at)}
+                          </span>
+                          {message.sender_id === userId && (
+                            <span className="text-xs text-white/70 ml-2">
+                              {message.read_at ? "Read" : "Sent"}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <div className="text-sm">{message.content}</div>
                     </div>
-                  )}
-                </motion.div>
-              ))
+                  </motion.div>
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
