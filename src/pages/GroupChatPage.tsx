@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Send, ArrowLeft, Paperclip, MoreVertical, Users } from "lucide-react";
+import { Send, ArrowLeft, Paperclip, MoreVertical, Users, MessageSquare } from "lucide-react";
 import { Header } from "../components/Header";
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from 'react-responsive';
@@ -547,166 +547,186 @@ export function GroupChatPage() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex flex-col fixed inset-0">
       <Header unreadChats={0} userEmail={userEmail} />
 
-      <div className="flex flex-grow mt-20 relative">
-        <div className="flex-1 flex flex-col relative">
-          {/* Chat Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glossy p-3 flex items-center gap-3 z-10 sticky top-20"
-          >
-            <button
-              onClick={goBack}
-              className="glass-button p-2 rounded-full"
+      <div className="flex flex-row items-start gap-2 mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex-1 flex flex-col">
+          <div className="max-w-4xl w-full flex flex-col h-[calc(100vh-96px)]">
+            {/* Chat Header */}
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glossy p-3 flex items-center gap-3 z-10 sticky top-24 w-full shadow-lg border border-white/20 rounded-2xl"
             >
-              <ArrowLeft className="w-5 h-5 text-sky-800" />
-            </button>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white">
-                <Users className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-sky-900">
-                  {groupInfo.name}
-                </h2>
-                <p className="text-xs text-sky-700">
-                  {groupInfo.city} • Group Chat
-                </p>
-              </div>
-            </div>
-
-            {isMobile && (
-              <button 
-                onClick={() => setShowMembers(true)}
-                className="glass-button p-2 rounded-full ml-auto"
+              <button
+                onClick={goBack}
+                className="glass-button p-2 rounded-full"
               >
-                <Users className="w-5 h-5 text-sky-800" />
+                <ArrowLeft className="w-5 h-5 text-sky-800" />
               </button>
-            )}
-          </motion.div>
-
-          {/* Chat Messages */}
-          <div className="flex-grow overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 ? (
-              <div className="text-center py-10 text-sky-700">
-                No messages yet. Start the conversation!
+              
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white border border-white/20 shadow-md">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-sky-900">
+                    {groupInfo.name}
+                  </h2>
+                  <p className="text-xs text-sky-700">
+                    {groupInfo.city} • Group Chat
+                  </p>
+                </div>
               </div>
-            ) : (
-              messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex items-start ${
-                    message.sender_id === userId ? "justify-end" : "justify-start"
-                  }`}
+
+              {isMobile && (
+                <button 
+                  onClick={() => setShowMembers(true)}
+                  className="glass-button p-2 rounded-full ml-auto"
                 >
-                  {message.sender_id !== userId && (
-                    <div className="flex-shrink-0 mr-2 mt-1">
-                      {message.sender_avatar ? (
-                        <img 
-                          src={message.sender_avatar} 
-                          alt={(message.sender_email || "").split('@')[0]} 
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-sky-400 to-sky-600 flex items-center justify-center text-white text-xs font-medium">
-                          {(message.sender_email || "").charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  <div
-                    className={`max-w-xs sm:max-w-md rounded-xl p-3 ${
-                      message.sender_id === userId
-                        ? "bg-gradient-to-r from-violet-500 to-violet-600 text-white"
-                        : "glossy text-sky-900"
+                  <Users className="w-5 h-5 text-sky-800" />
+                </button>
+              )}
+            </motion.div>
+
+            {/* Chat Messages */}
+            <div className="flex-grow overflow-y-auto p-4 space-y-4 w-full pb-20">
+              {messages.length === 0 ? (
+                <div className="text-center py-10 text-sky-700 glossy rounded-2xl p-8 backdrop-blur-sm">
+                  <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/10 shadow-md">
+                    <MessageSquare className="w-8 h-8 text-sky-600" />
+                  </div>
+                  <p className="font-medium text-sky-900 text-lg">No messages yet</p>
+                  <p className="text-sm mt-1 text-sky-700">Start the conversation!</p>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex items-start ${
+                      message.sender_id === userId ? "justify-end" : "justify-start"
                     }`}
                   >
                     {message.sender_id !== userId && (
-                      <div className="text-xs font-medium text-sky-700 mb-1">
-                        {(message.sender_email || "").split('@')[0]}
+                      <div className="flex-shrink-0 mr-2 mt-1">
+                        {message.sender_avatar ? (
+                          <img 
+                            src={message.sender_avatar} 
+                            alt={(message.sender_email || "").split('@')[0]} 
+                            className="w-8 h-8 rounded-full object-cover border border-white/20 shadow-md"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-sky-400 to-sky-600 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
+                            {(message.sender_email || "").charAt(0).toUpperCase()}
+                          </div>
+                        )}
                       </div>
                     )}
-                    <div className="text-sm">{message.content}</div>
+                    
                     <div
-                      className={`text-xs mt-1 ${
-                        message.sender_id === userId ? "text-violet-200" : "text-sky-700"
+                      className={`max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg rounded-2xl p-3 shadow-lg ${
+                        message.sender_id === userId
+                          ? "bg-gradient-to-r from-violet-500 to-violet-600 text-white border border-white/10"
+                          : "glossy text-sky-900 border border-white/20"
                       }`}
                     >
-                      {formatTime(message.created_at)}
-                    </div>
-                  </div>
-                  
-                  {message.sender_id === userId && (
-                    <div className="flex-shrink-0 ml-2 mt-1">
-                      {message.sender_avatar ? (
-                        <img 
-                          src={message.sender_avatar} 
-                          alt={(message.sender_email || "").split('@')[0]} 
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center text-white text-xs font-medium">
-                          {(message.sender_email || "").charAt(0).toUpperCase()}
+                      {message.sender_id !== userId && (
+                        <div className="text-xs font-medium text-sky-700 mb-1">
+                          {(message.sender_email || "").split('@')[0]}
                         </div>
                       )}
+                      <div className="text-sm">{message.content}</div>
+                      <div
+                        className={`text-xs mt-1 ${
+                          message.sender_id === userId ? "text-violet-200" : "text-sky-700"
+                        }`}
+                      >
+                        {formatTime(message.created_at)}
+                      </div>
                     </div>
-                  )}
-                </motion.div>
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+                    
+                    {message.sender_id === userId && (
+                      <div className="flex-shrink-0 ml-2 mt-1">
+                        {message.sender_avatar ? (
+                          <img 
+                            src={message.sender_avatar} 
+                            alt={(message.sender_email || "").split('@')[0]} 
+                            className="w-8 h-8 rounded-full object-cover border border-white/20 shadow-md"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
+                            {(message.sender_email || "").charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-          {/* Message Input */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 sticky bottom-0"
-          >
-            <form
-              onSubmit={handleSendMessage}
-              className="glossy p-2 rounded-full flex items-center gap-2"
+            {/* Message Input */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 sticky bottom-0 w-full"
             >
-              <button
-                type="button"
-                className="glass-button p-2 rounded-full text-sky-800"
+              <form
+                onSubmit={handleSendMessage}
+                className="glossy p-2 rounded-full flex items-center gap-2 shadow-lg border border-white/20"
               >
-                <Paperclip className="w-5 h-5" />
-              </button>
-              
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message..."
-                className="bg-transparent flex-grow px-3 py-2 outline-none text-sky-900 placeholder:text-sky-600"
-              />
-              
-              <button
-                type="submit"
-                disabled={!newMessage.trim() || !isAuthenticated}
-                className={`glass-button p-2 rounded-full ${
-                  newMessage.trim() && isAuthenticated ? "bg-gradient-to-r from-violet-500 to-violet-600" : "opacity-50"
-                }`}
-              >
-                <Send className={`w-5 h-5 ${newMessage.trim() && isAuthenticated ? "text-white" : "text-sky-800"}`} />
-              </button>
-            </form>
-          </motion.div>
+                <button
+                  type="button"
+                  className="glass-button p-3 rounded-full"
+                >
+                  <Paperclip className="w-5 h-5 text-sky-800" />
+                </button>
+                
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="bg-transparent flex-grow px-4 py-2 outline-none text-sky-900 placeholder:text-sky-600"
+                />
+                
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim() || !isAuthenticated}
+                  className={`glass-button p-3 rounded-full ${
+                    newMessage.trim() && isAuthenticated ? "bg-gradient-to-r from-violet-500 to-violet-600" : "opacity-50"
+                  }`}
+                >
+                  <Send className={`w-5 h-5 ${newMessage.trim() && isAuthenticated ? "text-white" : "text-sky-800"}`} />
+                </button>
+              </form>
+            </motion.div>
+          </div>
         </div>
 
-        {/* Members List */}
-        <MembersList
-          isOpen={isMobile ? showMembers : true}
-          onClose={() => setShowMembers(false)}
-          members={members}
-          isMobile={isMobile}
-          currentUserId={userId}
-        />
+        {/* Members List - Only render directly in the layout for non-mobile */}
+        {!isMobile && (
+          <div className="self-start sticky top-24">
+            <MembersList
+              isOpen={true}
+              members={members}
+              isMobile={false}
+              currentUserId={userId}
+            />
+          </div>
+        )}
+        
+        {/* Mobile Members List - Rendered as a modal */}
+        {isMobile && (
+          <MembersList
+            isOpen={showMembers}
+            onClose={() => setShowMembers(false)}
+            members={members}
+            isMobile={true}
+            currentUserId={userId}
+          />
+        )}
       </div>
     </div>
   );

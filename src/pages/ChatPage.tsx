@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
 import { Header } from "../components/Header";
-import { Send, ArrowLeft, Paperclip, MoreVertical } from "lucide-react";
+import { Send, ArrowLeft, Paperclip, MoreVertical, MessageSquare } from "lucide-react";
 
 interface Message {
   id: string;
@@ -280,122 +280,144 @@ export function ChatPage() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex flex-col fixed inset-0">
       <Header unreadChats={0} userEmail={userEmail} />
 
-      <div className="flex flex-col flex-grow mt-20 relative">
-        {/* Chat Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glossy p-3 flex items-center gap-3 z-10 sticky top-20"
-        >
-          <button
-            onClick={goBack}
-            className="glass-button p-2 rounded-full"
+      <div className="flex flex-col flex-grow mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 gap-4">
+        <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-96px)]">
+          {/* Chat Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glossy p-3 flex items-center gap-3 z-10 sticky top-24 w-full shadow-lg border border-white/20 rounded-2xl"
           >
-            <ArrowLeft className="w-5 h-5 text-sky-800" />
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white font-semibold">
-              {chatPartner?.email.charAt(0).toUpperCase() || "?"}
+            <button
+              onClick={goBack}
+              className="glass-button p-2 rounded-full"
+            >
+              <ArrowLeft className="w-5 h-5 text-sky-800" />
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
+                {chatPartner?.email.charAt(0).toUpperCase() || "?"}
+              </div>
+              <div>
+                <h2 className="font-semibold text-sky-900">
+                  {chatPartner?.email || "Loading..."}
+                </h2>
+                <p className="text-xs text-sky-700">
+                  {isLoading ? "Loading..." : "Online"}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold text-sky-900">
-                {chatPartner?.email || "Loading..."}
-              </h2>
-              <p className="text-xs text-sky-700">
-                {isLoading ? "Loading..." : "Online"}
-              </p>
-            </div>
-          </div>
 
-          <button className="glass-button p-2 rounded-full ml-auto">
-            <MoreVertical className="w-5 h-5 text-sky-800" />
-          </button>
-        </motion.div>
+            <button className="glass-button p-2 rounded-full ml-auto">
+              <MoreVertical className="w-5 h-5 text-sky-800" />
+            </button>
+          </motion.div>
 
-        {/* Chat Messages */}
-        <div className="flex-grow overflow-y-auto p-4 space-y-3">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="animate-pulse text-sky-700">Loading messages...</div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-10 text-sky-700">
-              No messages yet. Start the conversation!
-            </div>
-          ) : (
-            messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex ${
-                  message.sender_id === userId ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-xs sm:max-w-md rounded-xl p-3 ${
-                    message.sender_id === userId
-                      ? "bg-gradient-to-r from-violet-500 to-violet-600 text-white"
-                      : "glossy text-sky-900"
+          {/* Chat Messages */}
+          <div className="flex-grow overflow-y-auto p-4 space-y-4 w-full pb-20">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <div className="animate-pulse text-sky-700">Loading messages...</div>
+              </div>
+            ) : messages.length === 0 ? (
+              <div className="text-center py-10 text-sky-700 glossy rounded-2xl p-8 backdrop-blur-sm">
+                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/10 shadow-md">
+                  <MessageSquare className="w-8 h-8 text-white/40" />
+                </div>
+                <p className="font-medium text-white/80 text-lg">No messages yet</p>
+                <p className="text-sm mt-1 text-white/60">Start the conversation!</p>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex items-start ${
+                    message.sender_id === userId ? "justify-end" : "justify-start"
                   }`}
                 >
-                  <div className="text-sm">{message.content}</div>
-                  <div className="flex items-center justify-between mt-1">
-                    <div
-                      className={`text-xs ${
-                        message.sender_id === userId ? "text-violet-200" : "text-sky-700"
-                      }`}
-                    >
-                      {formatTime(message.created_at)}
-                    </div>
-                    
-                    {message.sender_id === userId && (
-                      <div className="text-xs text-violet-200 ml-2">
-                        {message.read_at ? "Read" : "Sent"}
+                  {message.sender_id !== userId && (
+                    <div className="flex-shrink-0 mr-2 mt-1">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-sky-400 to-sky-600 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
+                        {message.sender_email?.charAt(0).toUpperCase() || "?"}
                       </div>
-                    )}
+                    </div>
+                  )}
+                  
+                  <div
+                    className={`max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg rounded-2xl p-3 shadow-lg ${
+                      message.sender_id === userId
+                        ? "bg-gradient-to-r from-violet-500 to-violet-600 text-white border border-white/10"
+                        : "glossy text-sky-900 border border-white/20"
+                    }`}
+                  >
+                    <div className="text-sm">{message.content}</div>
+                    <div className="flex items-center justify-between mt-1">
+                      <div
+                        className={`text-xs ${
+                          message.sender_id === userId ? "text-violet-200" : "text-sky-700"
+                        }`}
+                      >
+                        {formatTime(message.created_at)}
+                      </div>
+                      
+                      {message.sender_id === userId && (
+                        <div className="text-xs text-violet-200 ml-2">
+                          {message.read_at ? "Read" : "Sent"}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+                  
+                  {message.sender_id === userId && (
+                    <div className="flex-shrink-0 ml-2 mt-1">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
+                        {userEmail.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
-        {/* Message Input */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 sticky bottom-0"
-        >
-          <form onSubmit={handleSendMessage} className="flex gap-2">
-            <button
-              type="button"
-              className="glass-button p-3 rounded-full"
-            >
-              <Paperclip className="w-5 h-5 text-sky-800" />
-            </button>
-            
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="glass-input flex-grow px-4 py-3 rounded-xl"
-            />
-            
-            <button
-              type="submit"
-              disabled={!newMessage.trim()}
-              className={`glass-button p-3 rounded-full ${
-                !newMessage.trim() ? "opacity-50" : ""
-              }`}
-            >
-              <Send className="w-5 h-5 text-sky-800" />
-            </button>
-          </form>
-        </motion.div>
+          {/* Message Input */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 sticky bottom-0 w-full"
+          >
+            <form onSubmit={handleSendMessage} className="flex gap-2 glossy p-2 rounded-full shadow-lg border border-white/20">
+              <button
+                type="button"
+                className="glass-button p-3 rounded-full"
+              >
+                <Paperclip className="w-5 h-5 text-sky-800" />
+              </button>
+              
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="bg-transparent flex-grow px-4 py-2 outline-none text-sky-900 placeholder:text-sky-600"
+              />
+              
+              <button
+                type="submit"
+                disabled={!newMessage.trim()}
+                className={`glass-button p-3 rounded-full ${
+                  !newMessage.trim() ? "opacity-50" : "bg-gradient-to-r from-violet-500 to-violet-600"
+                }`}
+              >
+                <Send className={`w-5 h-5 ${!newMessage.trim() ? "text-sky-800" : "text-white"}`} />
+              </button>
+            </form>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

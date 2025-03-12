@@ -39,7 +39,7 @@ function MemberModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
             onClick={onClose}
           >
             {/* Modal */}
@@ -48,7 +48,7 @@ function MemberModal({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative bg-white/10 backdrop-blur-xl p-6 pt-8 pb-8 rounded-2xl z-50 w-full max-w-xs shadow-xl mx-auto"
+              className="relative bg-white/10 backdrop-blur-xl p-6 pt-8 pb-8 rounded-2xl z-50 w-full max-w-xs shadow-xl mx-auto border border-white/20"
               onClick={(e) => e.stopPropagation()}
             >
               <button 
@@ -84,7 +84,7 @@ function MemberModal({
                     onClick={() => onSendMessage(member.id)}
                     className="flex flex-col items-center group"
                   >
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center mb-2 shadow-lg group-hover:shadow-violet-500/30 group-hover:scale-110 transition-all duration-200">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center mb-2 shadow-lg group-hover:shadow-violet-500/30 group-hover:scale-110 transition-all duration-200 border border-white/20">
                       <MessageSquare className="w-6 h-6 text-white" />
                     </div>
                     <span className="text-white text-sm font-medium group-hover:text-violet-200 transition-colors">Message</span>
@@ -94,7 +94,7 @@ function MemberModal({
                     onClick={() => onViewProfile(member.id)}
                     className="flex flex-col items-center group"
                   >
-                    <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-2 shadow-lg group-hover:shadow-white/20 group-hover:bg-white/20 group-hover:scale-110 transition-all duration-200">
+                    <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-2 shadow-lg group-hover:shadow-white/20 group-hover:bg-white/20 group-hover:scale-110 transition-all duration-200 border border-white/20">
                       <User className="w-6 h-6 text-white" />
                     </div>
                     <span className="text-white text-sm font-medium group-hover:text-white/90 transition-colors">Profile</span>
@@ -152,8 +152,8 @@ export function MembersList({
   };
 
   const containerClass = isMobile
-    ? "fixed inset-y-0 right-0 w-80 z-50"
-    : "w-80 border-l border-white/10";
+    ? "fixed inset-y-0 right-0 w-80 z-[150]"
+    : "w-80 relative z-[150]";
 
   const getInitials = (email: string) => {
     // Extract the part before @ in the email
@@ -187,68 +187,70 @@ export function MembersList({
   };
 
   const content = (
-    <div className={`h-full bg-white/10 backdrop-blur-xl ${isMobile ? '' : 'rounded-l-2xl'}`}>
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <h2 className="text-white font-semibold flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Members <span className="bg-white/20 text-xs rounded-full px-2 py-0.5 ml-1">{members.length}</span>
+    <div className="bg-white/10 backdrop-blur-xl flex flex-col border border-white/20 rounded-2xl shadow-lg overflow-hidden w-80">
+      <div className="p-3 border-b border-white/10 flex items-center justify-between glossy">
+        <h2 className="text-sky-900 font-semibold flex items-center gap-2">
+          <Users className="w-5 h-5 text-sky-800" />
+          Members <span className="bg-white/20 text-xs rounded-full px-2 py-0.5 ml-1 text-white">{members.length}</span>
         </h2>
         {isMobile && (
-          <button onClick={onClose} className="text-white">
+          <button onClick={onClose} className="text-sky-900 hover:text-sky-700 transition-colors">
             <X className="w-5 h-5" />
           </button>
         )}
       </div>
       
-      <div className="overflow-y-auto h-[calc(100%-60px)]">
+      <div className="overflow-y-auto max-h-[calc(100vh-200px)]">
         {members.length === 0 ? (
-          <div className="p-4 text-center text-white/60">
-            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3">
-              <Users className="w-8 h-8 text-white/40" />
+          <div className="p-4 text-center text-sky-700">
+            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/10 shadow-md">
+              <Users className="w-8 h-8 text-sky-600" />
             </div>
-            <p className="font-medium text-white/80">No members yet</p>
-            <p className="text-sm mt-1">Send a message to join this group</p>
+            <p className="font-medium text-sky-900 text-lg">No members yet</p>
+            <p className="text-sm mt-1 text-sky-700">Send a message to join this group</p>
           </div>
         ) : (
-          members.map((member) => (
-            <button
-              key={member.id}
-              onClick={() => handleMemberClick(member)}
-              className={`w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors ${
-                member.id === currentUserId ? 'bg-white/10' : ''
-              }`}
-            >
-              {member.avatar_url ? (
-                <img 
-                  src={member.avatar_url} 
-                  alt={member.email} 
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white font-semibold`}>
-                  {getInitials(member.email)}
+          <div className="space-y-1 p-2">
+            {members.map((member) => (
+              <button
+                key={member.id}
+                onClick={() => handleMemberClick(member)}
+                className={`w-full p-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-xl ${
+                  member.id === currentUserId ? 'bg-white/10 border border-white/10' : 'border border-transparent'
+                }`}
+              >
+                {member.avatar_url ? (
+                  <img 
+                    src={member.avatar_url} 
+                    alt={member.email} 
+                    className="w-10 h-10 rounded-full object-cover border border-white/20 shadow-md"
+                  />
+                ) : (
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white font-semibold border border-white/20 shadow-md`}>
+                    {getInitials(member.email)}
+                  </div>
+                )}
+                <div className="text-left flex-grow">
+                  <div className="text-sky-900 font-medium">
+                    {member.email.split('@')[0]}
+                    {member.id === currentUserId && <span className="ml-2 text-xs opacity-70">(You)</span>}
+                  </div>
+                  <div className="text-sky-700 text-xs">{member.email}</div>
                 </div>
-              )}
-              <div className="text-left flex-grow">
-                <div className="text-white font-medium">
-                  {member.email}
-                  {member.id === currentUserId && <span className="ml-2 text-xs opacity-70">(You)</span>}
-                </div>
-                <div className="text-white/60 text-sm">Online</div>
-              </div>
-              {member.id !== currentUserId && (
-                <button 
-                  className="p-2 rounded-full hover:bg-white/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSendMessage(member.id);
-                  }}
-                >
-                  <MessageSquare className="w-4 h-4 text-white/70" />
-                </button>
-              )}
-            </button>
-          ))
+                {member.id !== currentUserId && (
+                  <button 
+                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSendMessage(member.id);
+                    }}
+                  >
+                    <MessageSquare className="w-4 h-4 text-sky-800 hover:text-sky-600" />
+                  </button>
+                )}
+              </button>
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -278,7 +280,7 @@ export function MembersList({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[150]"
                 onClick={onClose}
               />
               <motion.div
@@ -286,15 +288,28 @@ export function MembersList({
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className={containerClass}
+                className="fixed inset-y-0 right-0 w-80 z-[150] shadow-xl"
               >
-                {content}
+                <div className="h-full bg-white/10 backdrop-blur-xl flex flex-col border-l border-white/20">
+                  <div className="p-3 border-b border-white/10 flex items-center justify-between glossy">
+                    <h2 className="text-sky-900 font-semibold flex items-center gap-2">
+                      <Users className="w-5 h-5 text-sky-800" />
+                      Members <span className="bg-white/20 text-xs rounded-full px-2 py-0.5 ml-1 text-white">{members.length}</span>
+                    </h2>
+                    <button onClick={onClose} className="text-sky-900 hover:text-sky-700 transition-colors">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto flex-grow">
+                    {content.props.children[1]}
+                  </div>
+                </div>
               </motion.div>
             </>
           )}
         </AnimatePresence>
       ) : (
-        <div className={containerClass}>{content}</div>
+        <div className={`${containerClass}`}>{content}</div>
       )}
     </>
   );
