@@ -67,12 +67,12 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
       const middleX = containerRect.left + (containerRect.width / 2);
       
       // Find the element closest to the middle
-      let closestElement: Element | null = null;
+      let closestElement: HTMLElement | null = null;
       let closestDistance = Infinity;
       
       items.forEach((item) => {
         const element = container.querySelector(`[data-item="${item}"]`);
-        if (element) {
+        if (element instanceof HTMLElement) {
           const rect = element.getBoundingClientRect();
           const elementMiddleX = rect.left + (rect.width / 2);
           const distance = Math.abs(elementMiddleX - middleX);
@@ -115,7 +115,13 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
         <span className="text-xs font-medium text-violet-700">Ciudad</span>
       </div>
       
-      <div className="relative h-[64px] rounded-2xl overflow-hidden glossy shadow-lg border border-white/40">
+      <div className="relative h-[64px] rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)]">
+        {/* Prismatic edge effect */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+        
         {/* Center highlight */}
         <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[100px] pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-indigo-500/5" />
@@ -123,11 +129,11 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
           <div className="absolute inset-y-0 right-0 border-l border-violet-500/10" />
         </div>
 
-        {/* Left fade */}
-        <div className="absolute inset-y-0 left-0 w-[30px] bg-gradient-to-r from-white/90 to-transparent pointer-events-none z-10" />
+        {/* Left fade - removed white gradient */}
+        <div className="absolute inset-y-0 left-0 w-[30px] bg-gradient-to-r from-transparent to-transparent pointer-events-none z-10" />
         
-        {/* Right fade */}
-        <div className="absolute inset-y-0 right-0 w-[30px] bg-gradient-to-l from-white/90 to-transparent pointer-events-none z-10" />
+        {/* Right fade - removed white gradient */}
+        <div className="absolute inset-y-0 right-0 w-[30px] bg-gradient-to-l from-transparent to-transparent pointer-events-none z-10" />
 
         <div 
           ref={containerRef}

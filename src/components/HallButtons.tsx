@@ -24,7 +24,7 @@ export function HallButtons() {
         <motion.button
           key={hall.id}
           onClick={() => handleHallClick(hall.id)}
-          className="hall-button group relative"
+          className="relative"
           whileHover={{ scale: 1.02, translateZ: 20 }}
           whileTap={{ scale: 0.98, translateZ: 10 }}
           transition={{
@@ -33,13 +33,12 @@ export function HallButtons() {
             damping: 17
           }}
         >
-          <div className="relative overflow-hidden rounded-2xl w-full bg-gradient-to-br from-white/90 to-white/40">
-            {/* Glass effect layers */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-white/30" />
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-sky-100/20 to-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            
-            {/* Dynamic reflection */}
-            <div className="absolute -inset-full bg-gradient-to-r from-transparent via-white/50 to-transparent group-hover:animate-[shine_2s_ease-in-out_infinite] translate-x-[-100%] skew-x-12" />
+          <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)]">
+            {/* Prismatic edge effect */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+            <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
             
             {/* Content */}
             <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-4 p-4 sm:p-5">
@@ -84,9 +83,6 @@ export function HallButtons() {
                 {hall.name}
               </span>
             </div>
-            
-            {/* Bottom highlight */}
-            <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
         </motion.button>
       ))}

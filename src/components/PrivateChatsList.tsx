@@ -194,7 +194,13 @@ export function PrivateChatsList() {
 
   if (loading) {
     return (
-      <div className="glossy p-4 rounded-2xl">
+      <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4">
+        {/* Prismatic edge effect */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+        
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="w-5 h-5 text-sky-700" />
           <h2 className="text-sky-900 font-semibold">Private Messages</h2>
@@ -209,7 +215,13 @@ export function PrivateChatsList() {
   }
 
   return (
-    <div className="glossy p-4 rounded-2xl">
+    <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4">
+      {/* Prismatic edge effect */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+      
       <div className="flex items-center gap-2 mb-4">
         <MessageSquare className="w-5 h-5 text-sky-700" />
         <h2 className="text-sky-900 font-semibold">Private Messages</h2>
@@ -227,7 +239,7 @@ export function PrivateChatsList() {
           {chats.map((chat) => (
             <motion.div
               key={chat.id}
-              className="glass-button p-3 rounded-xl cursor-pointer relative"
+              className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 cursor-pointer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleChatClick(chat.id)}
@@ -254,7 +266,7 @@ export function PrivateChatsList() {
               </div>
               
               {chat.unread_count > 0 && (
-                <div className="absolute top-3 right-3 bg-violet-500 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
+                <div className="absolute top-3 right-3 bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center shadow-[0_2px_5px_rgba(139,92,246,0.3)] border border-white/20">
                   {chat.unread_count}
                 </div>
               )}

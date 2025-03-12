@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Send, ArrowLeft, Paperclip, MoreVertical, Users, MessageSquare } from "lucide-react";
+import { Send, ArrowLeft, Paperclip, MoreVertical, Users, MessageSquare, X } from "lucide-react";
 import { Header } from "../components/Header";
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from 'react-responsive';
@@ -554,33 +554,40 @@ export function GroupChatPage() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glossy p-3 flex items-center gap-3 z-10 sticky top-24 w-full shadow-lg border border-white/20 rounded-2xl"
+              className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-3 flex items-center gap-3 z-10 sticky top-24 w-full"
             >
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              
               <button
                 onClick={goBack}
-                className="glass-button p-2 rounded-full"
+                className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
               >
                 <ArrowLeft className="w-5 h-5 text-sky-800" />
               </button>
               
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white border border-white/20 shadow-md">
-                  <Users className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
+                  {groupInfo.name?.charAt(0).toUpperCase() || "G"}
                 </div>
                 <div>
                   <h2 className="font-semibold text-sky-900">
-                    {groupInfo.name}
+                    {groupInfo.name || "Loading..."}
                   </h2>
                   <p className="text-xs text-sky-700">
-                    {groupInfo.city} • Group Chat
+                    {isLoading ? "Loading..." : `${members.length} members`}
                   </p>
                 </div>
               </div>
 
+              {/* Only show the members toggle button on mobile */}
               {isMobile && (
                 <button 
-                  onClick={() => setShowMembers(true)}
-                  className="glass-button p-2 rounded-full ml-auto"
+                  onClick={() => setShowMembers(!showMembers)}
+                  className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto"
                 >
                   <Users className="w-5 h-5 text-sky-800" />
                 </button>
@@ -589,8 +596,18 @@ export function GroupChatPage() {
 
             {/* Chat Messages */}
             <div className="flex-grow overflow-y-auto p-4 w-full pb-20 flex flex-col space-y-1">
-              {messages.length === 0 ? (
-                <div className="text-center py-10 text-sky-700 glossy rounded-2xl p-8 backdrop-blur-sm">
+              {isLoading ? (
+                <div className="flex justify-center items-center h-32">
+                  <div className="animate-pulse text-sky-700">Loading messages...</div>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="text-center py-10 text-sky-700 relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-8">
+                  {/* Prismatic edge effect */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                  
                   <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-3 border border-white/20 shadow-md">
                     <MessageSquare className="w-8 h-8 text-white" />
                   </div>
@@ -625,8 +642,14 @@ export function GroupChatPage() {
                       className="w-full"
                     >
                       <div
-                        className={`w-full rounded-2xl p-3 shadow-lg bg-gradient-to-r ${senderColor} text-white border border-white/10`}
+                        className={`relative overflow-hidden w-full rounded-[24px] p-3 shadow-[0_4px_15px_rgba(31,38,135,0.15)] bg-gradient-to-r ${senderColor} text-white border border-white/20`}
                       >
+                        {/* Prismatic edge effect */}
+                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                        
                         <div className="flex items-center mb-1">
                           <div className="flex-shrink-0 mr-2">
                             {message.sender_avatar ? (
@@ -663,13 +686,16 @@ export function GroupChatPage() {
               animate={{ opacity: 1, y: 0 }}
               className="p-3 sticky bottom-0 w-full"
             >
-              <form
-                onSubmit={handleSendMessage}
-                className="glossy p-2 rounded-full flex items-center gap-2 shadow-lg border border-white/20"
-              >
+              <form onSubmit={handleSendMessage} className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-2 flex gap-2">
+                {/* Prismatic edge effect */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                
                 <button
                   type="button"
-                  className="glass-button p-3 rounded-full"
+                  className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                 >
                   <Paperclip className="w-5 h-5 text-sky-800" />
                 </button>
@@ -684,39 +710,118 @@ export function GroupChatPage() {
                 
                 <button
                   type="submit"
-                  disabled={!newMessage.trim() || !isAuthenticated}
-                  className={`glass-button p-3 rounded-full ${
-                    newMessage.trim() && isAuthenticated ? "bg-gradient-to-r from-violet-500 to-violet-600" : "opacity-50"
-                  }`}
+                  disabled={!newMessage.trim() || !userId}
+                  className={`relative overflow-hidden rounded-full ${
+                    !newMessage.trim() || !userId ? "bg-white/10 opacity-50" : "bg-gradient-to-r from-violet-500 to-violet-600"
+                  } p-3 border border-white/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
                 >
-                  <Send className={`w-5 h-5 ${newMessage.trim() && isAuthenticated ? "text-white" : "text-sky-800"}`} />
+                  <Send className={`w-5 h-5 ${!newMessage.trim() || !userId ? "text-sky-800" : "text-white"}`} />
                 </button>
               </form>
             </motion.div>
           </div>
         </div>
 
-        {/* Members List - Only render directly in the layout for non-mobile */}
+        {/* Members List - Desktop (always visible) */}
         {!isMobile && (
-          <div className="self-start sticky top-24">
-            <MembersList
-              isOpen={true}
-              members={members}
-              isMobile={false}
-              currentUserId={userId}
-            />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="w-1/4 h-fit sticky top-24"
+          >
+            <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4 min-h-[200px] max-h-[calc(100vh-96px)] flex flex-col">
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-sky-900">Members ({members.length})</h3>
+              </div>
+              
+              <div className="flex-grow overflow-y-auto space-y-3">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                  >
+                    {/* Prismatic edge effect */}
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                    <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                    
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
+                      {member.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sky-900 truncate">{member.email}</p>
+                      <p className="text-xs text-sky-700">
+                        {member.id === userId ? "You" : "Member"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
-        
-        {/* Mobile Members List - Rendered as a modal */}
-        {isMobile && (
-          <MembersList
-            isOpen={showMembers}
-            onClose={() => setShowMembers(false)}
-            members={members}
-            isMobile={true}
-            currentUserId={userId}
-          />
+
+        {/* Members List - Mobile (toggleable) */}
+        {isMobile && showMembers && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            className="fixed inset-0 z-50 p-4 flex items-end"
+          >
+            <div className="relative overflow-hidden rounded-t-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4 min-h-[300px] max-h-[80vh] w-full flex flex-col">
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              
+              {/* Drag indicator */}
+              <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-4"></div>
+              
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-sky-900">Members ({members.length})</h3>
+                <button
+                  onClick={() => setShowMembers(false)}
+                  className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                >
+                  <X className="w-5 h-5 text-sky-800" />
+                </button>
+              </div>
+              
+              <div className="flex-grow overflow-y-auto space-y-3">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                  >
+                    {/* Prismatic edge effect */}
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                    <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                    
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
+                      {member.email.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sky-900 truncate">{member.email}</p>
+                      <p className="text-xs text-sky-700">
+                        {member.id === userId ? "You" : "Member"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
       </div>
     </div>

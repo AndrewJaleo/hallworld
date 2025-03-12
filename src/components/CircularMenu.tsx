@@ -134,329 +134,264 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
   };
 
   return (
-    <div className="mt-8 bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6 pb-6 sm:pb-safe z-50 lg:max-w-7xl lg:mx-auto ">
+    <div className="mt-8 bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6 pb-6 sm:pb-safe z-50 lg:max-w-7xl lg:mx-auto">
       <div className="relative max-w-xl lg:max-w-full mx-auto">
-        {/* Animated background glow */}
+        {/* Subtle background glow */}
         <motion.div
           animate={{
             scale: [1, 1.02, 1],
-            opacity: [0.3, 0.4, 0.3],
+            opacity: [0.2, 0.3, 0.2],
           }}
           transition={{
             duration: 3,
             repeat: Infinity,
             ease: "easeInOut"
           }}
-          className="opacity-0 absolute inset-0 rounded-3xl bg-transparent"
-        />
-        <motion.div
-          animate={{
-            scale: [1.02, 1, 1.02],
-            opacity: [0.4, 0.5, 0.4],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="opacity-0 absolute inset-0 rounded-3xl bg-transparent"
+          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-2xl transform-gpu"
         />
 
-        {/* Glass container */}
-        <div className="relative rounded-3xl  bg-transparent">
-          {/* Glass base layer */}
-          <div className="opacity-0 absolute inset-0 bg-transparent" />
-
-          {/* Prismatic edge effect */}
-          <div className="opacity-0 absolute inset-x-0 top-0 h-px bg-transparent" />
-          <div className="opacity-0 absolute inset-x-0 bottom-0 h-px bg-transparent" />
-          <div className="opacity-0 absolute inset-y-0 left-0 w-px bg-transparent" />
-          <div className="opacity-0 absolute inset-y-0 right-0 w-px bg-transparent" />
-
-          {/* Inner shadow and highlights */}
-          <div className="opacity-0 absolute inset-0 bg-transparent" />
-          <div className="opacity-0 absolute inset-0 bg-transparent" />
-          <div className="opacity-0 absolute inset-0 bg-transparent" />
-
-          {/* Dynamic light reflection */}
+        {/* Content container */}
+        <div className="relative p-4 sm:p-5">
           <motion.div
-            animate={{
-              opacity: [0.2, 0.4, 0.2],
-              backgroundPosition: ['100% 0', '0 0', '100% 0'],
-            }}
+            className="relative"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
             transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut"
+              type: "spring",
+              stiffness: 300,
+              damping: 30
             }}
-            className="opacity-0 absolute inset-0 bg-transparent"
-          />
+          >
+            {/* Circular menu container */}
+            <div className="relative h-[320px] sm:h-[380px] lg:h-[420px] flex items-center justify-center">
+              {/* Center city item */}
+              <motion.button
+                key={cityItem.id}
+                className="absolute z-20 overflow-hidden"
+                style={{
+                  borderRadius: '50%',
+                }}
+                whileHover={{ scale: 1.05, translateZ: 30 }}
+                whileTap={{ scale: 0.98, translateZ: 10 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 17
+                }}
+              >
+                {/* Rounded rectangle card for center city */}
+                <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg w-32 sm:w-36 lg:w-40">
+                  {/* Pulse animation on city change */}
+                  <motion.div 
+                    key={`pulse-${cityItem.label}`}
+                    initial={{ opacity: 0.5, scale: 0.95 }}
+                    animate={{ 
+                      opacity: [0.5, 0, 0],
+                      scale: [0.95, 1.2, 1.2]
+                    }}
+                    transition={{ 
+                      duration: 1.5,
+                      times: [0, 0.7, 1]
+                    }}
+                    className="absolute inset-0 rounded-[32px] bg-blue-400/20 z-0"
+                  />
 
-          {/* Content container */}
-          <div className="relative p-4 sm:p-5">
-            <motion.div
-              className="relative"
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30
-              }}
-            >
-              {/* Circular menu container */}
-              <div className="relative h-[320px] sm:h-[380px] lg:h-[420px] flex items-center justify-center">
-                {/* Center city item */}
-                <motion.button
-                  key={cityItem.id}
-                  className="menu-item absolute z-20 overflow-hidden"
-                  style={{
-                    borderRadius: '50%',
-                  }}
-                  whileHover={{ scale: 1.05, translateZ: 30 }}
-                  whileTap={{ scale: 0.98, translateZ: 10 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 17
-                  }}
-                >
-                  {/* Rounded rectangle card for center city */}
-                  <div className="relative overflow-hidden rounded-3xl bg-white/20 backdrop-blur-md shadow-lg border border-white/30 w-32 sm:w-36 lg:w-40">
-                    {/* Glass effect layers */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-white/10" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/20" />
-                    
-                    {/* Pulse animation on city change */}
-                    <motion.div 
-                      key={`pulse-${cityItem.label}`}
-                      initial={{ opacity: 0.7, scale: 0.95 }}
-                      animate={{ 
-                        opacity: [0.7, 0, 0],
-                        scale: [0.95, 1.2, 1.2]
-                      }}
-                      transition={{ 
-                        duration: 1.5,
-                        times: [0, 0.7, 1]
-                      }}
-                      className="absolute inset-0 rounded-3xl bg-blue-400/30 z-0"
-                    />
+                  {/* Content */}
+                  <div className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5">
+                    {/* Circular icon */}
+                    <div className="relative">
+                      <motion.div 
+                        key={`icon-${cityItem.label}`}
+                        initial={{ scale: 0.9, rotate: -5 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ 
+                          type: "spring", 
+                          stiffness: 300, 
+                          damping: 15 
+                        }}
+                        className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br from-blue-400/90 to-blue-600/90"
+                      >
+                        {/* Border */}
+                        <div className="absolute inset-0 rounded-full ring-1 ring-white/30" />
 
-                    {/* Content */}
-                    <div className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5">
-                      {/* Circular icon */}
-                      <div className="relative">
-                        <motion.div 
-                          key={`icon-${cityItem.label}`}
-                          initial={{ scale: 0.9, rotate: -5 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          transition={{ 
-                            type: "spring", 
-                            stiffness: 300, 
-                            damping: 15 
+                        {/* Icon */}
+                        <cityItem.icon className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white relative z-10" />
+
+                        {/* Sparkle */}
+                        <motion.div
+                          className="absolute -top-1 -right-1"
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 0.8] }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
                           }}
-                          className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br from-blue-400/90 to-blue-600/90"
                         >
-                          {/* Glass reflections */}
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/90 via-transparent to-white/30" />
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-sky-200/30 to-white/50" />
-
-                          {/* Top highlight */}
-                          <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-full opacity-90" />
-
-                          {/* Border */}
-                          <div className="absolute inset-0 rounded-full ring-2 ring-white/70" />
-
-                          {/* Icon */}
-                          <cityItem.icon className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white relative z-10" />
-
-                          {/* Sparkle */}
-                          <motion.div
-                            className="absolute -top-1 -right-1"
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 0.8] }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut"
-                            }}
-                          >
-                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
-                          </motion.div>
+                          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
                         </motion.div>
-                      </div>
-                      
-                      {/* City Label */}
-                      <AnimatePresence mode="wait">
-                        <motion.span 
-                          key={`city-${cityItem.label}`}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.3 }}
-                          className="text-lg sm:text-xl lg:text-2xl font-semibold text-blue-600 line-clamp-1"
-                        >
-                          {cityItem.label}
-                        </motion.span>
-                      </AnimatePresence>
-                      
-                      {/* Country Label */}
-                      <AnimatePresence mode="wait">
-                      
-                      </AnimatePresence>
+                      </motion.div>
                     </div>
+                    
+                    {/* City Label */}
+                    <AnimatePresence mode="wait">
+                      <motion.span 
+                        key={`city-${cityItem.label}`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-lg sm:text-xl lg:text-2xl font-semibold text-white/90 line-clamp-1"
+                      >
+                        {cityItem.label}
+                      </motion.span>
+                    </AnimatePresence>
+                    
+                    {/* Country Label */}
+                    <AnimatePresence mode="wait">
+                    
+                    </AnimatePresence>
                   </div>
-                </motion.button>
+                </div>
+              </motion.button>
 
-                {/* Circle arrangement of menu items */}
-                {menuItems.map((item, index) => {
-                  const Icon = item.icon;
-                  
-                  // Determine text color based on item
-                  const textColorMap: Record<string, string> = {
-                    'politica': 'text-violet-500',
-                    'ligar': 'text-rose-500',
-                    'universidad': 'text-amber-500',
-                    'planes': 'text-emerald-500',
-                    'cerca': 'text-sky-500',
-                    'amistad': 'text-fuchsia-500',
-                    'arte': 'text-cyan-500',
-                    'ciudad': 'text-violet-500'
-                  };
-                  
-                  // Determine icon background color
-                  const bgColorMap: Record<string, string> = {
-                    'politica': 'from-violet-400/90 to-violet-600/90',
-                    'ligar': 'from-rose-400/90 to-rose-600/90',
-                    'universidad': 'from-amber-400/90 to-amber-600/90',
-                    'planes': 'from-emerald-400/90 to-emerald-600/90',
-                    'cerca': 'from-sky-400/90 to-sky-600/90',
-                    'amistad': 'from-fuchsia-400/90 to-fuchsia-600/90',
-                    'arte': 'from-cyan-400/90 to-cyan-600/90',
-                    'ciudad': 'from-violet-400/90 to-violet-600/90'
-                  };
-                  
-                  const textColor = textColorMap[item.id] || 'text-blue-500';
-                  const bgColor = bgColorMap[item.id] || 'from-blue-400/90 to-blue-600/90';
-                  
-                  return (
-                    <motion.button
-                      key={`${item.id}-${cityItem.label}`}
-                      className="menu-item absolute overflow-hidden"
-                      style={{
-                        borderRadius: '50%',
-                      }}
-                      custom={index}
-                      variants={menuItemVariants}
-                      initial="initial"
-                      animate="cityChange"
-                      whileHover={{ scale: 1.1, translateZ: 24 }}
-                      whileTap={{ scale: 0.95, translateZ: 10 }}
-                      onClick={() => handleTopicClick(item.id)}
-                      disabled={isLoading[item.id]}
-                    >
-                      {/* Rounded rectangle card */}
-                      <div className="relative overflow-hidden rounded-3xl bg-white/20 backdrop-blur-md shadow-lg border border-white/30 w-24 sm:w-28">
-                        {/* Glass effect layers */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-white/10" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/20" />
+              {/* Circle arrangement of menu items */}
+              {menuItems.map((item, index) => {
+                const Icon = item.icon;
+                
+                // Determine text color based on item
+                const textColorMap: Record<string, string> = {
+                  'politica': 'text-violet-300',
+                  'ligar': 'text-rose-300',
+                  'universidad': 'text-amber-300',
+                  'planes': 'text-emerald-300',
+                  'cerca': 'text-sky-300',
+                  'amistad': 'text-fuchsia-300',
+                  'arte': 'text-cyan-300',
+                  'ciudad': 'text-violet-300'
+                };
+                
+                // Determine icon background color
+                const bgColorMap: Record<string, string> = {
+                  'politica': 'from-violet-400/90 to-violet-600/90',
+                  'ligar': 'from-rose-400/90 to-rose-600/90',
+                  'universidad': 'from-amber-400/90 to-amber-600/90',
+                  'planes': 'from-emerald-400/90 to-emerald-600/90',
+                  'cerca': 'from-sky-400/90 to-sky-600/90',
+                  'amistad': 'from-fuchsia-400/90 to-fuchsia-600/90',
+                  'arte': 'from-cyan-400/90 to-cyan-600/90',
+                  'ciudad': 'from-violet-400/90 to-violet-600/90'
+                };
+                
+                const textColor = textColorMap[item.id] || 'text-blue-300';
+                const bgColor = bgColorMap[item.id] || 'from-blue-400/90 to-blue-600/90';
+                
+                return (
+                  <motion.button
+                    key={`${item.id}-${cityItem.label}`}
+                    className="absolute overflow-hidden"
+                    style={{
+                      borderRadius: '50%',
+                    }}
+                    custom={index}
+                    variants={menuItemVariants}
+                    initial="initial"
+                    animate="cityChange"
+                    whileHover={{ scale: 1.1, translateZ: 24 }}
+                    whileTap={{ scale: 0.95, translateZ: 10 }}
+                    onClick={() => handleTopicClick(item.id)}
+                    disabled={isLoading[item.id]}
+                  >
+                    {/* Rounded rectangle card */}
+                    <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg w-24 sm:w-28">
+                      {/* Ripple effect on city change */}
+                      <motion.div 
+                        key={`ripple-${item.id}-${cityItem.label}`}
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ 
+                          opacity: [0.3, 0, 0],
+                          scale: [0.5, 1.3, 1.3]
+                        }}
+                        transition={{ 
+                          duration: 1,
+                          delay: index * 0.05,
+                          times: [0, 0.7, 1]
+                        }}
+                        className={`absolute inset-0 rounded-[32px] bg-gradient-to-br ${bgColor.replace('/90', '/20')} z-0`}
+                      />
 
-                        {/* Ripple effect on city change */}
-                        <motion.div 
-                          key={`ripple-${item.id}-${cityItem.label}`}
-                          initial={{ opacity: 0, scale: 0.5 }}
+                      {/* Content */}
+                      <div className="relative z-10 flex flex-col items-center gap-2 p-3 sm:p-4">
+                        {/* Circular icon */}
+                        <div className="relative">
+                          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br ${bgColor}`}>
+                            {/* Loading indicator */}
+                            {isLoading[item.id] && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
+                                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                            
+                            {/* Border */}
+                            <div className="absolute inset-0 rounded-full ring-1 ring-white/30" />
+
+                            {/* Icon */}
+                            <motion.div
+                              key={`icon-${item.id}-${cityItem.label}`}
+                              initial={{ scale: 1 }}
+                              animate={{ 
+                                scale: [1, 1.2, 1],
+                                rotate: [0, index % 2 === 0 ? 10 : -10, 0]
+                              }}
+                              transition={{ 
+                                duration: 0.5,
+                                delay: 0.1 + index * 0.04,
+                                times: [0, 0.5, 1]
+                              }}
+                            >
+                              <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white relative z-10" />
+                            </motion.div>
+
+                            {/* Sparkle */}
+                            <motion.div
+                              className="absolute -top-1 -right-1"
+                              initial={{ opacity: 0, scale: 0 }}
+                              animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 0.8] }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                              }}
+                            >
+                              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
+                            </motion.div>
+                          </div>
+                        </div>
+                        
+                        {/* Label */}
+                        <motion.span 
+                          key={`label-${item.id}-${cityItem.label}`}
+                          initial={{ opacity: 1 }}
                           animate={{ 
-                            opacity: [0.5, 0, 0],
-                            scale: [0.5, 1.3, 1.3]
+                            opacity: [1, 0.7, 1],
+                            y: [0, -2, 0]
                           }}
                           transition={{ 
-                            duration: 1,
-                            delay: index * 0.05,
-                            times: [0, 0.7, 1]
+                            duration: 0.5,
+                            delay: 0.2 + index * 0.04,
+                            times: [0, 0.5, 1]
                           }}
-                          className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${bgColor.replace('/90', '/20')} z-0`}
-                        />
-
-                        {/* Content */}
-                        <div className="relative z-10 flex flex-col items-center gap-2 p-3 sm:p-4">
-                          {/* Circular icon */}
-                          <div className="relative">
-                            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br ${bgColor}`}>
-                              {/* Loading indicator */}
-                              {isLoading[item.id] && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full">
-                                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                              )}
-                              
-                              {/* Glass reflections */}
-                              <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/90 via-transparent to-white/30" />
-                              <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-white/50" />
-
-                              {/* Top highlight */}
-                              <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/80 to-transparent rounded-t-full opacity-90" />
-
-                              {/* Border */}
-                              <div className="absolute inset-0 rounded-full ring-2 ring-white/70" />
-
-                              {/* Icon */}
-                              <motion.div
-                                key={`icon-${item.id}-${cityItem.label}`}
-                                initial={{ scale: 1 }}
-                                animate={{ 
-                                  scale: [1, 1.2, 1],
-                                  rotate: [0, index % 2 === 0 ? 10 : -10, 0]
-                                }}
-                                transition={{ 
-                                  duration: 0.5,
-                                  delay: 0.1 + index * 0.04,
-                                  times: [0, 0.5, 1]
-                                }}
-                              >
-                                <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white relative z-10" />
-                              </motion.div>
-
-                              {/* Sparkle */}
-                              <motion.div
-                                className="absolute -top-1 -right-1"
-                                initial={{ opacity: 0, scale: 0 }}
-                                animate={{ opacity: [0, 1, 0], scale: [0.8, 1.2, 0.8] }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut"
-                                }}
-                              >
-                                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
-                              </motion.div>
-                            </div>
-                          </div>
-                          
-                          {/* Label */}
-                          <motion.span 
-                            key={`label-${item.id}-${cityItem.label}`}
-                            initial={{ opacity: 1 }}
-                            animate={{ 
-                              opacity: [1, 0.7, 1],
-                              y: [0, -2, 0]
-                            }}
-                            transition={{ 
-                              duration: 0.5,
-                              delay: 0.2 + index * 0.04,
-                              times: [0, 0.5, 1]
-                            }}
-                            className={`text-sm sm:text-base font-semibold ${textColor} line-clamp-1`}
-                          >
-                            {item.label}
-                          </motion.span>
-                        </div>
+                          className={`text-sm sm:text-base font-semibold ${textColor} line-clamp-1`}
+                        >
+                          {item.label}
+                        </motion.span>
                       </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

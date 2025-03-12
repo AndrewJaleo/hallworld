@@ -612,7 +612,7 @@ export function ProfileCanvas({
           id="canvas-container"
         >
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-xl border border-white/20 z-10">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
             </div>
           )}
@@ -846,9 +846,9 @@ export function ProfileCanvas({
                   {/* Custom color picker button */}
                   <button
                     onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="flex items-center justify-center gap-2 text-sm py-2 px-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-center gap-2 text-sm py-2 px-3 bg-white/10 backdrop-blur-xl border border-white/20 rounded-lg hover:bg-white/20 text-white/80 transition-colors"
                   >
-                    <div className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: brushColor }}></div>
+                    <div className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: brushColor }}></div>
                     <span>Color personalizado</span>
                   </button>
                 </div>
@@ -863,15 +863,15 @@ export function ProfileCanvas({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute left-16 top-0 glossy p-4 rounded-xl shadow-lg"
+                className="absolute left-16 top-0 bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-xl shadow-lg"
                 style={{ zIndex: 70 }}
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-semibold text-gray-700">Selector de color</h3>
+                    <h3 className="text-sm font-semibold text-white/80">Selector de color</h3>
                     <button 
                       onClick={() => setShowColorPicker(false)}
-                      className="text-gray-500 hover:text-gray-700 text-sm"
+                      className="text-white/60 hover:text-white/80 text-sm"
                     >
                       Cerrar
                     </button>
@@ -884,14 +884,13 @@ export function ProfileCanvas({
                   
                   <div className="flex items-center gap-2 mt-2">
                     <div 
-                      className="w-8 h-8 rounded-md border border-gray-300" 
-                      style={{ backgroundColor: isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000') }}
+                      className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000') }}
                     ></div>
                     <input
                       type="text"
                       value={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
                       onChange={(e) => handleColorChange(e.target.value)}
-                      className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                      className="flex-1 px-2 py-1 text-sm bg-white/10 border border-white/20 rounded-md text-white/80 focus:outline-none focus:ring-1 focus:ring-white/30"
                     />
                   </div>
                 </div>
@@ -903,7 +902,7 @@ export function ProfileCanvas({
 
       {/* Toolbar - Mobile (horizontal) */}
       {isEditing && isOwner && isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/90 p-2 flex justify-center z-30 border-t border-gray-200 backdrop-blur-sm">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-xl p-2 flex justify-center z-30 border-t border-white/20">
           <div className="flex gap-2 overflow-x-auto pb-2 max-w-full">
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -1013,7 +1012,7 @@ export function ProfileCanvas({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="absolute bottom-16 left-0 right-0 bg-white/95 p-4 border-t border-gray-200"
+                className="absolute bottom-16 left-0 right-0 bg-white/10 backdrop-blur-xl p-4 border-t border-white/20"
                 style={{ zIndex: 60 }}
               >
                 <div className="max-w-md mx-auto">
@@ -1066,7 +1065,7 @@ export function ProfileCanvas({
                       ))}
                       <button
                         onClick={() => setShowColorPicker(!showColorPicker)}
-                        className="flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-300 text-gray-500"
+                        className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white/80 hover:bg-white/20 transition-colors"
                         aria-label="Custom color"
                       >
                         +

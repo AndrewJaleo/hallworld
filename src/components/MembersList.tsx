@@ -48,56 +48,56 @@ function MemberModal({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative bg-white/10 backdrop-blur-xl p-6 pt-8 pb-8 rounded-2xl z-50 w-full max-w-xs shadow-xl mx-auto border border-white/20"
+              className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] w-full max-w-md p-6"
               onClick={(e) => e.stopPropagation()}
             >
-              <button 
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              
+              {/* Close button */}
+              <button
                 onClick={onClose}
-                className="absolute top-3 right-3 text-white/70 hover:text-white"
+                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sky-900 hover:bg-white/20 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
               
-              <div className="flex flex-col items-center">
-                {/* Profile Picture */}
-                <div className="mb-5">
-                  {member.avatar_url ? (
-                    <img 
-                      src={member.avatar_url} 
-                      alt={member.email} 
-                      className="w-28 h-28 rounded-full object-cover border-2 border-white/20 shadow-lg"
-                    />
-                  ) : (
-                    <div className={`w-28 h-28 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white text-3xl font-semibold border-2 border-white/20 shadow-lg`}>
-                      {getInitials(member.email)}
-                    </div>
-                  )}
+              {/* Member info */}
+              <div className="flex flex-col items-center text-center">
+                {/* Avatar */}
+                <div className={`w-24 h-24 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white text-3xl font-semibold mb-4 border-2 border-white/30 shadow-lg`}>
+                  {getInitials(member.email)}
                 </div>
                 
-                {/* User Info */}
-                <h3 className="text-white text-xl font-semibold mb-1">{member.email.split('@')[0]}</h3>
-                <p className="text-white/70 mb-8">{member.email}</p>
+                {/* Name */}
+                <h3 className="text-xl font-semibold text-sky-900 mb-1">
+                  {member.email.split('@')[0]}
+                </h3>
                 
-                {/* Action Buttons */}
-                <div className="flex gap-8 w-full justify-center">
+                {/* Email */}
+                <p className="text-sky-700 mb-6">
+                  {member.email}
+                </p>
+                
+                {/* Actions */}
+                <div className="flex gap-3 w-full">
                   <button
                     onClick={() => onSendMessage(member.id)}
-                    className="flex flex-col items-center group"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-sky-900 hover:bg-white/20 transition-colors"
                   >
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-r from-violet-500 to-violet-600 flex items-center justify-center mb-2 shadow-lg group-hover:shadow-violet-500/30 group-hover:scale-110 transition-all duration-200 border border-white/20">
-                      <MessageSquare className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-white text-sm font-medium group-hover:text-violet-200 transition-colors">Message</span>
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Message</span>
                   </button>
                   
                   <button
                     onClick={() => onViewProfile(member.id)}
-                    className="flex flex-col items-center group"
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-sky-900 hover:bg-white/20 transition-colors"
                   >
-                    <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-2 shadow-lg group-hover:shadow-white/20 group-hover:bg-white/20 group-hover:scale-110 transition-all duration-200 border border-white/20">
-                      <User className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-white text-sm font-medium group-hover:text-white/90 transition-colors">Profile</span>
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
                   </button>
                 </div>
               </div>
@@ -124,193 +124,164 @@ export function MembersList({
   isMobile = false,
   currentUserId = null
 }: MembersListProps) {
-  const navigate = useNavigate();
-  // Add state for the selected member and modal visibility
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleMemberClick = (member: Member) => {
-    // Don't show modal for yourself
-    if (member.id === currentUserId) return;
-    
-    // Show the modal with the selected member
     setSelectedMember(member);
-    setIsModalOpen(true);
   };
-  
+
   const handleSendMessage = (memberId: string) => {
+    // Navigate to private chat with this member
     navigate({ to: `/chat/${memberId}` });
-    setIsModalOpen(false);
-    if (isMobile) onClose();
   };
-  
+
   const handleViewProfile = (memberId: string) => {
-    // Navigate to profile page (you can implement this later)
+    // Navigate to profile page
     navigate({ to: `/profile/${memberId}` });
-    setIsModalOpen(false);
-    if (isMobile) onClose();
   };
 
-  const containerClass = isMobile
-    ? "fixed inset-y-0 right-0 w-80 z-[150]"
-    : "w-80 relative z-[150]";
-
+  // Function to get initials from email
   const getInitials = (email: string) => {
-    // Extract the part before @ in the email
-    const name = email.split('@')[0];
-    // If the name has a dot, use first letters of each part
-    if (name.includes('.')) {
-      return name.split('.')
-        .map(part => part.charAt(0).toUpperCase())
-        .join('');
+    try {
+      const parts = email.split('@')[0].split(/[._-]/);
+      if (parts.length > 1) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return email.substring(0, 2).toUpperCase();
+    } catch (e) {
+      return 'U';
     }
-    // Otherwise just use the first letter
-    return name.charAt(0).toUpperCase();
   };
-  
+
+  // Function to get a consistent color based on user ID
   const getRandomColor = (id: string) => {
-    // Generate a consistent color based on the user ID
     const colors = [
       'from-violet-400 to-violet-600',
-      'from-blue-400 to-blue-600',
-      'from-green-400 to-green-600',
-      'from-yellow-400 to-yellow-600',
-      'from-red-400 to-red-600',
-      'from-pink-400 to-pink-600',
       'from-indigo-400 to-indigo-600',
-      'from-teal-400 to-teal-600'
+      'from-blue-400 to-blue-600',
+      'from-sky-400 to-sky-600',
+      'from-cyan-400 to-cyan-600',
+      'from-teal-400 to-teal-600',
+      'from-emerald-400 to-emerald-600',
+      'from-green-400 to-green-600',
+      'from-lime-400 to-lime-600',
+      'from-amber-400 to-amber-600',
+      'from-orange-400 to-orange-600',
+      'from-rose-400 to-rose-600',
+      'from-pink-400 to-pink-600',
+      'from-fuchsia-400 to-fuchsia-600'
     ];
     
-    // Use the sum of character codes in the ID to pick a color
-    const sum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[sum % colors.length];
+    // Use a simple hash function to get a consistent index
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = ((hash << 5) - hash) + id.charCodeAt(i);
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
   };
 
-  const content = (
-    <div className="bg-white/10 backdrop-blur-xl flex flex-col border border-white/20 rounded-2xl shadow-lg overflow-hidden w-80">
-      <div className="p-3 border-b border-white/10 flex items-center justify-between glossy">
-        <h2 className="text-sky-900 font-semibold flex items-center gap-2">
-          <Users className="w-5 h-5 text-sky-800" />
-          Members <span className="bg-white/20 text-xs rounded-full px-2 py-0.5 ml-1 text-white">{members.length}</span>
-        </h2>
-        {isMobile && (
-          <button onClick={onClose} className="text-sky-900 hover:text-sky-700 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-      
-      <div className="overflow-y-auto max-h-[calc(100vh-200px)]">
-        {members.length === 0 ? (
-          <div className="p-4 text-center text-sky-700">
-            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/10 shadow-md">
-              <Users className="w-8 h-8 text-sky-600" />
-            </div>
-            <p className="font-medium text-sky-900 text-lg">No members yet</p>
-            <p className="text-sm mt-1 text-sky-700">Send a message to join this group</p>
-          </div>
-        ) : (
-          <div className="space-y-1 p-2">
-            {members.map((member) => (
-              <button
-                key={member.id}
-                onClick={() => handleMemberClick(member)}
-                className={`w-full p-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-xl ${
-                  member.id === currentUserId ? 'bg-white/10 border border-white/10' : 'border border-transparent'
-                }`}
-              >
-                {member.avatar_url ? (
-                  <img 
-                    src={member.avatar_url} 
-                    alt={member.email} 
-                    className="w-10 h-10 rounded-full object-cover border border-white/20 shadow-md"
-                  />
-                ) : (
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white font-semibold border border-white/20 shadow-md`}>
-                    {getInitials(member.email)}
-                  </div>
-                )}
-                <div className="text-left flex-grow">
-                  <div className="text-sky-900 font-medium">
-                    {member.email.split('@')[0]}
-                    {member.id === currentUserId && <span className="ml-2 text-xs opacity-70">(You)</span>}
-                  </div>
-                  <div className="text-sky-700 text-xs">{member.email}</div>
-                </div>
-                {member.id !== currentUserId && (
-                  <button 
-                    className="p-2 rounded-full hover:bg-white/10 transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSendMessage(member.id);
-                    }}
-                  >
-                    <MessageSquare className="w-4 h-4 text-sky-800 hover:text-sky-600" />
-                  </button>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
   return (
-    <>
-      {/* Member Modal */}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={isMobile ? { y: "100%" } : { x: "100%" }}
+          animate={isMobile ? { y: 0 } : { x: 0 }}
+          exit={isMobile ? { y: "100%" } : { x: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className={`fixed ${isMobile ? 'inset-x-0 bottom-0 rounded-t-[32px] max-h-[80vh]' : 'top-0 right-0 bottom-0 w-80 sm:w-96'} z-50 flex flex-col relative overflow-hidden bg-white/10 backdrop-blur-xl border-l border-t border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)]`}
+        >
+          {/* Prismatic edge effect */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+          <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+          
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-sky-700" />
+              <h2 className="text-sky-900 font-semibold">Members ({members.length})</h2>
+            </div>
+            <button 
+              onClick={onClose}
+              className="p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sky-900 hover:bg-white/20 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="overflow-y-auto max-h-[calc(100vh-200px)]">
+            {members.length === 0 ? (
+              <div className="p-4 text-center text-sky-700">
+                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-3 border border-white/10 shadow-md">
+                  <Users className="w-8 h-8 text-sky-600" />
+                </div>
+                <p className="font-medium text-sky-900 text-lg">No members yet</p>
+                <p className="text-sm mt-1 text-sky-700">Send a message to join this group</p>
+              </div>
+            ) : (
+              <div className="space-y-1 p-2">
+                {members.map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => handleMemberClick(member)}
+                    className={`w-full p-3 flex items-center gap-3 hover:bg-white/5 transition-colors rounded-xl ${
+                      member.id === currentUserId ? 'bg-white/10 border border-white/10' : 'border border-transparent'
+                    }`}
+                  >
+                    {member.avatar_url ? (
+                      <img 
+                        src={member.avatar_url} 
+                        alt={member.email} 
+                        className="w-10 h-10 rounded-full object-cover border border-white/20 shadow-md"
+                      />
+                    ) : (
+                      <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white font-semibold border border-white/20 shadow-md`}>
+                        {getInitials(member.email)}
+                      </div>
+                    )}
+                    <div className="text-left flex-grow">
+                      <div className="text-sky-900 font-medium">
+                        {member.email.split('@')[0]}
+                        {member.id === currentUserId && <span className="ml-2 text-xs opacity-70">(You)</span>}
+                      </div>
+                      <div className="text-sky-700 text-xs">{member.email}</div>
+                    </div>
+                    {member.id !== currentUserId && (
+                      <button 
+                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSendMessage(member.id);
+                        }}
+                      >
+                        <MessageSquare className="w-4 h-4 text-sky-800 hover:text-sky-600" />
+                      </button>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+      
+      {/* Member modal */}
       {selectedMember && (
         <MemberModal
           member={selectedMember}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          isOpen={!!selectedMember}
+          onClose={() => setSelectedMember(null)}
           onSendMessage={handleSendMessage}
           onViewProfile={handleViewProfile}
           getInitials={getInitials}
           getRandomColor={getRandomColor}
         />
       )}
-      
-      {/* Members List */}
-      {isMobile ? (
-        <AnimatePresence>
-          {isOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[150]"
-                onClick={onClose}
-              />
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed inset-y-0 right-0 w-80 z-[150] shadow-xl"
-              >
-                <div className="h-full bg-white/10 backdrop-blur-xl flex flex-col border-l border-white/20">
-                  <div className="p-3 border-b border-white/10 flex items-center justify-between glossy">
-                    <h2 className="text-sky-900 font-semibold flex items-center gap-2">
-                      <Users className="w-5 h-5 text-sky-800" />
-                      Members <span className="bg-white/20 text-xs rounded-full px-2 py-0.5 ml-1 text-white">{members.length}</span>
-                    </h2>
-                    <button onClick={onClose} className="text-sky-900 hover:text-sky-700 transition-colors">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="overflow-y-auto flex-grow">
-                    {content.props.children[1]}
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      ) : (
-        <div className={`${containerClass}`}>{content}</div>
-      )}
-    </>
+    </AnimatePresence>
   );
 } 

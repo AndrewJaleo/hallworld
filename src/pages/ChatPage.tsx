@@ -286,11 +286,17 @@ export function ChatPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glossy p-3 flex items-center gap-3 z-10 sticky top-24 w-full shadow-lg border border-white/20 rounded-2xl"
+            className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-3 flex items-center gap-3 z-10 sticky top-24 w-full"
           >
+            {/* Prismatic edge effect */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+            <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+            
             <button
               onClick={goBack}
-              className="glass-button p-2 rounded-full"
+              className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
             >
               <ArrowLeft className="w-5 h-5 text-sky-800" />
             </button>
@@ -309,7 +315,7 @@ export function ChatPage() {
               </div>
             </div>
 
-            <button className="glass-button p-2 rounded-full ml-auto">
+            <button className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto">
               <MoreVertical className="w-5 h-5 text-sky-800" />
             </button>
           </motion.div>
@@ -321,7 +327,13 @@ export function ChatPage() {
                 <div className="animate-pulse text-sky-700">Loading messages...</div>
               </div>
             ) : messages.length === 0 ? (
-              <div className="text-center py-10 text-sky-700 glossy rounded-2xl p-8 backdrop-blur-sm">
+              <div className="text-center py-10 text-sky-700 relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-8">
+                {/* Prismatic edge effect */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-3 border border-white/20 shadow-md">
                   <MessageSquare className="w-8 h-8 text-white" />
                 </div>
@@ -356,8 +368,14 @@ export function ChatPage() {
                     className="w-full"
                   >
                     <div
-                      className={`w-full rounded-2xl p-3 shadow-lg bg-gradient-to-r ${senderColor} text-white border border-white/10`}
+                      className={`relative overflow-hidden w-full rounded-[24px] p-3 shadow-[0_4px_15px_rgba(31,38,135,0.15)] bg-gradient-to-r ${senderColor} text-white border border-white/20`}
                     >
+                      {/* Prismatic edge effect */}
+                      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                      
                       <div className="flex items-center mb-1">
                         <div className="flex-shrink-0 mr-2">
                           <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
@@ -393,10 +411,16 @@ export function ChatPage() {
             animate={{ opacity: 1, y: 0 }}
             className="p-3 sticky bottom-0 w-full"
           >
-            <form onSubmit={handleSendMessage} className="flex gap-2 glossy p-2 rounded-full shadow-lg border border-white/20">
+            <form onSubmit={handleSendMessage} className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-2 flex gap-2">
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              
               <button
                 type="button"
-                className="glass-button p-3 rounded-full"
+                className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
               >
                 <Paperclip className="w-5 h-5 text-sky-800" />
               </button>
@@ -412,9 +436,9 @@ export function ChatPage() {
               <button
                 type="submit"
                 disabled={!newMessage.trim()}
-                className={`glass-button p-3 rounded-full ${
-                  !newMessage.trim() ? "opacity-50" : "bg-gradient-to-r from-violet-500 to-violet-600"
-                }`}
+                className={`relative overflow-hidden rounded-full ${
+                  !newMessage.trim() ? "bg-white/10 opacity-50" : "bg-gradient-to-r from-violet-500 to-violet-600"
+                } p-3 border border-white/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
               >
                 <Send className={`w-5 h-5 ${!newMessage.trim() ? "text-sky-800" : "text-white"}`} />
               </button>

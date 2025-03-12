@@ -116,7 +116,13 @@ export function UsersList() {
 
   if (loading) {
     return (
-      <div className="glossy p-4 rounded-2xl">
+      <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4">
+        {/* Prismatic edge effect */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+        
         <div className="flex items-center gap-2 mb-4">
           <Users className="w-5 h-5 text-sky-700" />
           <h2 className="text-sky-900 font-semibold">Users</h2>
@@ -131,7 +137,13 @@ export function UsersList() {
   }
 
   return (
-    <div className="glossy p-4 rounded-2xl">
+    <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4">
+      {/* Prismatic edge effect */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+      
       <div className="flex items-center gap-2 mb-4">
         <Users className="w-5 h-5 text-sky-700" />
         <h2 className="text-sky-900 font-semibold">Users</h2>
@@ -143,7 +155,7 @@ export function UsersList() {
         </div>
         <input
           type="text"
-          className="glass-input pl-10 pr-4 py-2 w-full rounded-xl"
+          className="w-full rounded-xl bg-white/20 backdrop-blur-md border border-white/30 pl-10 pr-4 py-2 text-sky-900 placeholder-sky-600/70 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           placeholder="Search users..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -164,7 +176,7 @@ export function UsersList() {
           {filteredUsers.map((user) => (
             <motion.div
               key={user.id}
-              className="glass-button p-3 rounded-xl cursor-pointer"
+              className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 cursor-pointer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => startChat(user.id)}
@@ -181,7 +193,7 @@ export function UsersList() {
                 </div>
                 
                 <button 
-                  className="glass-button p-2 rounded-full"
+                  className="p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20"
                   onClick={(e) => {
                     e.stopPropagation();
                     startChat(user.id);
