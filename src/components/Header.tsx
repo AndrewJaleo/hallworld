@@ -29,9 +29,11 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        console.log('Click outside notifications detected');
         setShowNotifications(false);
       }
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        console.log('Click outside profile detected');
         setShowProfile(false);
       }
     }
@@ -42,6 +44,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
 
   useEffect(() => {
     if (showNotifications) {
+      console.log('Notifications opened, fetching unread messages');
       fetchUnreadMessages();
     }
   }, [showNotifications]);
@@ -49,10 +52,14 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
   const fetchUnreadMessages = async () => {
     try {
       setLoading(true);
+      console.log('Starting to fetch unread messages');
       
       // Get current user
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
+      if (!session?.user) {
+        console.log('No user session found');
+        return;
+      }
       
       const userId = session.user.id;
       
@@ -157,12 +164,12 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[100] px-4 pt-4 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-[100] px-4 pt-4 pointer-events-none overflow-visible">
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99] }}
-        className="relative mx-auto max-w-7xl pointer-events-auto"
+        className="relative mx-auto max-w-7xl pointer-events-auto overflow-visible"
       >
         {/* Animated background glow */}
         <motion.div
@@ -222,7 +229,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
           <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white to-transparent opacity-70" />
         </div>
 
-        <div className="relative rounded-[32px] overflow-hidden border border-white/60">
+        <div className="relative rounded-[32px] overflow-visible border border-white/60">
           {/* Frutiger Aero glass effects */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-transparent" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.5),transparent)]" />
@@ -258,7 +265,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
           />
 
           {/* Content */}
-          <div className="relative px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between">
+          <div className="relative px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between overflow-visible">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -269,9 +276,12 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
 
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Notifications */}
-              <div className="relative" ref={notificationsRef}>
+              <div className="relative z-[150] overflow-visible" ref={notificationsRef}>
                 <motion.button
-                  onClick={() => setShowNotifications(!showNotifications)}
+                  onClick={() => {
+                    console.log('Notification button clicked, current state:', !showNotifications);
+                    setShowNotifications(!showNotifications);
+                  }}
                   className="relative group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -295,11 +305,11 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="fixed right-2 sm:right-4 mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-[20rem] sm:max-w-none z-[200]"
+                      className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-[20rem] sm:max-w-none z-[999]"
                     >
                       <div className="relative">
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl border border-white/40 overflow-hidden backdrop-blur-xl">
+                        <div className="relative rounded-2xl border-2 border-white/60 backdrop-blur-xl bg-white/90 shadow-xl">
                           <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-transparent" />
 
                           <div className="relative">
@@ -380,7 +390,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
               </div>
 
               {/* User Profile */}
-              <div className="relative" ref={profileRef}>
+              <div className="relative z-[150] overflow-visible" ref={profileRef}>
                 <motion.button
                   onClick={() => setShowProfile(!showProfile)}
                   className="relative group"
@@ -401,11 +411,11 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="fixed right-2 sm:right-4 mt-2 w-48 z-[200]"
+                      className="absolute right-0 top-full mt-2 w-48 z-[200]"
                     >
                       <div className="relative">
                         <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl border border-white/40 overflow-hidden backdrop-blur-xl">
+                        <div className="relative rounded-2xl border-2 border-white/60 backdrop-blur-xl bg-white/90 shadow-xl">
                           <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-transparent" />
 
                           <div className="relative p-2">
