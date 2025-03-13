@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
-import { motion } from "framer-motion";
-import { Send, ArrowLeft, Paperclip, MoreVertical, Users, MessageSquare, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, ArrowLeft, Paperclip, MoreVertical, Users, MessageSquare, X, User } from "lucide-react";
 import { Header } from "../components/Header";
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from 'react-responsive';
@@ -31,6 +31,141 @@ interface GroupChat {
   type: string;
 }
 
+// Add a new interface for the member modal
+interface MemberModalProps {
+  member: Member;
+  isOpen: boolean;
+  onClose: () => void;
+  onSendMessage: (memberId: string) => void;
+  onViewProfile: (memberId: string) => void;
+}
+
+// Add the MemberModal component
+function MemberModal({
+  member,
+  isOpen,
+  onClose,
+  onSendMessage,
+  onViewProfile
+}: MemberModalProps) {
+  // Function to get initials from email
+  const getInitials = (email: string) => {
+    try {
+      const parts = email.split('@')[0].split(/[._-]/);
+      if (parts.length > 1) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return email.substring(0, 2).toUpperCase();
+    } catch (e) {
+      return 'U';
+    }
+  };
+
+  // Function to get a consistent color based on user ID
+  const getRandomColor = (id: string) => {
+    const colors = [
+      'from-cyan-400 to-cyan-600',
+      'from-blue-400 to-blue-600',
+      'from-indigo-400 to-indigo-600',
+      'from-teal-400 to-teal-600',
+      'from-emerald-400 to-emerald-600',
+      'from-green-400 to-green-600',
+      'from-amber-400 to-amber-600',
+      'from-orange-400 to-orange-600',
+      'from-rose-400 to-rose-600',
+      'from-pink-400 to-pink-600'
+    ];
+    
+    // Use a simple hash function to get a consistent index
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = ((hash << 5) - hash) + id.charCodeAt(i);
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop with flex centering */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+            onClick={onClose}
+          >
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] w-full max-w-md p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              
+              {/* Close button */}
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 p-2 rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 text-cyan-300 hover:bg-cyan-700/30 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              
+              {/* Member info */}
+              <div className="flex flex-col items-center text-center">
+                {/* Avatar */}
+                <div className={`w-24 h-24 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white text-3xl font-semibold mb-4 border-2 border-white/30 shadow-lg`}>
+                  {getInitials(member.email)}
+                </div>
+                
+                {/* Name */}
+                <h3 className="text-xl font-semibold text-cyan-300 mb-1">
+                  {member.email.split('@')[0]}
+                </h3>
+                
+                {/* Email */}
+                <p className="text-cyan-400 mb-6">
+                  {member.email}
+                </p>
+                
+                {/* Actions */}
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => onSendMessage(member.id)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 text-cyan-300 hover:bg-cyan-700/30 transition-colors"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Message</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => onViewProfile(member.id)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 text-cyan-300 hover:bg-cyan-700/30 transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function GroupChatPage() {
   const { id } = useParams({ from: '/group-chat/$id' });
   const navigate = useNavigate();
@@ -52,6 +187,9 @@ export function GroupChatPage() {
   
   // Use a ref to track message IDs to prevent duplicates
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
+  
+  // Add state for selected member
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   
   // Debug: Log members whenever they change
   useEffect(() => {
@@ -429,6 +567,85 @@ export function GroupChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Add handlers for member actions
+  const handleMemberClick = (member: Member) => {
+    setSelectedMember(member);
+  };
+
+  const handleSendDirectMessage = async (memberId: string) => {
+    // Close the modal first for better UX
+    setSelectedMember(null);
+    
+    // Show loading state
+    setIsLoading(true);
+    
+    try {
+      // First, check if a private chat already exists between these users
+      const { data: existingChats, error: chatError } = await supabase
+        .from("private_chats")
+        .select("id, user1_id, user2_id")
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+        .or(`user1_id.eq.${memberId},user2_id.eq.${memberId}`);
+      
+      if (chatError) {
+        console.error("Error checking for existing chat:", chatError);
+        throw chatError;
+      }
+      
+      // Find a chat where both users are participants
+      const existingChat = existingChats?.find(chat => 
+        (chat.user1_id === userId && chat.user2_id === memberId) || 
+        (chat.user1_id === memberId && chat.user2_id === userId)
+      );
+      
+      let chatId;
+      
+      if (existingChat) {
+        // Use existing chat
+        chatId = existingChat.id;
+        console.log("Using existing private chat:", chatId);
+      } else {
+        // Create a new private chat
+        const { data: newChat, error: createError } = await supabase
+          .from("private_chats")
+          .insert({
+            user1_id: userId,
+            user2_id: memberId,
+            created_at: new Date().toISOString()
+          })
+          .select();
+        
+        if (createError) {
+          console.error("Error creating new chat:", createError);
+          throw createError;
+        }
+        
+        chatId = newChat?.[0]?.id;
+        console.log("Created new private chat:", chatId);
+      }
+      
+      if (chatId) {
+        // Navigate to the private chat
+        navigate({ to: `/chat/${chatId}` });
+      } else {
+        console.error("Failed to get or create private chat");
+        // Show error message to user
+        alert("Could not start private chat. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error handling direct message:", error);
+      // Show error message to user
+      alert("Could not start private chat. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewProfile = (memberId: string) => {
+    // Navigate to profile page
+    navigate({ to: `/profile/${memberId}` });
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !userId) return;
@@ -546,6 +763,17 @@ export function GroupChatPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex flex-col fixed inset-0">
       <Header unreadChats={0} userEmail={userEmail} />
+
+      {/* Member Modal */}
+      {selectedMember && (
+        <MemberModal
+          member={selectedMember}
+          isOpen={!!selectedMember}
+          onClose={() => setSelectedMember(null)}
+          onSendMessage={handleSendDirectMessage}
+          onViewProfile={handleViewProfile}
+        />
+      )}
 
       <div className="flex flex-row items-start gap-2 mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="flex-1 flex flex-col">
@@ -744,7 +972,8 @@ export function GroupChatPage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                    onClick={() => handleMemberClick(member)}
+                    className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)] cursor-pointer hover:bg-cyan-700/30 transition-colors"
                   >
                     {/* Prismatic edge effect */}
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
@@ -800,7 +1029,8 @@ export function GroupChatPage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                    onClick={() => handleMemberClick(member)}
+                    className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)] cursor-pointer hover:bg-cyan-700/30 transition-colors"
                   >
                     {/* Prismatic edge effect */}
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
