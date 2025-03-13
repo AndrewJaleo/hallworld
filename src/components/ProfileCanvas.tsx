@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { fabric } from 'fabric';
 import { HexColorPicker } from 'react-colorful';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +30,7 @@ const rangeInputStyles = `
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #4F46E5;
+    background: #06b6d4;
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     cursor: pointer;
@@ -43,7 +43,7 @@ const rangeInputStyles = `
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #4F46E5;
+    background: #06b6d4;
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     cursor: pointer;
@@ -227,6 +227,27 @@ export function ProfileCanvas({
     canvas.freeDrawingBrush.width = brushSize;
   }, [brushColor, brushSize, canvas]);
 
+  // Add current canvas state to history
+  const addToHistory = useCallback(() => {
+    if (!canvas) return;
+    
+    // Get current canvas state
+    const json = JSON.stringify(canvas.toJSON());
+    
+    // If we're not at the end of the history, remove everything after current index
+    if (historyIndex < canvasHistory.length - 1) {
+      setCanvasHistory(canvasHistory.slice(0, historyIndex + 1));
+    }
+    
+    // Add new state to history
+    const newHistory = [...canvasHistory, json];
+    setCanvasHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    
+    // Log for debugging
+    console.log(`Added to history. New index: ${newHistory.length - 1}, History length: ${newHistory.length}`);
+  }, [canvas, canvasHistory, historyIndex, setCanvasHistory, setHistoryIndex]);
+
   // Set up canvas event listeners
   useEffect(() => {
     if (!canvas) return;
@@ -275,28 +296,7 @@ export function ProfileCanvas({
       canvas.off('path:created', handlePathCreated);
       canvas.off('object:added', handleObjectAdded);
     };
-  }, [canvas]);
-
-  // Add current canvas state to history
-  const addToHistory = () => {
-    if (!canvas) return;
-    
-    // Get current canvas state
-    const json = JSON.stringify(canvas.toJSON());
-    
-    // If we're not at the end of the history, remove everything after current index
-    if (historyIndex < canvasHistory.length - 1) {
-      setCanvasHistory(canvasHistory.slice(0, historyIndex + 1));
-    }
-    
-    // Add new state to history
-    const newHistory = [...canvasHistory, json];
-    setCanvasHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-    
-    // Log for debugging
-    console.log(`Added to history. New index: ${newHistory.length - 1}, History length: ${newHistory.length}`);
-  };
+  }, [canvas, addToHistory]);
 
   // Undo/Redo functions
   const undo = () => {
@@ -373,6 +373,11 @@ export function ProfileCanvas({
       }
     } catch (error) {
       console.error('Error loading canvas state:', error);
+      // Initialize empty history with current state even if there's an error
+      const json = JSON.stringify(canvas.toJSON());
+      setCanvasHistory([json]);
+      setHistoryIndex(0);
+      console.log('Error loading canvas. Empty history initialized.');
     } finally {
       setIsLoading(false);
     }
@@ -436,20 +441,57 @@ export function ProfileCanvas({
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canvas || !e.target.files?.[0]) return;
+    if (!canvas || !e.target.files?.[0]) {
+      console.log('No canvas or no files selected');
+      return;
+    }
 
+    console.log('File selected:', e.target.files[0].name);
+    const file = e.target.files[0];
     const reader = new FileReader();
+    
     reader.onload = (event) => {
-      if (!event.target?.result) return;
-      fabric.Image.fromURL(event.target.result.toString(), (img: fabric.Image) => {
-        img.scaleToWidth(200);
-        canvas.add(img);
-        canvas.setActiveObject(img);
+      if (!event.target?.result) {
+        console.log('FileReader result is null');
+        return;
+      }
+      
+      console.log('File loaded, creating image');
+      const imgUrl = event.target.result.toString();
+      
+      // Use fabric.Image.fromURL instead of creating an HTML element
+      fabric.Image.fromURL(imgUrl, (fabricImage) => {
+        console.log('Image created, dimensions:', fabricImage.width, 'x', fabricImage.height);
+        
+        // Position the image
+        fabricImage.set({
+          left: 50,
+          top: 50
+        });
+        
+        // Scale the image to a reasonable size
+        fabricImage.scaleToWidth(200);
+        
+        // Add the image to the canvas
+        canvas.add(fabricImage);
+        canvas.setActiveObject(fabricImage);
         canvas.renderAll();
-        // History will be added by the object:added event listener
+        console.log('Image added to canvas');
+        
+        // Clear the file input so the same file can be selected again
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }, {
+        crossOrigin: 'anonymous'
       });
     };
-    reader.readAsDataURL(e.target.files[0]);
+    
+    reader.onerror = (error) => {
+      console.error('Error reading file:', error);
+    };
+    
+    reader.readAsDataURL(file);
   };
 
   const handleColorChange = (color: string) => {
@@ -591,17 +633,27 @@ export function ProfileCanvas({
       setCanvasHistory([json]);
       setHistoryIndex(0);
     }
-  }, [canvas, canvasHistory.length]);
+  }, [canvas, canvasHistory.length, setCanvasHistory, setHistoryIndex]);
 
   return (
     <div className="relative">
       {/* Add style tag for range input styling */}
       <style>{rangeInputStyles}</style>
       
+      {/* Hidden file input for image uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+        id="file-input"
+      />
+      
       {/* Canvas container - updated for better mobile centering */}
       <div className="w-full flex justify-center px-0 sm:px-4">
         <div 
-          className={`relative rounded-2xl overflow-hidden ${isEditing ? 'border-2 border-dashed border-violet-300' : ''}`} 
+          className={`relative rounded-2xl overflow-hidden ${isEditing ? 'border-2 border-dashed border-cyan-300' : ''}`} 
           style={{ 
             zIndex: 0,
             width: '100%',
@@ -612,8 +664,8 @@ export function ProfileCanvas({
           id="canvas-container"
         >
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/10 backdrop-blur-xl border border-white/20 z-10">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <div className="absolute inset-0 flex items-center justify-center bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 z-10">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
             </div>
           )}
           <canvas 
@@ -628,50 +680,49 @@ export function ProfileCanvas({
       {isEditing && isOwner && !isMobile && (
         <div className="absolute left-4 top-2 flex flex-col gap-2 z-30">
           <motion.div
-            className="glossy p-2 rounded-xl flex flex-col gap-2 shadow-lg"
+            className="relative overflow-hidden rounded-xl p-2 flex flex-col gap-2 shadow-lg bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             style={{ zIndex: 50 }}
           >
+            {/* Prismatic edge effect */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+            <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+            
             {/* Toolbar buttons for desktop */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="glass-button p-2"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Subir imagen"
             >
               <Image className="w-5 h-5" />
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-            />
             <button
               onClick={addText}
-              className="glass-button p-2"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Añadir texto"
             >
               <Type className="w-5 h-5" />
             </button>
             <button
               onClick={() => addShape('rect')}
-              className="glass-button p-2"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Añadir rectángulo"
             >
               <Square className="w-5 h-5" />
             </button>
             <button
               onClick={() => addShape('circle')}
-              className="glass-button p-2"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Añadir círculo"
             >
               <Circle className="w-5 h-5" />
             </button>
             <button
               onClick={toggleDrawingMode}
-              className={`glass-button p-2 ${isDrawingMode ? 'bg-blue-100 ring-2 ring-blue-400' : ''}`}
+              className={`relative overflow-hidden rounded-full backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 ${isDrawingMode ? 'bg-cyan-600/50 ring-2 ring-cyan-400' : 'bg-cyan-800/30'}`}
               title={isDrawingMode ? "Desactivar modo dibujo" : "Activar modo dibujo"}
               data-brush-toggle="true"
             >
@@ -679,21 +730,21 @@ export function ProfileCanvas({
             </button>
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
-              className="glass-button p-2"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Color"
               style={{ 
                 backgroundColor: isDrawingMode ? brushColor : 'transparent',
-                color: isDrawingMode && brushColor !== '#ffffff' ? 'white' : 'black'
+                color: isDrawingMode && brushColor !== '#ffffff' ? 'white' : 'cyan-300'
               }}
             >
               <Palette className="w-5 h-5" />
             </button>
             
             {/* Add undo/redo buttons */}
-            <div className="border-t border-gray-200 my-1 pt-1"></div>
+            <div className="border-t border-cyan-500/20 my-1 pt-1"></div>
             <button
               onClick={undo}
-              className="glass-button p-2"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Deshacer"
               disabled={historyIndex <= 0}
               style={{ opacity: historyIndex <= 0 ? 0.5 : 1 }}
@@ -702,7 +753,7 @@ export function ProfileCanvas({
             </button>
             <button
               onClick={redo}
-              className="glass-button p-2"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Rehacer"
               disabled={historyIndex >= canvasHistory.length - 1}
               style={{ opacity: historyIndex >= canvasHistory.length - 1 ? 0.5 : 1 }}
@@ -713,28 +764,34 @@ export function ProfileCanvas({
 
           {selectedObject && !isDrawingMode && (
             <motion.div
-              className="glossy p-2 rounded-xl flex flex-col gap-2 shadow-lg"
+              className="relative overflow-hidden rounded-xl p-2 flex flex-col gap-2 shadow-lg bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               style={{ zIndex: 50 }}
             >
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              
               <button
                 onClick={deleteSelected}
-                className="glass-button p-2 text-rose-500"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-red-500"
                 title="Eliminar"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
               <button
                 onClick={duplicateSelected}
-                className="glass-button p-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                 title="Duplicar"
               >
                 <Copy className="w-5 h-5" />
               </button>
               <button
                 onClick={toggleLock}
-                className="glass-button p-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                 title="Bloquear/Desbloquear"
               >
                 {selectedObject.lockMovementX ? (
@@ -745,28 +802,28 @@ export function ProfileCanvas({
               </button>
               <button
                 onClick={() => adjustLayer('forward')}
-                className="glass-button p-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                 title="Traer adelante"
               >
                 <Plus className="w-5 h-5" />
               </button>
               <button
                 onClick={() => adjustLayer('backward')}
-                className="glass-button p-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                 title="Enviar atrás"
               >
                 <Minus className="w-5 h-5" />
               </button>
               <button
                 onClick={() => adjustLayer('front')}
-                className="glass-button p-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                 title="Traer al frente"
               >
                 <BringToFront className="w-5 h-5" />
               </button>
               <button
                 onClick={() => adjustLayer('back')}
-                className="glass-button p-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                 title="Enviar al fondo"
               >
                 <SendToBack className="w-5 h-5" />
@@ -782,16 +839,22 @@ export function ProfileCanvas({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute left-16 top-20 glossy p-5 rounded-xl shadow-lg"
+                className="absolute left-16 top-20 relative overflow-hidden rounded-xl p-5 shadow-lg bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20"
                 style={{ zIndex: 60, width: '280px' }}
               >
+                {/* Prismatic edge effect */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                
                 <div className="flex flex-col gap-4">
-                  <h3 className="text-sm font-semibold text-gray-700">Ajustes de pincel</h3>
+                  <h3 className="text-sm font-semibold text-cyan-300">Ajustes de pincel</h3>
                   
                   {/* Brush preview */}
-                  <div className="flex items-center justify-center p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-center p-3 bg-cyan-800/30 rounded-lg border border-cyan-500/20">
                     <div 
-                      className="rounded-full border border-gray-300 shadow-sm"
+                      className="rounded-full border border-cyan-500/20 shadow-sm"
                       style={{ 
                         width: `${Math.min(brushSize * 2, 100)}px`, 
                         height: `${Math.min(brushSize * 2, 100)}px`,
@@ -801,97 +864,27 @@ export function ProfileCanvas({
                     ></div>
                   </div>
                   
-                  {/* Brush size control */}
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="text-xs font-medium text-gray-600">Tamaño</label>
-                      <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded-md">{brushSize}px</span>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 right-0 flex items-center pointer-events-none">
-                        <div className="w-full h-2 bg-gradient-to-r from-gray-300 to-gray-500 rounded-full"></div>
+                  {/* Brush size slider */}
+                  <div>
+                    <label className="block text-sm font-medium text-cyan-300 mb-2">Tamaño del pincel</label>
+                    <div className="relative h-6 flex items-center">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="h-1 w-full bg-cyan-500/20 rounded"></div>
                       </div>
-                      <input 
-                        type="range" 
-                        min="1" 
-                        max="50" 
-                        value={brushSize} 
+                      <input
+                        type="range"
+                        min="1"
+                        max="50"
+                        value={brushSize}
                         onChange={(e) => setBrushSize(parseInt(e.target.value))}
                         className="range-slider"
                       />
                     </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Fino</span>
-                      <span>Grueso</span>
+                    <div className="flex justify-between text-xs text-cyan-400 mt-1">
+                      <span>1px</span>
+                      <span>{brushSize}px</span>
+                      <span>50px</span>
                     </div>
-                  </div>
-                  
-                  {/* Color presets */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600 block mb-2">Colores</label>
-                    <div className="grid grid-cols-6 gap-2">
-                      {['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
-                        '#00ffff', '#ff00ff', '#ff9900', '#9900ff', '#4CAF50', '#2196F3'].map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setBrushColor(color)}
-                          className={`w-8 h-8 rounded-full transition-all hover:scale-110 ${brushColor === color ? 'ring-2 ring-offset-2 ring-blue-500' : 'ring-1 ring-gray-300'}`}
-                          style={{ backgroundColor: color }}
-                          aria-label={`Color ${color}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Custom color picker button */}
-                  <button
-                    onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="flex items-center justify-center gap-2 text-sm py-2 px-3 bg-white/10 backdrop-blur-xl border border-white/20 rounded-lg hover:bg-white/20 text-white/80 transition-colors"
-                  >
-                    <div className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: brushColor }}></div>
-                    <span>Color personalizado</span>
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showColorPicker && (
-              <motion.div
-                ref={colorPickerRef}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute left-16 top-0 bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-xl shadow-lg"
-                style={{ zIndex: 70 }}
-              >
-                <div className="flex flex-col gap-3">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-semibold text-white/80">Selector de color</h3>
-                    <button 
-                      onClick={() => setShowColorPicker(false)}
-                      className="text-white/60 hover:text-white/80 text-sm"
-                    >
-                      Cerrar
-                    </button>
-                  </div>
-                  
-                  <HexColorPicker
-                    color={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
-                    onChange={handleColorChange}
-                  />
-                  
-                  <div className="flex items-center gap-2 mt-2">
-                    <div 
-                      className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000') }}
-                    ></div>
-                    <input
-                      type="text"
-                      value={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
-                      onChange={(e) => handleColorChange(e.target.value)}
-                      className="flex-1 px-2 py-1 text-sm bg-white/10 border border-white/20 rounded-md text-white/80 focus:outline-none focus:ring-1 focus:ring-white/30"
-                    />
                   </div>
                 </div>
               </motion.div>
@@ -902,39 +895,39 @@ export function ProfileCanvas({
 
       {/* Toolbar - Mobile (horizontal) */}
       {isEditing && isOwner && isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-xl p-2 flex justify-center z-30 border-t border-white/20">
+        <div className="fixed bottom-0 left-0 right-0 bg-cyan-900/20 backdrop-blur-xl p-2 flex justify-center z-30 border-t border-cyan-500/20">
           <div className="flex gap-2 overflow-x-auto pb-2 max-w-full">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="glass-button p-2 flex-shrink-0"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Subir imagen"
             >
               <Image className="w-5 h-5" />
             </button>
             <button
               onClick={addText}
-              className="glass-button p-2 flex-shrink-0"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Añadir texto"
             >
               <Type className="w-5 h-5" />
             </button>
             <button
               onClick={() => addShape('rect')}
-              className="glass-button p-2 flex-shrink-0"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Añadir rectángulo"
             >
               <Square className="w-5 h-5" />
             </button>
             <button
               onClick={() => addShape('circle')}
-              className="glass-button p-2 flex-shrink-0"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Añadir círculo"
             >
               <Circle className="w-5 h-5" />
             </button>
             <button
               onClick={toggleDrawingMode}
-              className={`glass-button p-2 flex-shrink-0 ${isDrawingMode ? 'bg-blue-100 ring-2 ring-blue-400' : ''}`}
+              className={`relative overflow-hidden rounded-full backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0 ${isDrawingMode ? 'bg-cyan-600/50 ring-2 ring-cyan-400' : 'bg-cyan-800/30'}`}
               title={isDrawingMode ? "Desactivar modo dibujo" : "Activar modo dibujo"}
               data-brush-toggle="true"
             >
@@ -942,21 +935,21 @@ export function ProfileCanvas({
             </button>
             <button
               onClick={() => setShowColorPicker(!showColorPicker)}
-              className="glass-button p-2 flex-shrink-0"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Color"
               style={{ 
-                backgroundColor: isDrawingMode ? brushColor : 'black',
-                color: isDrawingMode && brushColor !== 'black' ? 'black' : 'black'
+                backgroundColor: isDrawingMode ? brushColor : 'transparent',
+                color: isDrawingMode && brushColor !== '#ffffff' ? 'white' : 'cyan-300'
               }}
             >
               <Palette className="w-5 h-5" />
             </button>
             
             {/* Add undo/redo buttons */}
-            <div className="h-full border-l border-gray-200 mx-1"></div>
+            <div className="h-full border-l border-cyan-500/20 mx-1"></div>
             <button
               onClick={undo}
-              className="glass-button p-2 flex-shrink-0"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Deshacer"
               disabled={historyIndex <= 0}
               style={{ opacity: historyIndex <= 0 ? 0.5 : 1 }}
@@ -965,7 +958,7 @@ export function ProfileCanvas({
             </button>
             <button
               onClick={redo}
-              className="glass-button p-2 flex-shrink-0"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Rehacer"
               disabled={historyIndex >= canvasHistory.length - 1}
               style={{ opacity: historyIndex >= canvasHistory.length - 1 ? 0.5 : 1 }}
@@ -977,21 +970,21 @@ export function ProfileCanvas({
               <>
                 <button
                   onClick={deleteSelected}
-                  className="glass-button p-2 text-rose-500 flex-shrink-0"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-red-500 flex-shrink-0"
                   title="Eliminar"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>
                 <button
                   onClick={duplicateSelected}
-                  className="glass-button p-2 flex-shrink-0"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
                   title="Duplicar"
                 >
                   <Copy className="w-5 h-5" />
                 </button>
                 <button
                   onClick={toggleLock}
-                  className="glass-button p-2 flex-shrink-0"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
                   title="Bloquear/Desbloquear"
                 >
                   {selectedObject.lockMovementX ? (
@@ -1002,98 +995,194 @@ export function ProfileCanvas({
                 </button>
               </>
             )}
-          </div>
-          
-          {/* Mobile brush settings */}
-          <AnimatePresence>
-            {showBrushSettings && isDrawingMode && (
-              <motion.div
-                ref={brushSettingsRef}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="absolute bottom-16 left-0 right-0 bg-white/10 backdrop-blur-xl p-4 border-t border-white/20"
-                style={{ zIndex: 60 }}
-              >
-                <div className="max-w-md mx-auto">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div 
-                      className="rounded-full border border-gray-300 shadow-sm flex-shrink-0"
-                      style={{ 
-                        width: `${Math.min(brushSize * 1.5, 40)}px`, 
-                        height: `${Math.min(brushSize * 1.5, 40)}px`,
-                        backgroundColor: brushColor,
-                        transition: 'all 0.2s ease'
-                      }}
-                    ></div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs font-medium text-gray-600">Tamaño</label>
-                        <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded-md">{brushSize}px</span>
-                      </div>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 right-0 flex items-center pointer-events-none">
-                          <div className="w-full h-2 bg-gradient-to-r from-gray-300 to-gray-500 rounded-full"></div>
-                        </div>
-                        <input 
-                          type="range" 
-                          min="1" 
-                          max="50" 
-                          value={brushSize} 
-                          onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                          className="range-slider"
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>Fino</span>
-                        <span>Grueso</span>
-                      </div>
-                    </div>
-                  </div>
+            
+            {/* Mobile brush settings */}
+            <AnimatePresence>
+              {showBrushSettings && isDrawingMode && isMobile && (
+                <motion.div
+                  ref={brushSettingsRef}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="absolute bottom-full left-0 right-0 bg-cyan-900/80 backdrop-blur-xl p-4 border-t border-cyan-500/30 rounded-t-xl mb-1"
+                  style={{ zIndex: 70 }}
+                >
+                  {/* Prismatic edge effect */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
                   
-                  <div className="overflow-x-auto pb-2">
-                    <div className="flex gap-2 min-w-max">
-                      {['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
-                        '#00ffff', '#ff00ff', '#ff9900', '#9900ff', '#4CAF50', '#2196F3'].map((color) => (
-                        <button
-                          key={color}
-                          onClick={() => setBrushColor(color)}
-                          className={`w-8 h-8 rounded-full transition-all ${brushColor === color ? 'ring-2 ring-offset-1 ring-blue-500 scale-110' : 'ring-1 ring-gray-300'}`}
-                          style={{ backgroundColor: color }}
-                          aria-label={`Color ${color}`}
-                        />
-                      ))}
-                      <button
-                        onClick={() => setShowColorPicker(!showColorPicker)}
-                        className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white/80 hover:bg-white/20 transition-colors"
-                        aria-label="Custom color"
+                  <div className="max-w-md mx-auto">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-sm font-semibold text-cyan-300">Ajustes de pincel</h3>
+                      <button 
+                        onClick={() => setShowBrushSettings(false)}
+                        className="text-cyan-400 hover:text-cyan-300 text-xs bg-cyan-800/50 px-2 py-1 rounded-md"
                       >
-                        +
+                        Cerrar
                       </button>
                     </div>
+                    
+                    <div className="flex items-center gap-3 mb-3">
+                      <div 
+                        className="rounded-full border border-cyan-500/20 shadow-sm flex-shrink-0"
+                        style={{ 
+                          width: `${Math.min(brushSize * 1.5, 40)}px`, 
+                          height: `${Math.min(brushSize * 1.5, 40)}px`,
+                          backgroundColor: brushColor,
+                          transition: 'all 0.2s ease'
+                        }}
+                      ></div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-medium text-cyan-300">Tamaño</label>
+                          <span className="text-xs font-medium bg-cyan-800/30 px-2 py-0.5 rounded-md text-cyan-300">{brushSize}px</span>
+                        </div>
+                        <div className="relative h-6 flex items-center">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="h-1 w-full bg-cyan-500/20 rounded"></div>
+                          </div>
+                          <input
+                            type="range"
+                            min="1"
+                            max="50"
+                            value={brushSize}
+                            onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                            className="range-slider"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="overflow-x-auto pb-1">
+                      <div className="flex gap-2 min-w-max">
+                        {['#000000', '#ffffff', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', 
+                          '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#10b981', '#14b8a6'].map((color) => (
+                            <button
+                              key={color}
+                              onClick={() => setBrushColor(color)}
+                              className={`w-8 h-8 rounded-full transition-all ${brushColor === color ? 'ring-2 ring-offset-1 ring-cyan-400 scale-110' : 'ring-1 ring-cyan-500/20'}`}
+                              style={{ backgroundColor: color }}
+                              aria-label={`Color ${color}`}
+                            />
+                          ))}
+                        <button
+                          onClick={() => {
+                            setShowBrushSettings(false);
+                            setShowColorPicker(true);
+                          }}
+                          className="flex items-center justify-center w-8 h-8 rounded-full bg-cyan-800/30 backdrop-blur-xl border border-cyan-500/20 text-cyan-300 hover:bg-cyan-700/30 transition-colors"
+                          aria-label="Custom color"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          
-          <AnimatePresence>
-            {showColorPicker && (
-              <motion.div
-                ref={colorPickerRef}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute bottom-16 left-1/2 transform -translate-x-1/2 glossy p-4 rounded-xl shadow-lg"
-                style={{ zIndex: 60 }}
-              >
-                <HexColorPicker
-                  color={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
-                  onChange={handleColorChange}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {/* Color Picker - Desktop Only */}
+            <AnimatePresence>
+              {showColorPicker && !isMobile && (
+                <motion.div
+                  ref={colorPickerRef}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute left-16 top-0 bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 p-4 rounded-xl shadow-lg"
+                  style={{ zIndex: 70 }}
+                >
+                  {/* Prismatic edge effect */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                  
+                  <div className="flex flex-col gap-3">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-sm font-semibold text-cyan-300">Selector de color</h3>
+                      <button 
+                        onClick={() => setShowColorPicker(false)}
+                        className="text-cyan-400 hover:text-cyan-300 text-sm"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                    
+                    <HexColorPicker
+                      color={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
+                      onChange={handleColorChange}
+                    />
+                    
+                    <div className="flex items-center gap-2 mt-2">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-cyan-500/20 shadow-sm" 
+                        style={{ backgroundColor: isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000') }}
+                      ></div>
+                      <input
+                        type="text"
+                        value={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
+                        onChange={(e) => handleColorChange(e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm bg-cyan-800/30 border border-cyan-500/20 rounded-md text-cyan-100 focus:outline-none focus:ring-1 focus:ring-cyan-500/30"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {/* Mobile Color Picker */}
+            <AnimatePresence>
+              {showColorPicker && isMobile && (
+                <motion.div
+                  ref={colorPickerRef}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  className="absolute bottom-full left-0 right-0 bg-cyan-900/80 backdrop-blur-xl p-4 border-t border-cyan-500/30 rounded-t-xl mb-1"
+                  style={{ zIndex: 70 }}
+                >
+                  {/* Prismatic edge effect */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                  
+                  <div className="max-w-md mx-auto">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-sm font-semibold text-cyan-300">Selector de color</h3>
+                      <button 
+                        onClick={() => setShowColorPicker(false)}
+                        className="text-cyan-400 hover:text-cyan-300 text-xs bg-cyan-800/50 px-2 py-1 rounded-md"
+                      >
+                        Cerrar
+                      </button>
+                    </div>
+                    
+                    <HexColorPicker
+                      color={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
+                      onChange={handleColorChange}
+                      className="w-full max-h-[180px]"
+                    />
+                    
+                    <div className="flex items-center gap-2 mt-3">
+                      <div 
+                        className="w-6 h-6 rounded-full border border-cyan-500/20 shadow-sm" 
+                        style={{ backgroundColor: isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000') }}
+                      ></div>
+                      <input
+                        type="text"
+                        value={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
+                        onChange={(e) => handleColorChange(e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm bg-cyan-800/50 border border-cyan-500/30 rounded-md text-cyan-100 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </div>

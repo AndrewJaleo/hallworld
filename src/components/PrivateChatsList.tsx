@@ -194,20 +194,20 @@ export function PrivateChatsList() {
 
   if (loading) {
     return (
-      <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4">
+      <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4">
         {/* Prismatic edge effect */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
         
         <div className="flex items-center gap-2 mb-4">
-          <MessageSquare className="w-5 h-5 text-sky-700" />
-          <h2 className="text-sky-900 font-semibold">Private Messages</h2>
+          <MessageSquare className="w-5 h-5 text-cyan-300" />
+          <h2 className="text-cyan-300 font-semibold">Private Messages</h2>
         </div>
         <div className="animate-pulse flex flex-col gap-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-sky-100/50 rounded-xl"></div>
+            <div key={i} className="h-16 bg-cyan-800/30 rounded-xl"></div>
           ))}
         </div>
       </div>
@@ -215,58 +215,58 @@ export function PrivateChatsList() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4">
+    <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4">
       {/* Prismatic edge effect */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
       
       <div className="flex items-center gap-2 mb-4">
-        <MessageSquare className="w-5 h-5 text-sky-700" />
-        <h2 className="text-sky-900 font-semibold">Private Messages</h2>
+        <MessageSquare className="w-5 h-5 text-cyan-300" />
+        <h2 className="text-cyan-300 font-semibold">Private Messages</h2>
       </div>
       
       {chats.length === 0 ? (
-        <div className="text-center py-6 text-sky-700">
+        <div className="text-center py-6 text-cyan-300">
           <p>No private conversations yet</p>
-          <p className="text-sm mt-1 text-sky-600">
+          <p className="text-sm mt-1 text-cyan-400">
             Start chatting with other users to see them here
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {chats.map((chat) => (
             <motion.div
               key={chat.id}
-              className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 cursor-pointer"
+              className="relative overflow-hidden rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 cursor-pointer"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleChatClick(chat.id)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white font-semibold">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium">
                   {chat.partner_email.charAt(0).toUpperCase()}
                 </div>
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium text-sky-900 truncate">
+                    <h3 className="font-medium text-cyan-300 truncate">
                       {chat.partner_email}
                     </h3>
-                    <span className="text-xs text-sky-700 whitespace-nowrap ml-2">
+                    <span className="text-xs text-cyan-400 whitespace-nowrap ml-2">
                       {formatTime(chat.last_message_time || chat.updated_at)}
                     </span>
                   </div>
                   
-                  <p className="text-sm text-sky-700 truncate">
+                  <p className="text-sm text-cyan-400 truncate">
                     {truncateMessage(chat.last_message)}
                   </p>
                 </div>
               </div>
               
               {chat.unread_count > 0 && (
-                <div className="absolute top-3 right-3 bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center shadow-[0_2px_5px_rgba(139,92,246,0.3)] border border-white/20">
+                <div className="absolute top-3 right-3 bg-gradient-to-br from-cyan-500 to-blue-500 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center shadow-[0_2px_5px_rgba(6,182,212,0.3)] border border-cyan-500/20">
                   {chat.unread_count}
                 </div>
               )}

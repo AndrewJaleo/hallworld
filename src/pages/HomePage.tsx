@@ -152,23 +152,23 @@ export function HomePage() {
               ease: [0.6, -0.05, 0.01, 0.99]
             }}
           >
-            <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4 sm:p-5">
+            <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 sm:p-5">
               {/* Prismatic edge effect */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
               
               <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-sky-900 font-semibold">Ubicación</h2>
+                <h2 className="text-cyan-300 font-semibold">Ubicación</h2>
                 <motion.button
                   onClick={handleResetLocation}
-                  className="ml-auto relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center gap-2 px-3 py-1.5 text-sm shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                  className="ml-auto relative overflow-hidden rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 flex items-center gap-2 px-3 py-1.5 text-sm shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <MapPinOff className="w-3.5 h-3.5 text-violet-500" strokeWidth={2.5} />
-                  <span className="text-violet-600 font-medium">Reestablecer</span>
+                  <MapPinOff className="w-3.5 h-3.5 text-cyan-300" strokeWidth={2.5} />
+                  <span className="text-cyan-300 font-medium">Reestablecer</span>
                 </motion.button>
               </div>
               <div className="space-y-4">

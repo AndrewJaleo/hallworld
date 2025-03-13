@@ -100,7 +100,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
             <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-0">
               <motion.button
                 onClick={() => setIsEditing(!isEditing)}
-                className="glass-button px-4 py-2 flex items-center gap-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 px-4 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-cyan-300"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isLoading}
@@ -122,7 +122,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
                 <>
                   <motion.button
                     onClick={() => canvasUtils.saveCanvasState(canvas, userId, setIsLoading, handleSaveComplete)}
-                    className="glass-button px-4 py-2 flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                    className="relative overflow-hidden rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 p-2 px-4 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-white"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     disabled={isLoading}
@@ -133,7 +133,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
                   
                   <motion.button
                     onClick={() => canvasUtils.exportCanvas(canvas)}
-                    className="glass-button px-4 py-2 flex items-center gap-2"
+                    className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 px-4 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-cyan-300"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -148,7 +148,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
               <div className="flex items-center gap-2">
                 <motion.button
                   onClick={handleUndo}
-                  className="glass-button p-2"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={historyIndex <= 0}
@@ -158,7 +158,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
                 </motion.button>
                 <motion.button
                   onClick={handleRedo}
-                  className="glass-button p-2"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={historyIndex >= canvasHistory.length - 1}

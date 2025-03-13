@@ -529,22 +529,22 @@ export function GroupChatPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex items-center justify-center">
-        <div className="text-white">Loading group chat...</div>
+      <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex items-center justify-center">
+        <div className="text-cyan-300">Loading group chat...</div>
       </div>
     );
   }
 
   if (!groupInfo) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex items-center justify-center">
-        <div className="text-white">Group not found</div>
+      <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex items-center justify-center">
+        <div className="text-cyan-300">Group not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex flex-col fixed inset-0">
+    <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex flex-col fixed inset-0">
       <Header unreadChats={0} userEmail={userEmail} />
 
       <div className="flex flex-row items-start gap-2 mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
@@ -554,30 +554,30 @@ export function GroupChatPage() {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-3 flex items-center gap-3 z-10 sticky top-24 w-full"
+              className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-3 flex items-center gap-3 z-10 sticky top-24 w-full"
             >
               {/* Prismatic edge effect */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
               
               <button
                 onClick={goBack}
-                className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
               >
-                <ArrowLeft className="w-5 h-5 text-sky-800" />
+                <ArrowLeft className="w-5 h-5 text-cyan-300" />
               </button>
               
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium border border-cyan-500/20 shadow-md">
                   {groupInfo.name?.charAt(0).toUpperCase() || "G"}
                 </div>
                 <div>
-                  <h2 className="font-semibold text-sky-900">
+                  <h2 className="font-semibold text-cyan-300">
                     {groupInfo.name || "Loading..."}
                   </h2>
-                  <p className="text-xs text-sky-700">
+                  <p className="text-xs text-cyan-400">
                     {isLoading ? "Loading..." : `${members.length} members`}
                   </p>
                 </div>
@@ -587,9 +587,9 @@ export function GroupChatPage() {
               {isMobile && (
                 <button 
                   onClick={() => setShowMembers(!showMembers)}
-                  className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto"
                 >
-                  <Users className="w-5 h-5 text-sky-800" />
+                  <Users className="w-5 h-5 text-cyan-300" />
                 </button>
               )}
             </motion.div>
@@ -598,21 +598,21 @@ export function GroupChatPage() {
             <div className="flex-grow overflow-y-auto p-4 w-full pb-20 flex flex-col space-y-1">
               {isLoading ? (
                 <div className="flex justify-center items-center h-32">
-                  <div className="animate-pulse text-sky-700">Loading messages...</div>
+                  <div className="animate-pulse text-cyan-400">Loading messages...</div>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="text-center py-10 text-sky-700 relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-8">
+                <div className="text-center py-10 text-cyan-400 relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-8">
                   {/* Prismatic edge effect */}
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
                   
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center mx-auto mb-3 border border-white/20 shadow-md">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mx-auto mb-3 border border-cyan-500/20 shadow-md">
                     <MessageSquare className="w-8 h-8 text-white" />
                   </div>
-                  <p className="font-medium text-sky-900 text-lg">No messages yet</p>
-                  <p className="text-sm mt-1 text-sky-700">Start the conversation!</p>
+                  <p className="font-medium text-cyan-300 text-lg">No messages yet</p>
+                  <p className="text-sm mt-1 text-cyan-400">Start the conversation!</p>
                 </div>
               ) : (
                 messages.map((message) => {
@@ -686,18 +686,18 @@ export function GroupChatPage() {
               animate={{ opacity: 1, y: 0 }}
               className="p-3 sticky bottom-0 w-full"
             >
-              <form onSubmit={handleSendMessage} className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-2 flex gap-2">
+              <form onSubmit={handleSendMessage} className="relative overflow-hidden rounded-full bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-2 flex gap-2">
                 {/* Prismatic edge effect */}
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-                <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
                 
                 <button
                   type="button"
-                  className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                 >
-                  <Paperclip className="w-5 h-5 text-sky-800" />
+                  <Paperclip className="w-5 h-5 text-cyan-300" />
                 </button>
                 
                 <input
@@ -705,17 +705,17 @@ export function GroupChatPage() {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a message..."
-                  className="bg-transparent flex-grow px-4 py-2 outline-none text-sky-900 placeholder:text-sky-600"
+                  className="bg-transparent flex-grow px-4 py-2 outline-none text-cyan-100 placeholder:text-cyan-500"
                 />
                 
                 <button
                   type="submit"
-                  disabled={!newMessage.trim() || !userId}
+                  disabled={!newMessage.trim()}
                   className={`relative overflow-hidden rounded-full ${
-                    !newMessage.trim() || !userId ? "bg-white/10 opacity-50" : "bg-gradient-to-r from-violet-500 to-violet-600"
-                  } p-3 border border-white/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
+                    !newMessage.trim() ? "bg-cyan-800/30 opacity-50" : "bg-gradient-to-r from-cyan-500 to-blue-500"
+                  } p-3 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
                 >
-                  <Send className={`w-5 h-5 ${!newMessage.trim() || !userId ? "text-sky-800" : "text-white"}`} />
+                  <Send className={`w-5 h-5 ${!newMessage.trim() ? "text-cyan-300" : "text-white"}`} />
                 </button>
               </form>
             </motion.div>
@@ -729,35 +729,35 @@ export function GroupChatPage() {
             animate={{ opacity: 1, x: 0 }}
             className="w-1/4 h-fit sticky top-24"
           >
-            <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4 min-h-[200px] max-h-[calc(100vh-96px)] flex flex-col">
+            <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 min-h-[200px] max-h-[calc(100vh-96px)] flex flex-col">
               {/* Prismatic edge effect */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
               
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-sky-900">Members ({members.length})</h3>
+                <h3 className="font-semibold text-cyan-300">Members ({members.length})</h3>
               </div>
               
               <div className="flex-grow overflow-y-auto space-y-3">
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                    className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                   >
                     {/* Prismatic edge effect */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-                    <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                    <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
                     
                     <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
                       {member.email.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sky-900 truncate">{member.email}</p>
-                      <p className="text-xs text-sky-700">
+                      <p className="font-medium text-cyan-300 truncate">{member.email}</p>
+                      <p className="text-xs text-cyan-400">
                         {member.id === userId ? "You" : "Member"}
                       </p>
                     </div>
@@ -776,23 +776,23 @@ export function GroupChatPage() {
             exit={{ opacity: 0, y: "100%" }}
             className="fixed inset-0 z-50 p-4 flex items-end"
           >
-            <div className="relative overflow-hidden rounded-t-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)] p-4 min-h-[300px] max-h-[80vh] w-full flex flex-col">
+            <div className="relative overflow-hidden rounded-t-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 min-h-[300px] max-h-[80vh] w-full flex flex-col">
               {/* Prismatic edge effect */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
               
               {/* Drag indicator */}
               <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-4"></div>
               
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-sky-900">Members ({members.length})</h3>
+                <h3 className="font-semibold text-cyan-300">Members ({members.length})</h3>
                 <button
                   onClick={() => setShowMembers(false)}
-                  className="relative overflow-hidden rounded-full bg-white/10 backdrop-blur-md border border-white/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                 >
-                  <X className="w-5 h-5 text-sky-800" />
+                  <X className="w-5 h-5 text-cyan-300" />
                 </button>
               </div>
               
@@ -800,20 +800,20 @@ export function GroupChatPage() {
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                    className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                   >
                     {/* Prismatic edge effect */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-                    <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                    <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
                     
                     <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
                       {member.email.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sky-900 truncate">{member.email}</p>
-                      <p className="text-xs text-sky-700">
+                      <p className="font-medium text-cyan-300 truncate">{member.email}</p>
+                      <p className="text-xs text-cyan-400">
                         {member.id === userId ? "You" : "Member"}
                       </p>
                     </div>

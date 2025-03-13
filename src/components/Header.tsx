@@ -171,7 +171,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
         transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99] }}
         className="relative mx-auto max-w-7xl pointer-events-auto overflow-visible"
       >
-        {/* Subtle background glow */}
+        {/* Subtle background glow - Updated to match the darker blue cube colors */}
         <motion.div
           animate={{
             scale: [1, 1.02, 1],
@@ -182,23 +182,32 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
             repeat: Infinity,
             ease: "easeInOut"
           }}
-          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-2xl transform-gpu"
+          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-2xl transform-gpu"
         />
 
-        {/* Main container with glassy effect */}
-        <div className="relative rounded-[32px] overflow-visible bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg">
+        {/* Main container with glassy effect - Updated to match the darker blue cube colors */}
+        <div className="relative rounded-[32px] overflow-visible bg-cyan-900/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
           {/* Content */}
           <div className="relative px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between overflow-visible">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-lg sm:text-xl font-bold bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent"
+              className="flex items-center gap-2"
             >
-              HallWorld
+              {/* Logo */}
+              <img 
+                src="/logo_hallworld.png" 
+                alt="HallWorld Logo" 
+                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+              />
+              {/* Brand name with updated gradient */}
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-br from-cyan-300 via-blue-300 to-indigo-400 bg-clip-text text-transparent">
+                HallWorld
+              </span>
             </motion.div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Notifications */}
+              {/* Notifications - Updated colors */}
               <div className="relative z-[150] overflow-visible" ref={notificationsRef}>
                 <motion.button
                   onClick={() => {
@@ -209,11 +218,11 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/30 via-fuchsia-400/30 to-pink-400/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
-                  <div className="relative p-1.5 sm:p-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg">
-                    <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-violet-500" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-800/30 via-blue-900/30 to-indigo-950/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
+                  <div className="relative p-1.5 sm:p-2 rounded-full bg-white/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
+                    <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
                     {unreadChats > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-medium bg-gradient-to-br from-rose-500 to-pink-500 text-white rounded-full shadow-lg shadow-rose-500/30 border border-white/20">
+                      <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-medium bg-gradient-to-br from-blue-700 to-indigo-900 text-white rounded-full shadow-lg shadow-blue-900/30 border border-white/20">
                         {unreadChats}
                       </span>
                     )}
@@ -230,15 +239,15 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-[20rem] sm:max-w-none z-[999]"
                     >
                       <div className="relative">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg overflow-hidden">
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-xl transform-gpu" />
+                        <div className="relative rounded-2xl bg-black/20 backdrop-blur-xl border border-cyan-700/20 shadow-lg overflow-hidden">
                           <div className="relative">
                             <div className="p-4 border-b border-white/10">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                                <h3 className="font-semibold bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
                                   Mensajes
                                 </h3>
-                                <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/10 text-violet-300">
+                                <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/10 text-cyan-200">
                                   {unreadChats} nuevos
                                 </span>
                               </div>
@@ -254,52 +263,31 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                                   No tienes mensajes nuevos
                                 </div>
                               ) : (
-                                notifications.map(notification => (
-                                  <motion.div
+                                notifications.map((notification) => (
+                                  <button
                                     key={notification.id}
-                                    className="relative group cursor-pointer"
-                                    whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
                                     onClick={() => handleNotificationClick(notification.chat_id)}
+                                    className="w-full p-3 flex items-start gap-3 hover:bg-white/5 transition-colors text-left"
                                   >
-                                    <div className="p-4">
-                                      <div className="flex items-center gap-3">
-                                        <div className="relative">
-                                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 blur-sm" />
-                                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-400 to-violet-600 flex items-center justify-center text-white font-semibold border border-white/20 relative">
-                                            {notification.sender_email.charAt(0).toUpperCase()}
-                                          </div>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center justify-between">
-                                            <p className="font-medium text-white/90 truncate text-sm sm:text-base">
-                                              {notification.sender_email}
-                                            </p>
-                                            <span className="text-[10px] sm:text-xs text-violet-300 ml-2">
-                                              {formatTime(notification.created_at)}
-                                            </span>
-                                          </div>
-                                          <p className="text-sm text-white/70 truncate">
-                                            {notification.content}
-                                          </p>
-                                        </div>
-                                      </div>
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-600 to-blue-800 flex items-center justify-center text-white font-medium text-sm">
+                                      {notification.sender_email.charAt(0).toUpperCase()}
                                     </div>
-                                  </motion.div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex justify-between items-start">
+                                        <p className="text-sm font-medium text-white truncate">
+                                          {notification.sender_email}
+                                        </p>
+                                        <span className="text-xs text-white/60 ml-2 flex-shrink-0">
+                                          {formatTime(notification.created_at)}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-white/80 mt-1 line-clamp-2">
+                                        {notification.content}
+                                      </p>
+                                    </div>
+                                  </button>
                                 ))
                               )}
-                            </div>
-                            
-                            <div className="p-3 border-t border-white/10">
-                              <button 
-                                className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-sm font-medium flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-violet-500/20 transition-shadow"
-                                onClick={() => {
-                                  setShowNotifications(false);
-                                  navigate({ to: '/' });
-                                }}
-                              >
-                                <MessageSquare className="w-4 h-4" />
-                                Ver todos los mensajes
-                              </button>
                             </div>
                           </div>
                         </div>
@@ -309,7 +297,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                 </AnimatePresence>
               </div>
 
-              {/* User Profile */}
+              {/* Profile Menu - Updated colors */}
               <div className="relative z-[150] overflow-visible" ref={profileRef}>
                 <motion.button
                   onClick={() => setShowProfile(!showProfile)}
@@ -317,9 +305,9 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/30 via-fuchsia-400/30 to-pink-400/30 blur-sm sm:blur-md transform-gpu" />
-                  <div className="relative p-1.5 sm:p-2 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg">
-                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-violet-500" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-800/30 via-blue-900/30 to-indigo-950/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
+                  <div className="relative p-1.5 sm:p-2 rounded-full bg-white/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
                   </div>
                 </motion.button>
 
@@ -330,49 +318,59 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 top-full mt-2 w-48 z-[200]"
+                      className="absolute right-0 top-full mt-2 w-56 z-[999]"
                     >
                       <div className="relative">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg overflow-hidden">
-                          <div className="relative p-2">
-                            <div className="p-2 text-center border-b border-white/10">
-                              <p className="text-sm font-medium text-white/90 truncate">
-                                {userEmail}
-                              </p>
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-xl transform-gpu" />
+                        <div className="relative rounded-2xl bg-black/20 backdrop-blur-xl border border-cyan-700/20 shadow-lg overflow-hidden">
+                          <div className="p-4 border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-600 to-blue-800 flex items-center justify-center text-white font-medium">
+                                {userEmail.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">
+                                  {userEmail}
+                                </p>
+                                <p className="text-xs text-white/60 mt-0.5">
+                                  Usuario
+                                </p>
+                              </div>
                             </div>
+                          </div>
 
-                            <div className="mt-2 space-y-1">
-                              <Link to="/profile" className="block">
-                                <motion.div
-                                  className="flex items-center gap-2 p-2 rounded-xl text-sm text-white/80 hover:bg-white/10"
-                                  whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                                  onClick={() => setShowProfile(false)}
-                                >
-                                  <User className="w-4 h-4 text-violet-400" />
-                                  <span>Perfil</span>
-                                </motion.div>
-                              </Link>
-                              <motion.div
-                                className="flex items-center gap-2 p-2 rounded-xl text-sm text-white/80 hover:bg-white/10 cursor-pointer"
-                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                                onClick={() => setShowProfile(false)}
-                              >
-                                <Settings className="w-4 h-4 text-violet-400" />
-                                <span>Ajustes</span>
-                              </motion.div>
-                              <motion.div
-                                className="flex items-center gap-2 p-2 rounded-xl text-sm text-rose-300 hover:bg-white/10 cursor-pointer"
-                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                                onClick={() => {
-                                  setShowProfile(false);
-                                  handleLogout();
-                                }}
-                              >
-                                <LogOut className="w-4 h-4" />
-                                <span>Cerrar sesión</span>
-                              </motion.div>
-                            </div>
+                          <div className="p-2">
+                            <Link
+                              to="/profile"
+                              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+                              onClick={() => setShowProfile(false)}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                <Settings className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <span className="text-sm text-white">Perfil</span>
+                            </Link>
+
+                            <Link
+                              to="/"
+                              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+                              onClick={() => setShowProfile(false)}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                <MessageSquare className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <span className="text-sm text-white">Chats</span>
+                            </Link>
+
+                            <button
+                              onClick={handleLogout}
+                              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                <LogOut className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <span className="text-sm text-white">Cerrar sesión</span>
+                            </button>
                           </div>
                         </div>
                       </div>

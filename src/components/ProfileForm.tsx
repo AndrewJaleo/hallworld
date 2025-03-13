@@ -291,12 +291,19 @@ export function ProfileForm({ userId }: ProfileFormProps) {
   }
 
   return (
-    <div className="glossy p-8 rounded-2xl shadow-xl backdrop-blur-sm bg-white/20 border border-white/30">
-      <h2 className="text-gray-900 text-2xl font-bold mb-8 text-center relative">
+    <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-6 md:p-8">
+      {/* Prismatic edge effect */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+      <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+      
+      <h2 className="text-2xl font-bold text-cyan-300 mb-6 flex items-center justify-between">
         Información Personal
-        {saving && (
-          <div className="absolute right-0 top-1">
-            <div className="w-5 h-5 border-2 border-t-transparent border-gray-900 rounded-full animate-spin"></div>
+        {loading && (
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 border-2 border-t-transparent border-cyan-400 rounded-full animate-spin"></div>
+            <span className="text-sm font-normal text-cyan-400">Cargando...</span>
           </div>
         )}
       </h2>
@@ -305,7 +312,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
         {/* Avatar Upload */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative group">
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-blue-100/30 to-sky-200/30 mb-3 border-4 border-white/70 shadow-lg transition-transform duration-300 group-hover:scale-105">
+            <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-cyan-400/30 to-blue-500/30 mb-3 border-4 border-cyan-500/30 shadow-lg transition-transform duration-300 group-hover:scale-105">
               {avatarPreview ? (
                 <img 
                   src={avatarPreview} 
@@ -313,7 +320,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-white/20 text-gray-900">
+                <div className="w-full h-full flex items-center justify-center bg-cyan-800/20 text-cyan-300">
                   <span className="text-4xl font-light">+</span>
                 </div>
               )}
@@ -333,10 +340,10 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="glass-button px-4 py-2 text-sm flex items-center gap-2 bg-white/20 hover:bg-white/30 border border-white/30 shadow-md transition-all duration-300 hover:shadow-lg"
+            className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 px-4 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2"
           >
-            <Upload size={16} className="text-gray-900" />
-            <span className="text-gray-900 font-medium">Subir Foto</span>
+            <Upload size={16} className="text-cyan-300" />
+            <span className="text-cyan-300 font-medium">Subir Foto</span>
           </button>
           
           <input
@@ -351,7 +358,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Name */}
           <div className="col-span-2 md:col-span-1">
-            <label htmlFor="name" className="block text-gray-900 text-sm font-medium mb-2">
+            <label htmlFor="name" className="block text-cyan-300 text-sm font-medium mb-2">
               Nombre
             </label>
             <input
@@ -360,14 +367,14 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               type="text"
               value={profile.name}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+              className="w-full px-4 py-3 rounded-lg bg-cyan-900/30 border border-cyan-500/20 text-cyan-100 placeholder-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 shadow-sm"
               placeholder="Tu nombre"
             />
           </div>
           
           {/* Age */}
           <div className="col-span-2 md:col-span-1">
-            <label htmlFor="age" className="block text-gray-900 text-sm font-medium mb-2">
+            <label htmlFor="age" className="block text-cyan-300 text-sm font-medium mb-2">
               Edad
             </label>
             <input
@@ -378,14 +385,14 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               max="120"
               value={profile.age || ''}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+              className="w-full px-4 py-3 rounded-lg bg-cyan-900/30 border border-cyan-500/20 text-cyan-100 placeholder-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 shadow-sm"
               placeholder="Tu edad"
             />
           </div>
           
           {/* Gender */}
           <div className="col-span-2 md:col-span-1">
-            <label htmlFor="gender" className="block text-gray-900 text-sm font-medium mb-2">
+            <label htmlFor="gender" className="block text-cyan-300 text-sm font-medium mb-2">
               Género
             </label>
             <select
@@ -393,7 +400,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               name="gender"
               value={profile.gender}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+              className="w-full px-4 py-3 rounded-lg bg-cyan-900/30 border border-cyan-500/20 text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 shadow-sm"
             >
               <option value="">Seleccionar</option>
               <option value="male">Masculino</option>
@@ -406,7 +413,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           
           {/* Likings */}
           <div className="col-span-2 md:col-span-1">
-            <label htmlFor="likings" className="block text-gray-900 text-sm font-medium mb-2">
+            <label htmlFor="likings" className="block text-cyan-300 text-sm font-medium mb-2">
               Gustos
             </label>
             <input
@@ -415,14 +422,14 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               type="text"
               value={profile.likings}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm"
+              className="w-full px-4 py-3 rounded-lg bg-cyan-900/30 border border-cyan-500/20 text-cyan-100 placeholder-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 shadow-sm"
               placeholder="Tus gustos e intereses"
             />
           </div>
           
           {/* Biography */}
           <div className="col-span-2">
-            <label htmlFor="biography" className="block text-gray-900 text-sm font-medium mb-2">
+            <label htmlFor="biography" className="block text-cyan-300 text-sm font-medium mb-2">
               Biografía
             </label>
             <textarea
@@ -431,7 +438,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               rows={4}
               value={profile.biography}
               onChange={handleChange}
-              className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-gray-900 placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-white/30 shadow-sm resize-none"
+              className="w-full px-4 py-3 rounded-lg bg-cyan-900/30 border border-cyan-500/20 text-cyan-100 placeholder-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 shadow-sm resize-none"
               placeholder="Cuéntanos sobre ti..."
             ></textarea>
           </div>
@@ -441,14 +448,12 @@ export function ProfileForm({ userId }: ProfileFormProps) {
         {message && (
           <div className={`p-4 rounded-lg ${
             message.type === 'success' 
-              ? 'bg-green-500/20 text-gray-900 border-l-4 border-green-400' 
+              ? 'bg-green-500/20 text-cyan-300 border-l-4 border-green-400' 
               : message.type === 'warning' 
-                ? 'bg-yellow-500/20 text-gray-900 border-l-4 border-yellow-400' 
-                : 'bg-red-500/20 text-gray-900 border-l-4 border-red-400'
+                ? 'bg-yellow-500/20 text-cyan-300 border-l-4 border-yellow-400' 
+                : 'bg-red-500/20 text-cyan-300 border-l-4 border-red-400'
           }`}>
-            {message.type === 'success' && 'Perfil actualizado con éxito!'}
-            {message.type === 'warning' && 'Perfil actualizado parcialmente. Algunos campos no pudieron guardarse debido a un problema en la base de datos. Por favor, contacta con soporte.'}
-            {message.type === 'error' && 'Error al actualizar el perfil. Por favor, inténtalo de nuevo.'}
+            {message.text}
           </div>
         )}
         
@@ -456,7 +461,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
         <motion.button
           type="submit"
           disabled={saving}
-          className="w-full px-6 py-3.5 bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:translate-y-[-2px] disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+          className="w-full px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:translate-y-[-2px] disabled:hover:translate-y-0 disabled:hover:shadow-lg"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

@@ -67,12 +67,12 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
       const middleX = containerRect.left + (containerRect.width / 2);
       
       // Find the element closest to the middle
-      let closestElement: HTMLElement | null = null;
+      let closestElement: Element | null = null;
       let closestDistance = Infinity;
       
       items.forEach((item) => {
         const element = container.querySelector(`[data-item="${item}"]`);
-        if (element instanceof HTMLElement) {
+        if (element) {
           const rect = element.getBoundingClientRect();
           const elementMiddleX = rect.left + (rect.width / 2);
           const distance = Math.abs(elementMiddleX - middleX);
@@ -85,7 +85,8 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
       });
       
       if (closestElement) {
-        const newSelected = closestElement.getAttribute('data-item');
+        // Use type assertion to tell TypeScript this is an Element with getAttribute
+        const newSelected = (closestElement as Element).getAttribute('data-item');
         if (newSelected && newSelected !== internalSelected) {
           setInternalSelected(newSelected);
           onSelect(newSelected);
@@ -111,28 +112,28 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
   return (
     <div className="relative pt-3 pb-1">
       {/* Label */}
-      <div className="absolute left-3 top-0 px-2 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 rounded-full z-10">
-        <span className="text-xs font-medium text-violet-700">Ciudad</span>
+      <div className="absolute left-3 top-0 px-2 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 rounded-full z-10">
+        <span className="text-xs font-medium text-cyan-300">Ciudad</span>
       </div>
       
-      <div className="relative h-[64px] rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)]">
+      <div className="relative h-[64px] rounded-[32px] overflow-hidden bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)]">
         {/* Prismatic edge effect */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
         
         {/* Center highlight */}
         <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[100px] pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-500/5 to-indigo-500/5" />
-          <div className="absolute inset-y-0 left-0 border-l border-violet-500/10" />
-          <div className="absolute inset-y-0 right-0 border-l border-violet-500/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10" />
+          <div className="absolute inset-y-0 left-0 border-l border-cyan-500/20" />
+          <div className="absolute inset-y-0 right-0 border-l border-cyan-500/20" />
         </div>
 
-        {/* Left fade - removed white gradient */}
+        {/* Left fade */}
         <div className="absolute inset-y-0 left-0 w-[30px] bg-gradient-to-r from-transparent to-transparent pointer-events-none z-10" />
         
-        {/* Right fade - removed white gradient */}
+        {/* Right fade */}
         <div className="absolute inset-y-0 right-0 w-[30px] bg-gradient-to-l from-transparent to-transparent pointer-events-none z-10" />
 
         <div 
@@ -154,8 +155,8 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
                 <div 
                   className={`transition-all duration-300 ${
                     internalSelected === item 
-                      ? 'text-violet-700 font-medium' 
-                      : 'text-sky-900/40'
+                      ? 'text-cyan-300 font-medium' 
+                      : 'text-cyan-100/60'
                   }`}
                   style={{
                     transform: internalSelected === item 
@@ -163,7 +164,7 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
                       : 'translateZ(-10px) scale(0.9)',
                     transformStyle: 'preserve-3d',
                     perspective: '500px',
-                    textShadow: internalSelected === item ? '0 0 10px rgba(139, 92, 246, 0.3)' : 'none'
+                    textShadow: internalSelected === item ? '0 0 10px rgba(6, 182, 212, 0.5)' : 'none'
                   }}
                 >
                   {item}
@@ -178,7 +179,7 @@ export function CitySelector({ items, selected, onSelect }: CitySelectorProps) {
 
         {/* Scroll indicator */}
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center gap-1 opacity-60">
-          <div className="h-1 w-6 rounded-full bg-gradient-to-r from-sky-300/80 to-violet-400/80 animate-pulse" />
+          <div className="h-1 w-6 rounded-full bg-gradient-to-r from-cyan-300/80 to-blue-400/80 animate-pulse" />
         </div>
       </div>
     </div>
