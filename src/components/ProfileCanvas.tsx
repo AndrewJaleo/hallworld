@@ -74,7 +74,6 @@ interface ProfileCanvasProps {
   isEditing: boolean;
   isLoading: boolean;
   setIsLoading: (isLoading: boolean) => void;
-  onSave?: () => void;
   canvasHistory: string[];
   setCanvasHistory: (history: string[]) => void;
   historyIndex: number;
@@ -92,7 +91,6 @@ export function ProfileCanvas({
   isEditing, 
   isLoading, 
   setIsLoading,
-  onSave,
   canvasHistory,
   setCanvasHistory,
   historyIndex,
@@ -229,23 +227,52 @@ export function ProfileCanvas({
 
   // Add current canvas state to history
   const addToHistory = useCallback(() => {
-    if (!canvas) return;
-    
-    // Get current canvas state
-    const json = JSON.stringify(canvas.toJSON());
-    
-    // If we're not at the end of the history, remove everything after current index
-    if (historyIndex < canvasHistory.length - 1) {
-      setCanvasHistory(canvasHistory.slice(0, historyIndex + 1));
+    if (!canvas) {
+      console.warn('Cannot add to history: Canvas is null');
+      return;
     }
     
-    // Add new state to history
-    const newHistory = [...canvasHistory, json];
-    setCanvasHistory(newHistory);
-    setHistoryIndex(newHistory.length - 1);
-    
-    // Log for debugging
-    console.log(`Added to history. New index: ${newHistory.length - 1}, History length: ${newHistory.length}`);
+    try {
+      // Get current canvas state with specific properties to reduce size
+      const canvasJSON = canvas.toJSON([
+        'id', 'selectable', 'lockMovementX', 'lockMovementY',
+        'lockRotation', 'lockScalingX', 'lockScalingY'
+      ]);
+      
+      // Serialize with error handling
+      const json = JSON.stringify(canvasJSON);
+      
+      // Prevent adding identical states to history
+      const currentLastState = canvasHistory[historyIndex];
+      if (currentLastState === json) {
+        console.log('State unchanged, not adding to history');
+        return;
+      }
+      
+      // If we're not at the end of the history, remove everything after current index
+      let newHistory = canvasHistory;
+      if (historyIndex < canvasHistory.length - 1) {
+        newHistory = canvasHistory.slice(0, historyIndex + 1);
+      }
+      
+      // Limit history size to prevent memory issues (keep last 50 states)
+      const MAX_HISTORY_SIZE = 50;
+      if (newHistory.length >= MAX_HISTORY_SIZE) {
+        newHistory = newHistory.slice(newHistory.length - MAX_HISTORY_SIZE + 1);
+      }
+      
+      // Add new state to history
+      newHistory = [...newHistory, json];
+      
+      // Update state
+      setCanvasHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+      
+      // Log for debugging
+      console.log(`Added to history. New index: ${newHistory.length - 1}, History length: ${newHistory.length}`);
+    } catch (error) {
+      console.error('Error adding to history:', error);
+    }
   }, [canvas, canvasHistory, historyIndex, setCanvasHistory, setHistoryIndex]);
 
   // Set up canvas event listeners
@@ -302,8 +329,18 @@ export function ProfileCanvas({
   const undo = () => {
     console.log(`Undo called. Current index: ${historyIndex}, History length: ${canvasHistory.length}`);
     
-    if (!canvas || historyIndex <= 0) {
-      console.log('Cannot undo: at beginning of history or no canvas');
+    if (!canvas) {
+      console.warn('Cannot undo: Canvas is null');
+      return;
+    }
+    
+    if (historyIndex <= 0) {
+      console.log('Cannot undo: At beginning of history');
+      return;
+    }
+    
+    if (canvasHistory.length === 0) {
+      console.log('Cannot undo: History is empty');
       return;
     }
     
@@ -311,21 +348,54 @@ export function ProfileCanvas({
     console.log(`Undoing to index ${newIndex}`);
     
     try {
-      canvas.loadFromJSON(canvasHistory[newIndex], () => {
+      // Validate the history state before loading
+      let historyState;
+      try {
+        // If it's a string, parse it to ensure it's valid JSON
+        if (typeof canvasHistory[newIndex] === 'string') {
+          historyState = JSON.parse(canvasHistory[newIndex]);
+        } else {
+          historyState = canvasHistory[newIndex];
+        }
+      } catch (parseError) {
+        console.error('Error parsing history state:', parseError);
+        throw new Error('Corrupted history data');
+      }
+      
+      // Load the canvas state with proper error handling
+      canvas.loadFromJSON(historyState, () => {
         canvas.renderAll();
         setHistoryIndex(newIndex);
         console.log(`Undo successful. New index: ${newIndex}`);
       });
     } catch (error) {
       console.error('Error during undo:', error);
+      // If there's an error, try to recover by removing the corrupted state
+      if (canvasHistory.length > 1) {
+        const newHistory = [...canvasHistory];
+        newHistory.splice(newIndex, 1);
+        setCanvasHistory(newHistory);
+        setHistoryIndex(Math.min(newIndex, newHistory.length - 1));
+        console.log('Removed corrupted history state and attempted recovery');
+      }
     }
   };
 
   const redo = () => {
     console.log(`Redo called. Current index: ${historyIndex}, History length: ${canvasHistory.length}`);
     
-    if (!canvas || historyIndex >= canvasHistory.length - 1) {
-      console.log('Cannot redo: at end of history or no canvas');
+    if (!canvas) {
+      console.warn('Cannot redo: Canvas is null');
+      return;
+    }
+    
+    if (historyIndex >= canvasHistory.length - 1) {
+      console.log('Cannot redo: At end of history');
+      return;
+    }
+    
+    if (canvasHistory.length === 0) {
+      console.log('Cannot redo: History is empty');
       return;
     }
     
@@ -333,71 +403,148 @@ export function ProfileCanvas({
     console.log(`Redoing to index ${newIndex}`);
     
     try {
-      canvas.loadFromJSON(canvasHistory[newIndex], () => {
+      // Validate the history state before loading
+      let historyState;
+      try {
+        // If it's a string, parse it to ensure it's valid JSON
+        if (typeof canvasHistory[newIndex] === 'string') {
+          historyState = JSON.parse(canvasHistory[newIndex]);
+        } else {
+          historyState = canvasHistory[newIndex];
+        }
+      } catch (parseError) {
+        console.error('Error parsing history state:', parseError);
+        throw new Error('Corrupted history data');
+      }
+      
+      // Load the canvas state with proper error handling
+      canvas.loadFromJSON(historyState, () => {
         canvas.renderAll();
         setHistoryIndex(newIndex);
         console.log(`Redo successful. New index: ${newIndex}`);
       });
     } catch (error) {
       console.error('Error during redo:', error);
+      // If there's an error, try to recover by removing the corrupted state
+      if (canvasHistory.length > 1) {
+        const newHistory = [...canvasHistory];
+        newHistory.splice(newIndex, 1);
+        setCanvasHistory(newHistory);
+        setHistoryIndex(Math.min(historyIndex, newHistory.length - 1));
+        console.log('Removed corrupted history state and attempted recovery');
+      }
     }
   };
 
   const loadCanvasState = async () => {
-    if (!canvas) return;
+    if (!canvas) {
+      console.error('Cannot load: Canvas is null');
+      return;
+    }
+    
+    if (!userId) {
+      console.error('Cannot load: User ID is missing');
+      return;
+    }
     
     setIsLoading(true);
+    console.log('Loading canvas state from database...');
+    
     try {
+      // Fetch data from Supabase
       const { data, error } = await supabase
         .from('profiles')
         .select('canvas_state')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
       if (data?.canvas_state) {
-        canvas.loadFromJSON(data.canvas_state, () => {
-          canvas.renderAll();
-          // Initialize history with loaded state
-          const newHistory = [data.canvas_state];
-          setCanvasHistory(newHistory);
-          setHistoryIndex(0);
-          console.log('Canvas loaded from database. History initialized.');
-        });
+        console.log('Canvas data found, parsing...');
+        
+        // Validate the canvas state before loading
+        let canvasState;
+        try {
+          // Handle different formats of canvas_state
+          if (typeof data.canvas_state === 'string') {
+            // Try to parse the string as JSON
+            canvasState = JSON.parse(data.canvas_state);
+            console.log('Successfully parsed canvas_state string');
+          } else {
+            // If it's already an object, use it directly
+            canvasState = data.canvas_state;
+            console.log('Using canvas_state object directly');
+          }
+          
+          // Verify that the parsed data has the expected structure
+          if (!canvasState.objects || !Array.isArray(canvasState.objects)) {
+            console.warn('Canvas state has unexpected structure:', canvasState);
+            // Try to fix the structure if possible
+            if (!canvasState.objects && canvasState.version) {
+              console.log('Attempting to fix canvas structure...');
+            } else {
+              throw new Error('Invalid canvas structure');
+            }
+          }
+        } catch (parseError) {
+          console.error('Error parsing canvas state:', parseError);
+          console.error('Raw canvas_state:', data.canvas_state);
+          throw new Error('Corrupted canvas data');
+        }
+        
+        // Load the canvas state with error handling
+        try {
+          console.log('Loading canvas from JSON...');
+          canvas.clear(); // Clear existing canvas before loading
+          
+          canvas.loadFromJSON(canvasState, () => {
+            canvas.renderAll();
+            console.log('Canvas rendered successfully');
+            
+            // Initialize history with loaded state
+            // Ensure we're storing the state as a string consistently
+            const stateString = typeof canvasState === 'string' 
+              ? canvasState 
+              : JSON.stringify(canvasState);
+              
+            const newHistory = [stateString];
+            setCanvasHistory(newHistory);
+            setHistoryIndex(0);
+            console.log('Canvas loaded from database. History initialized.');
+          }, (o: any, object: any) => {
+            // This is a callback for each object loaded
+            console.log(`Loaded object: ${object?.type}`);
+            return true;
+          });
+        } catch (loadError) {
+          console.error('Error loading canvas from JSON:', loadError);
+          throw new Error('Failed to load canvas data');
+        }
       } else {
+        console.log('No saved canvas found, initializing empty canvas.');
         // Initialize empty history with current state
+        canvas.clear(); // Ensure canvas is empty
         const json = JSON.stringify(canvas.toJSON());
         setCanvasHistory([json]);
         setHistoryIndex(0);
-        console.log('No saved canvas found. Empty history initialized.');
+        console.log('Empty history initialized.');
       }
     } catch (error) {
       console.error('Error loading canvas state:', error);
       // Initialize empty history with current state even if there's an error
-      const json = JSON.stringify(canvas.toJSON());
-      setCanvasHistory([json]);
-      setHistoryIndex(0);
-      console.log('Error loading canvas. Empty history initialized.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const saveCanvasState = async () => {
-    if (!canvas) return;
-
-    setIsLoading(true);
-    try {
-      const canvasState = JSON.stringify(canvas.toJSON());
-      const { error } = await supabase
-        .from('profiles')
-        .update({ canvas_state: canvasState })
-        .eq('id', userId);
-
-      if (error) throw error;
-      if (onSave) onSave();
-    } catch (error) {
-      console.error('Error saving canvas state:', error);
+      try {
+        canvas.clear(); // Ensure canvas is empty
+        const json = JSON.stringify(canvas.toJSON());
+        setCanvasHistory([json]);
+        setHistoryIndex(0);
+        console.log('Error loading canvas. Empty history initialized.');
+      } catch (fallbackError) {
+        console.error('Failed to initialize empty history:', fallbackError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -569,12 +716,13 @@ export function ProfileCanvas({
       quality: 1
     });
     
+    // Use a simpler approach without DOM manipulation
     const link = document.createElement('a');
     link.download = `canvas-${new Date().toISOString().slice(0, 10)}.png`;
     link.href = dataURL;
-    document.body.appendChild(link);
+    
+    // Use click() directly without appending to DOM
     link.click();
-    document.body.removeChild(link);
   };
 
   // Add a useEffect to handle clicks outside the popovers
@@ -1199,31 +1347,12 @@ export const canvasUtils = {
       quality: 1
     });
     
+    // Use a simpler approach without DOM manipulation
     const link = document.createElement('a');
     link.download = `canvas-${new Date().toISOString().slice(0, 10)}.png`;
     link.href = dataURL;
-    document.body.appendChild(link);
+    
+    // Use click() directly without appending to DOM
     link.click();
-    document.body.removeChild(link);
-  },
-  
-  saveCanvasState: async (canvas: fabric.Canvas | null, userId: string, setIsLoading: (isLoading: boolean) => void, onSave?: () => void) => {
-    if (!canvas) return;
-
-    setIsLoading(true);
-    try {
-      const canvasState = JSON.stringify(canvas.toJSON());
-      const { error } = await supabase
-        .from('profiles')
-        .update({ canvas_state: canvasState })
-        .eq('id', userId);
-
-      if (error) throw error;
-      if (onSave) onSave();
-    } catch (error) {
-      console.error('Error saving canvas state:', error);
-    } finally {
-      setIsLoading(false);
-    }
   }
 } 

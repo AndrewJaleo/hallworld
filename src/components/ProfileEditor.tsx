@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useProfileStore } from '../lib/store';
 import {
   Save, Edit3, Eye, Download, Undo, Redo
 } from 'lucide-react';
 import { ProfileCanvas, canvasUtils } from './ProfileCanvas';
+import { supabase } from '../lib/supabase';
 
 interface ProfileEditorProps {
   userId: string;
@@ -17,6 +18,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
   const [canvasHistory, setCanvasHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Track window size for responsive layout
   useEffect(() => {
@@ -35,10 +37,101 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
     }
   }, [isOwner]);
 
-  // Handle save completion
-  const handleSaveComplete = () => {
-    setIsEditing(false);
-  };
+  // Handle save operation with a separate effect to avoid React reconciliation issues
+  useEffect(() => {
+    const saveCanvas = async () => {
+      if (!isSaving || !canvas || !userId) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Simple serialization
+        const canvasJSON = canvas.toJSON();
+        const canvasState = JSON.stringify(canvasJSON);
+        
+        console.log('Saving canvas state...');
+        
+        // Direct Supabase call
+        const { error } = await supabase
+          .from('profiles')
+          .update({ canvas_state: canvasState })
+          .eq('id', userId);
+        
+        if (error) {
+          console.error('Error saving to Supabase:', error);
+          return;
+        }
+        
+        console.log('Canvas saved successfully');
+        
+        // Use setTimeout to defer state updates
+        setTimeout(() => {
+          setIsEditing(false);
+          setIsSaving(false);
+          setIsLoading(false);
+        }, 100);
+      } catch (error) {
+        console.error('Error saving canvas:', error);
+        setIsSaving(false);
+        setIsLoading(false);
+      }
+    };
+    
+    saveCanvas();
+  }, [isSaving, canvas, userId]);
+
+  // Safe save function that triggers the save effect
+  const handleSave = useCallback(() => {
+    if (isLoading || isSaving) return;
+    setIsSaving(true);
+  }, [isLoading, isSaving]);
+
+  // Safe export function
+  const handleExport = useCallback(() => {
+    if (!canvas) return;
+    
+    try {
+      // Create data URL
+      const dataURL = canvas.toDataURL({
+        format: 'png',
+        quality: 1
+      });
+      
+      // Create a blob instead of using a link element
+      const byteString = atob(dataURL.split(',')[1]);
+      const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      
+      const blob = new Blob([ab], { type: mimeString });
+      const url = URL.createObjectURL(blob);
+      
+      // Use a safer download approach
+      const filename = `canvas-${new Date().toISOString().slice(0, 10)}.png`;
+      
+      // Create a temporary link without appending to DOM
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      
+      // Use a safer click approach
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up safely with timeout
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error('Error exporting canvas:', error);
+    }
+  }, [canvas]);
 
   // Undo function
   const handleUndo = () => {
@@ -103,7 +196,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
                 className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 px-4 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-cyan-300"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                disabled={isLoading}
+                disabled={isLoading || isSaving}
               >
                 {isEditing ? (
                   <>
@@ -121,21 +214,22 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
               {isEditing && (
                 <>
                   <motion.button
-                    onClick={() => canvasUtils.saveCanvasState(canvas, userId, setIsLoading, handleSaveComplete)}
+                    onClick={handleSave}
                     className="relative overflow-hidden rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 p-2 px-4 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-white"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    disabled={isLoading}
+                    disabled={isLoading || isSaving}
                   >
                     <Save className="w-4 h-4" />
-                    <span>{isLoading ? 'Guardando...' : 'Guardar'}</span>
+                    <span>{isLoading || isSaving ? 'Guardando...' : 'Guardar'}</span>
                   </motion.button>
                   
                   <motion.button
-                    onClick={() => canvasUtils.exportCanvas(canvas)}
+                    onClick={handleExport}
                     className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 px-4 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-cyan-300"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    disabled={isLoading || isSaving}
                   >
                     <Download className="w-4 h-4" />
                     <span>Exportar</span>
@@ -151,7 +245,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
                   className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  disabled={historyIndex <= 0}
+                  disabled={historyIndex <= 0 || isLoading || isSaving}
                   title="Deshacer"
                 >
                   <Undo className="w-4 h-4" />
@@ -161,7 +255,7 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
                   className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  disabled={historyIndex >= canvasHistory.length - 1}
+                  disabled={historyIndex >= canvasHistory.length - 1 || isLoading || isSaving}
                   title="Rehacer"
                 >
                   <Redo className="w-4 h-4" />
@@ -184,9 +278,8 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
               userId={userId}
               isOwner={isOwner}
               isEditing={isEditing}
-              isLoading={isLoading}
+              isLoading={isLoading || isSaving}
               setIsLoading={setIsLoading}
-              onSave={handleSaveComplete}
               canvasHistory={canvasHistory}
               setCanvasHistory={setCanvasHistory}
               historyIndex={historyIndex}
