@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, ArrowLeft, Paperclip, MoreVertical, Users, MessageSquare, X, User } from "lucide-react";
-import { Header } from "../components/Header";
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from 'react-responsive';
 import { MembersList } from '../components/MembersList';
@@ -167,7 +166,7 @@ function MemberModal({
 }
 
 export function GroupChatPage() {
-  const { id } = useParams({ from: '/group-chat/$id' });
+  const { id } = useParams({ from: '/layout/group-chat/$id' });
   const navigate = useNavigate();
   
   // User state
@@ -762,8 +761,6 @@ export function GroupChatPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex flex-col fixed inset-0">
-      <Header unreadChats={0} userEmail={userEmail} />
-
       {/* Member Modal */}
       {selectedMember && (
         <MemberModal

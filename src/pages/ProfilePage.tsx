@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { supabase } from '../lib/supabase';
-import { Header } from '../components/Header';
 import { ProfileForm } from '../components/ProfileForm';
 import { ProfileEditor } from '../components/ProfileEditor';
 import { motion } from 'framer-motion';
@@ -43,8 +42,6 @@ export function ProfilePage() {
     <div 
       className="min-h-screen flex flex-col fixed inset-0 overflow-auto bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950"
     >
-      <Header unreadChats={0} userEmail={userEmail} />
-      
       <div className="mt-24 pb-12 px-4 max-w-4xl mx-auto w-full relative z-10">
         {/* Decorative elements */}
         <div className="absolute top-[-50px] right-[-80px] w-64 h-64 bg-gradient-to-br from-cyan-300/20 to-blue-300/20 rounded-full blur-3xl -z-10"></div>

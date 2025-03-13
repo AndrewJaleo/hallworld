@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPinOff } from 'lucide-react';
-import { Header } from '../components/Header';
 import { CountrySelector } from '../components/CountrySelector';
 import { CitySelector } from '../components/CitySelector';
 import { CircularMenu } from '../components/CircularMenu';
@@ -139,10 +138,8 @@ export function HomePage() {
   }
 
   return (
-    <>
-      <Header unreadChats={unreadChats} userEmail={userEmail} />
-      
-      <div className="flex flex-col lg:flex-row lg:items-start p-3 sm:p-6 lg:p-8 mt-24 sm:mt-20 mb-32 sm:mb-28 lg:mb-32">
+    <div className="container mx-auto px-4 pt-24 pb-12">
+      <div className="flex flex-col lg:flex-row lg:items-start p-3 sm:p-6 lg:p-8  sm:mt-20 mb-32 sm:mb-28 lg:mb-32">
         <div className="flex flex-col gap-4 mb-4 lg:mb-0 max-w-md lg:max-w-xl mx-auto lg:mx-0 lg:ml-auto w-full">
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
@@ -225,6 +222,6 @@ export function HomePage() {
           <CircularMenu selectedCity={state.selectedCity} />
         </motion.div>
       </div>
-    </>
+    </div>
   );
 } 

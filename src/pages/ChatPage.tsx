@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { supabase } from "../lib/supabase";
-import { Header } from "../components/Header";
 import { Send, ArrowLeft, Paperclip, MoreVertical, MessageSquare } from "lucide-react";
 
 interface Message {
@@ -21,7 +20,7 @@ interface ChatUser {
 }
 
 export function ChatPage() {
-  const { id } = useParams({ from: "/chat/$id" });
+  const { id } = useParams({ from: "/layout/chat/$id" });
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
@@ -278,8 +277,6 @@ export function ChatPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex flex-col fixed inset-0">
-      <Header unreadChats={0} userEmail={userEmail} />
-
       <div className="flex flex-col flex-grow mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 gap-4">
         <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-96px)]">
           {/* Chat Header */}
