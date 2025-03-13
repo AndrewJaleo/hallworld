@@ -107,6 +107,9 @@ const ProfileCanvas: React.FC<{ canvasState: string | null }> = ({ canvasState }
   );
 };
 
+// Define a CSS class for text shadow that can be reused
+const textShadowClass = "text-shadow-sm"; // We'll define this in the component
+
 export function ProfileViewPage() {
   const { id } = useParams({ from: '/profile/$id' });
   const navigate = useNavigate();
@@ -262,11 +265,11 @@ export function ProfileViewPage() {
             <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
             <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
             
-            <h2 className="text-2xl font-bold text-cyan-300 mb-4">{error}</h2>
-            <p className="text-cyan-400 mb-6">No se pudo encontrar el perfil solicitado.</p>
+            <h2 className="text-2xl font-bold text-cyan-300 mb-4 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{error}</h2>
+            <p className="text-cyan-400 mb-6 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">No se pudo encontrar el perfil solicitado.</p>
             <button
               onClick={() => navigate({ to: '/' })}
-              className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px]"
+              className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px] [text-shadow:0_1px_1px_rgba(0,0,0,0.5)]"
             >
               Volver al Inicio
             </button>
@@ -303,25 +306,25 @@ export function ProfileViewPage() {
                         className="w-32 h-32 rounded-full object-cover border-4 border-cyan-500/30 shadow-lg"
                       />
                     ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/30 flex items-center justify-center text-cyan-300 text-4xl font-bold border-4 border-cyan-500/30 shadow-lg">
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/30 flex items-center justify-center text-cyan-300 text-4xl font-bold border-4 border-cyan-500/30 shadow-lg [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
                         {(profile.name || profile.email.split('@')[0]).charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
                   
                   <div className="text-center md:text-left flex-1">
-                    <h1 className="text-cyan-300 text-3xl font-bold mb-1">
+                    <h1 className="text-cyan-300 text-3xl font-bold mb-1 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
                       {profile.name || profile.email.split('@')[0]}
                     </h1>
                     <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
                       <Mail size={16} className="text-cyan-400" />
-                      <p className="text-cyan-400">{profile.email}</p>
+                      <p className="text-cyan-400 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.email}</p>
                     </div>
                     
                     {profile.joined_date && (
                       <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
                         <Calendar size={16} className="text-cyan-400" />
-                        <p className="text-cyan-400">
+                        <p className="text-cyan-400 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
                           Se unió el {new Date(profile.joined_date).toLocaleDateString()}
                         </p>
                       </div>
@@ -330,7 +333,7 @@ export function ProfileViewPage() {
                     {currentUserId !== profile.id && (
                       <button
                         onClick={handleSendMessage}
-                        className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px]"
+                        className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px] [text-shadow:0_1px_1px_rgba(0,0,0,0.5)]"
                       >
                         Enviar Mensaje
                       </button>
@@ -343,8 +346,8 @@ export function ProfileViewPage() {
                     <div className="flex items-start gap-3">
                       <User className="w-5 h-5 text-cyan-400 mt-0.5" />
                       <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1">Edad</h3>
-                        <p className="text-cyan-100 text-lg">{profile.age} años</p>
+                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Edad</h3>
+                        <p className="text-cyan-100 text-lg [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.age} años</p>
                       </div>
                     </div>
                   )}
@@ -353,8 +356,8 @@ export function ProfileViewPage() {
                     <div className="flex items-start gap-3">
                       <User className="w-5 h-5 text-cyan-400 mt-0.5" />
                       <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1">Género</h3>
-                        <p className="text-cyan-100 text-lg capitalize">
+                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Género</h3>
+                        <p className="text-cyan-100 text-lg capitalize [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
                           {profile.gender === 'male' ? 'Masculino' : 
                            profile.gender === 'female' ? 'Femenino' : 
                            profile.gender === 'non-binary' ? 'No binario' : 
@@ -369,8 +372,8 @@ export function ProfileViewPage() {
                     <div className="flex items-start gap-3">
                       <Home className="w-5 h-5 text-cyan-400 mt-0.5" />
                       <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1">Ubicación</h3>
-                        <p className="text-cyan-100 text-lg">{profile.location}</p>
+                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Ubicación</h3>
+                        <p className="text-cyan-100 text-lg [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.location}</p>
                       </div>
                     </div>
                   )}
@@ -379,8 +382,8 @@ export function ProfileViewPage() {
                     <div className="flex items-start gap-3 md:col-span-2">
                       <Heart className="w-5 h-5 text-cyan-400 mt-0.5" />
                       <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1">Gustos</h3>
-                        <p className="text-cyan-100 text-lg">{profile.likings}</p>
+                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Gustos</h3>
+                        <p className="text-cyan-100 text-lg [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.likings}</p>
                       </div>
                     </div>
                   )}
@@ -389,12 +392,12 @@ export function ProfileViewPage() {
                     <div className="flex items-start gap-3 md:col-span-2">
                       <Heart className="w-5 h-5 text-cyan-400 mt-0.5" />
                       <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1">Intereses</h3>
+                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Intereses</h3>
                         <div className="flex flex-wrap gap-2">
                           {profile.interests.map((interest, index) => (
                             <span 
                               key={index}
-                              className="px-3 py-1 bg-cyan-800/30 rounded-full text-cyan-300 border border-cyan-500/20"
+                              className="px-3 py-1 bg-cyan-800/30 rounded-full text-cyan-300 border border-cyan-500/20 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]"
                             >
                               {interest}
                             </span>
@@ -408,7 +411,7 @@ export function ProfileViewPage() {
                     <div className="flex items-start gap-3 md:col-span-2">
                       <Info className="w-5 h-5 text-cyan-400 mt-0.5" />
                       <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1">Redes Sociales</h3>
+                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Redes Sociales</h3>
                         <div className="flex flex-col gap-2">
                           {Object.entries(profile.social_links).map(([platform, url]) => (
                             <a 
@@ -416,7 +419,7 @@ export function ProfileViewPage() {
                               href={url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-cyan-300 hover:text-cyan-100 transition-colors"
+                              className="text-cyan-300 hover:text-cyan-100 transition-colors [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]"
                             >
                               {platform.charAt(0).toUpperCase() + platform.slice(1)}
                             </a>
@@ -431,9 +434,9 @@ export function ProfileViewPage() {
                   <div className="flex items-start gap-3">
                     <Info className="w-5 h-5 text-cyan-400 mt-1.5" />
                     <div className="flex-1">
-                      <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-2">Biografía</h3>
+                      <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-2 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Biografía</h3>
                       <div className="bg-cyan-800/20 p-6 rounded-xl border border-cyan-500/20">
-                        <p className="text-cyan-100 whitespace-pre-line">{profile.biography}</p>
+                        <p className="text-cyan-100 whitespace-pre-line [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.biography}</p>
                       </div>
                     </div>
                   </div>
@@ -462,7 +465,7 @@ export function ProfileViewPage() {
                   
                   <button
                     onClick={() => setActiveTab('info')}
-                    className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 ${
+                    className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)] ${
                       activeTab === 'info' 
                         ? 'bg-cyan-800/50 text-cyan-300 shadow-sm' 
                         : 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-800/30'

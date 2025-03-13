@@ -194,16 +194,21 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center gap-2"
             >
-              {/* Logo */}
-              <img 
-                src="/logo_hallworld.png" 
-                alt="HallWorld Logo" 
-                className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
-              />
-              {/* Brand name with updated gradient */}
-              <span className="text-lg sm:text-xl font-bold bg-gradient-to-br from-cyan-300 via-blue-300 to-indigo-400 bg-clip-text text-transparent">
-                HallWorld
-              </span>
+              {/* Logo - Make it clickable and redirect to home page */}
+              <div 
+                onClick={() => navigate({ to: '/' })}
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <img 
+                  src="/logo_hallworld.png" 
+                  alt="HallWorld Logo" 
+                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                />
+                {/* Brand name with updated gradient */}
+                <span className="text-lg sm:text-xl font-bold bg-gradient-to-br from-cyan-300 via-blue-300 to-indigo-400 bg-clip-text text-transparent">
+                  HallWorld
+                </span>
+              </div>
             </motion.div>
 
             <div className="flex items-center gap-2 sm:gap-4">

@@ -43,7 +43,7 @@ export function ProfilePage() {
     <div 
       className="min-h-screen flex flex-col fixed inset-0 overflow-auto bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950"
     >
-      <Header unreadChats={3} userEmail={userEmail} />
+      <Header unreadChats={0} userEmail={userEmail} />
       
       <div className="mt-24 pb-12 px-4 max-w-4xl mx-auto w-full relative z-10">
         {/* Decorative elements */}

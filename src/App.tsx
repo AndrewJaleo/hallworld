@@ -77,7 +77,7 @@ export default function App() {
       
       {/* Content overlay with cyan accent colors */}
       <div className="min-h-screen relative z-20 flex flex-col">
-        <Header unreadChats={3} userEmail={userEmail} />
+        <Header unreadChats={0} userEmail={userEmail} />
         <Outlet />
       </div>
     </div>
