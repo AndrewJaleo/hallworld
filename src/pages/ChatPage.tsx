@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabase";
-import { Send, ArrowLeft, Paperclip, MoreVertical, MessageSquare } from "lucide-react";
+import { Send, ArrowLeft, Paperclip, MoreVertical, MessageSquare, X, User } from "lucide-react";
 
 interface Message {
   id: string;
@@ -19,6 +19,130 @@ interface ChatUser {
   avatar_url?: string;
 }
 
+// Add ProfileModal component
+interface ProfileModalProps {
+  user: ChatUser;
+  isOpen: boolean;
+  onClose: () => void;
+  onViewProfile: (userId: string) => void;
+}
+
+function ProfileModal({
+  user,
+  isOpen,
+  onClose,
+  onViewProfile
+}: ProfileModalProps) {
+  // Function to get initials from email
+  const getInitials = (email: string) => {
+    try {
+      const parts = email.split('@')[0].split(/[._-]/);
+      if (parts.length > 1) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return email.substring(0, 2).toUpperCase();
+    } catch (e) {
+      return 'U';
+    }
+  };
+
+  // Function to get a consistent color based on user ID
+  const getRandomColor = (id: string) => {
+    const colors = [
+      'from-cyan-400 to-cyan-600',
+      'from-blue-400 to-blue-600',
+      'from-indigo-400 to-indigo-600',
+      'from-teal-400 to-teal-600',
+      'from-emerald-400 to-emerald-600',
+      'from-green-400 to-green-600',
+      'from-amber-400 to-amber-600',
+      'from-orange-400 to-orange-600',
+      'from-rose-400 to-rose-600',
+      'from-pink-400 to-pink-600'
+    ];
+    
+    // Use a simple hash function to get a consistent index
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = ((hash << 5) - hash) + id.charCodeAt(i);
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop with flex centering */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+            onClick={onClose}
+          >
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] w-full max-w-md p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Prismatic edge effect */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+              
+              {/* Close button */}
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 p-2 rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 text-cyan-300 hover:bg-cyan-700/30 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              
+              {/* User info */}
+              <div className="flex flex-col items-center text-center">
+                {/* Avatar */}
+                <div className={`w-24 h-24 rounded-full bg-gradient-to-r ${getRandomColor(user.id)} flex items-center justify-center text-white text-3xl font-semibold mb-4 border-2 border-white/30 shadow-lg`}>
+                  {getInitials(user.email)}
+                </div>
+                
+                {/* Name */}
+                <h3 className="text-xl font-semibold text-cyan-300 mb-1">
+                  {user.email.split('@')[0]}
+                </h3>
+                
+                {/* Email */}
+                <p className="text-cyan-400 mb-6">
+                  {user.email}
+                </p>
+                
+                {/* Actions */}
+                <div className="w-full">
+                  <button
+                    onClick={() => onViewProfile(user.id)}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 text-cyan-300 hover:bg-cyan-700/30 transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Ver Perfil Completo</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function ChatPage() {
   const { id } = useParams({ from: "/layout/chat/$id" });
   const navigate = useNavigate();
@@ -30,6 +154,7 @@ export function ChatPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
 
   useEffect(() => {
     // Get current user
@@ -275,9 +400,27 @@ export function ChatPage() {
     navigate({ to: "/" });
   };
 
+  const handleViewProfile = (userId: string) => {
+    // Close the modal
+    setShowProfileModal(false);
+    
+    // Navigate to profile page
+    navigate({ to: `/profile/${userId}` });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex flex-col fixed inset-0">
-      <div className="flex flex-col flex-grow mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 gap-4">
+      {/* Profile Modal */}
+      {chatPartner && (
+        <ProfileModal
+          user={chatPartner}
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          onViewProfile={handleViewProfile}
+        />
+      )}
+      
+      <div className="flex flex-col flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 gap-4">
         <div className="max-w-4xl mx-auto w-full flex flex-col h-[calc(100vh-96px)]">
           {/* Chat Header */}
           <motion.div
@@ -312,7 +455,10 @@ export function ChatPage() {
               </div>
             </div>
 
-            <button className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto">
+            <button 
+              onClick={() => setShowProfileModal(true)}
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2.5 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto"
+            >
               <MoreVertical className="w-5 h-5 text-cyan-300" />
             </button>
           </motion.div>

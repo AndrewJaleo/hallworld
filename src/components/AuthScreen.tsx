@@ -35,7 +35,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       }
       onAuthSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'Ha ocurrido un error');
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           }}
         >
           <source src="/hallword_background.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
+          Tu navegador no soporta la etiqueta de video.
         </video>
         
         {/* Gradient overlay */}
@@ -79,7 +79,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           <div className="flex flex-col items-center gap-2">
             <motion.img 
               src="/logo_hallworld.png"
-              alt="HallWorld Logo"
+              alt="Logo de HallWorld"
               className="h-20 w-20 object-contain"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
