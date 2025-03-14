@@ -122,6 +122,7 @@ export function ProfileViewPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'info'>('info');
+  const [isSendingMessage, setIsSendingMessage] = useState<boolean>(false);
 
   // Check if current user is authenticated
   useEffect(() => {
@@ -232,9 +233,67 @@ export function ProfileViewPage() {
   }, [profile?.canvas_state]);
 
   // Handle sending a message to this user
-  const handleSendMessage = () => {
-    if (id) {
-      navigate({ to: `/chat/${id}` });
+  const handleSendMessage = async () => {
+    if (!id || !currentUserId) return;
+    
+    try {
+      // Show loading state
+      setIsSendingMessage(true);
+      
+      // First, check if a private chat already exists between these users
+      const { data: existingChats, error: chatError } = await supabase
+        .from("private_chats")
+        .select("id, user1_id, user2_id")
+        .or(`user1_id.eq.${currentUserId},user2_id.eq.${currentUserId}`)
+        .or(`user1_id.eq.${id},user2_id.eq.${id}`);
+      
+      if (chatError) {
+        console.error("Error checking for existing chat:", chatError);
+        throw chatError;
+      }
+      
+      // Find a chat where both users are participants
+      const existingChat = existingChats?.find(chat => 
+        (chat.user1_id === currentUserId && chat.user2_id === id) || 
+        (chat.user1_id === id && chat.user2_id === currentUserId)
+      );
+      
+      let chatId;
+      
+      if (existingChat) {
+        // Use existing chat
+        chatId = existingChat.id;
+      } else {
+        // Create a new private chat
+        const { data: newChat, error: createError } = await supabase
+          .from("private_chats")
+          .insert({
+            user1_id: currentUserId,
+            user2_id: id,
+            created_at: new Date().toISOString()
+          })
+          .select();
+        
+        if (createError) {
+          console.error("Error creating new chat:", createError);
+          throw createError;
+        }
+        
+        chatId = newChat?.[0]?.id;
+      }
+      
+      if (chatId) {
+        // Navigate to the private chat
+        navigate({ to: `/chat/${chatId}` });
+      } else {
+        console.error("Failed to get or create private chat");
+        // You could add an error notification here
+      }
+    } catch (error) {
+      console.error("Error handling direct message:", error);
+      // You could add an error notification here
+    } finally {
+      setIsSendingMessage(false);
     }
   };
 
@@ -330,9 +389,20 @@ export function ProfileViewPage() {
                     {currentUserId !== profile.id && (
                       <button
                         onClick={handleSendMessage}
-                        className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px] [text-shadow:0_1px_1px_rgba(0,0,0,0.5)]"
+                        disabled={isSendingMessage}
+                        className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px] [text-shadow:0_1px_1px_rgba(0,0,0,0.5)] disabled:opacity-70 disabled:cursor-not-allowed"
                       >
-                        Enviar Mensaje
+                        {isSendingMessage ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Conectando...
+                          </span>
+                        ) : (
+                          "Enviar Mensaje"
+                        )}
                       </button>
                     )}
                   </div>

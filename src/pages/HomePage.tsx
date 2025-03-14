@@ -218,7 +218,7 @@ export function HomePage() {
             ease: [0.6, -0.05, 0.01, 0.99]
           }}
         >
-          <HallButtons />
+          <HallButtons selectedCity={state.selectedCity} />
           <CircularMenu selectedCity={state.selectedCity} />
         </motion.div>
       </div>

@@ -72,7 +72,6 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
           table: 'private_messages'
         },
         (payload) => {
-          console.log('New message received:', payload);
           // Refetch unread messages when a new message is received
           fetchUnreadMessages();
         }
@@ -159,7 +158,6 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
           .in('id', senderIds);
           
         if (profilesError) {
-          console.error('Error fetching sender profiles:', profilesError);
           setLoading(false);
           return;
         }
@@ -179,13 +177,11 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
           chat_id: msg.chat_id
         }));
         
-        console.log('Fetched notifications:', formattedNotifications);
         setNotifications(formattedNotifications);
       }
       
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching unread messages:', error);
       setLoading(false);
     }
   };

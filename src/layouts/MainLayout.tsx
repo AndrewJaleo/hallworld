@@ -34,7 +34,6 @@ export function MainLayout() {
           // Refetch unread count when new messages arrive
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
-              console.log('New message received, fetching unread count');
               fetchUnreadChatsCount(session.user.id);
             }
           });
@@ -56,7 +55,6 @@ export function MainLayout() {
           // Refetch unread count when messages are marked as read
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
-              console.log('Message updated, fetching unread count');
               fetchUnreadChatsCount(session.user.id);
             }
           });
@@ -82,7 +80,6 @@ export function MainLayout() {
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
       
       if (chatsError) {
-        console.error('Error fetching chats:', chatsError);
         return;
       }
       
@@ -98,17 +95,15 @@ export function MainLayout() {
           .is('read_at', null);
         
         if (countError) {
-          console.error('Error counting unread messages:', countError);
           return;
         }
         
-        console.log('Unread messages count:', count);
         setUnreadChats(count || 0);
       } else {
         setUnreadChats(0);
       }
     } catch (error) {
-      console.error('Error in fetchUnreadChatsCount:', error);
+      // Handle error silently
     }
   };
 
