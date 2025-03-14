@@ -1,14 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fabric } from 'fabric';
-import { HexColorPicker } from 'react-colorful';
+import React, { useEffect, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useProfileStore } from '../lib/store';
-import { supabase } from '../lib/supabase';
 import {
-  Image, Type, Square, Circle, Palette, Save,
-  Edit3, Eye, Upload, Trash2, Plus, Minus,
-  RotateCcw, Lock, Unlock, Layers
+  Save, Edit3, Eye, Download, Undo, Redo
 } from 'lucide-react';
+import { ProfileCanvas, canvasUtils } from './ProfileCanvas';
+import { supabase } from '../lib/supabase';
 
 interface ProfileEditorProps {
   userId: string;
@@ -16,177 +13,190 @@ interface ProfileEditorProps {
 }
 
 export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const { canvas, setCanvas, isEditing, setIsEditing } = useProfileStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const { canvas, isEditing, setIsEditing } = useProfileStore();
+  const [canvasHistory, setCanvasHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isSaving, setIsSaving] = useState(false);
   
+  // Track window size for responsive layout
   useEffect(() => {
-    if (!canvasRef.current || canvas) return;
-
-    const newCanvas = new fabric.Canvas(canvasRef.current, {
-      width: window.innerWidth > 768 ? 800 : window.innerWidth - 32,
-      height: 600,
-      backgroundColor: '#ffffff'
-    });
-
-    setCanvas(newCanvas);
-
-    // Load saved canvas state
-    loadCanvasState();
-
-    return () => {
-      newCanvas.dispose();
-      setCanvas(null);
+    const handleWindowResize = () => {
+      setIsMobile(window.innerWidth < 768);
     };
+    
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
   }, []);
 
+  // Ensure editing mode is set to true when component mounts if user is owner
   useEffect(() => {
-    if (!canvas) return;
+    if (isOwner && !isEditing) {
+      setIsEditing(true);
+    }
+  }, [isOwner]);
 
-    canvas.on('selection:created', (e) => {
-      setSelectedObject(canvas.getActiveObject());
-    });
-
-    canvas.on('selection:cleared', () => {
-      setSelectedObject(null);
-    });
-
-    return () => {
-      canvas.off('selection:created');
-      canvas.off('selection:cleared');
+  // Handle save operation with a separate effect to avoid React reconciliation issues
+  useEffect(() => {
+    const saveCanvas = async () => {
+      if (!isSaving || !canvas || !userId) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Simple serialization
+        const canvasJSON = canvas.toJSON();
+        const canvasState = JSON.stringify(canvasJSON);
+        
+        console.log('Saving canvas state...');
+        
+        // Direct Supabase call
+        const { error } = await supabase
+          .from('profiles')
+          .update({ canvas_state: canvasState })
+          .eq('id', userId);
+        
+        if (error) {
+          console.error('Error saving to Supabase:', error);
+          return;
+        }
+        
+        console.log('Canvas saved successfully');
+        
+        // Use setTimeout to defer state updates
+        setTimeout(() => {
+          setIsEditing(false);
+          setIsSaving(false);
+          setIsLoading(false);
+        }, 100);
+      } catch (error) {
+        console.error('Error saving canvas:', error);
+        setIsSaving(false);
+        setIsLoading(false);
+      }
     };
+    
+    saveCanvas();
+  }, [isSaving, canvas, userId]);
+
+  // Safe save function that triggers the save effect
+  const handleSave = useCallback(() => {
+    if (isLoading || isSaving) return;
+    setIsSaving(true);
+  }, [isLoading, isSaving]);
+
+  // Safe export function
+  const handleExport = useCallback(() => {
+    if (!canvas) return;
+    
+    try {
+      // Create data URL
+      const dataURL = canvas.toDataURL({
+        format: 'png',
+        quality: 1
+      });
+      
+      // Create a blob instead of using a link element
+      const byteString = atob(dataURL.split(',')[1]);
+      const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      
+      const blob = new Blob([ab], { type: mimeString });
+      const url = URL.createObjectURL(blob);
+      
+      // Use a safer download approach
+      const filename = `canvas-${new Date().toISOString().slice(0, 10)}.png`;
+      
+      // Create a temporary link without appending to DOM
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      
+      // Use a safer click approach
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up safely with timeout
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (error) {
+      console.error('Error exporting canvas:', error);
+    }
   }, [canvas]);
 
-  const loadCanvasState = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('canvas_state')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      if (data?.canvas_state && canvas) {
-        canvas.loadFromJSON(data.canvas_state, () => {
-          canvas.renderAll();
-        });
-      }
-    } catch (error) {
-      console.error('Error loading canvas state:', error);
+  // Undo function
+  const handleUndo = () => {
+    console.log(`Editor Undo called. Current index: ${historyIndex}, History length: ${canvasHistory.length}`);
+    
+    if (!canvas || historyIndex <= 0) {
+      console.log('Editor cannot undo: at beginning of history or no canvas');
+      return;
     }
-  };
-
-  const saveCanvasState = async () => {
-    if (!canvas) return;
-
+    
+    const newIndex = historyIndex - 1;
+    console.log(`Editor undoing to index ${newIndex}`);
+    
     try {
-      const canvasState = JSON.stringify(canvas.toJSON());
-      const { error } = await supabase
-        .from('profiles')
-        .update({ canvas_state: canvasState })
-        .eq('id', userId);
-
-      if (error) throw error;
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error saving canvas state:', error);
-    }
-  };
-
-  const addText = () => {
-    if (!canvas) return;
-    const text = new fabric.IText('Doble click para editar', {
-      left: 50,
-      top: 50,
-      fontFamily: 'Arial',
-      fontSize: 20,
-      fill: '#000000'
-    });
-    canvas.add(text);
-    canvas.setActiveObject(text);
-    canvas.renderAll();
-  };
-
-  const addShape = (type: 'rect' | 'circle') => {
-    if (!canvas) return;
-    const shape = type === 'rect'
-      ? new fabric.Rect({
-          left: 50,
-          top: 50,
-          width: 100,
-          height: 100,
-          fill: '#4F46E5'
-        })
-      : new fabric.Circle({
-          left: 50,
-          top: 50,
-          radius: 50,
-          fill: '#4F46E5'
-        });
-    canvas.add(shape);
-    canvas.setActiveObject(shape);
-    canvas.renderAll();
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!canvas || !e.target.files?.[0]) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (!event.target?.result) return;
-      fabric.Image.fromURL(event.target.result.toString(), (img) => {
-        img.scaleToWidth(200);
-        canvas.add(img);
+      canvas.loadFromJSON(canvasHistory[newIndex], () => {
         canvas.renderAll();
+        setHistoryIndex(newIndex);
+        console.log(`Editor undo successful. New index: ${newIndex}`);
       });
-    };
-    reader.readAsDataURL(e.target.files[0]);
-  };
-
-  const handleColorChange = (color: string) => {
-    if (!selectedObject || !canvas) return;
-    selectedObject.set('fill', color);
-    canvas.renderAll();
-  };
-
-  const deleteSelected = () => {
-    if (!canvas || !selectedObject) return;
-    canvas.remove(selectedObject);
-    setSelectedObject(null);
-    canvas.renderAll();
-  };
-
-  const toggleLock = () => {
-    if (!selectedObject) return;
-    selectedObject.set('lockMovementX', !selectedObject.lockMovementX);
-    selectedObject.set('lockMovementY', !selectedObject.lockMovementY);
-    canvas?.renderAll();
-  };
-
-  const adjustLayer = (direction: 'forward' | 'backward') => {
-    if (!selectedObject || !canvas) return;
-    if (direction === 'forward') {
-      selectedObject.bringForward();
-    } else {
-      selectedObject.sendBackwards();
+    } catch (error) {
+      console.error('Error during editor undo:', error);
     }
-    canvas.renderAll();
   };
+
+  // Redo function
+  const handleRedo = () => {
+    console.log(`Editor Redo called. Current index: ${historyIndex}, History length: ${canvasHistory.length}`);
+    
+    if (!canvas || historyIndex >= canvasHistory.length - 1) {
+      console.log('Editor cannot redo: at end of history or no canvas');
+      return;
+    }
+    
+    const newIndex = historyIndex + 1;
+    console.log(`Editor redoing to index ${newIndex}`);
+    
+    try {
+      canvas.loadFromJSON(canvasHistory[newIndex], () => {
+        canvas.renderAll();
+        setHistoryIndex(newIndex);
+        console.log(`Editor redo successful. New index: ${newIndex}`);
+      });
+    } catch (error) {
+      console.error('Error during editor redo:', error);
+    }
+  };
+
+  // Add a useEffect to log history changes for debugging
+  useEffect(() => {
+    console.log(`History updated in Editor. Index: ${historyIndex}, Length: ${canvasHistory.length}`);
+  }, [historyIndex, canvasHistory]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4">
+    <div className="w-full mx-auto p-2 sm:p-4 overflow-hidden">
       <div className="relative">
         {/* Editor Controls */}
         {isOwner && (
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="mb-4 flex flex-wrap items-center justify-between z-40 relative">
+            <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-0">
               <motion.button
                 onClick={() => setIsEditing(!isEditing)}
-                className="glass-button px-4 py-2 flex items-center gap-2"
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 px-4 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-cyan-300"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
+                disabled={isLoading || isSaving}
               >
                 {isEditing ? (
                   <>
@@ -202,134 +212,80 @@ export function ProfileEditor({ userId, isOwner }: ProfileEditorProps) {
               </motion.button>
               
               {isEditing && (
-                <motion.button
-                  onClick={saveCanvasState}
-                  className="glass-button px-4 py-2 flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Guardar</span>
-                </motion.button>
+                <>
+                  <motion.button
+                    onClick={handleSave}
+                    className="relative overflow-hidden rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 p-2 px-4 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-white"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isLoading || isSaving}
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isLoading || isSaving ? 'Guardando...' : 'Guardar'}</span>
+                  </motion.button>
+                  
+                  <motion.button
+                    onClick={handleExport}
+                    className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 px-4 shadow-[0_2px_5px_rgba(31,38,135,0.1)] flex items-center gap-2 text-cyan-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    disabled={isLoading || isSaving}
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Exportar</span>
+                  </motion.button>
+                </>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Toolbar */}
-        {isEditing && isOwner && (
-          <div className="absolute left-4 top-20 flex flex-col gap-2">
-            <motion.div
-              className="glossy p-2 rounded-xl flex flex-col gap-2"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="glass-button p-2"
-                title="Subir imagen"
-              >
-                <Image className="w-5 h-5" />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-              <button
-                onClick={addText}
-                className="glass-button p-2"
-                title="Añadir texto"
-              >
-                <Type className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => addShape('rect')}
-                className="glass-button p-2"
-                title="Añadir rectángulo"
-              >
-                <Square className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => addShape('circle')}
-                className="glass-button p-2"
-                title="Añadir círculo"
-              >
-                <Circle className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setShowColorPicker(!showColorPicker)}
-                className="glass-button p-2"
-                title="Color"
-              >
-                <Palette className="w-5 h-5" />
-              </button>
-            </motion.div>
-
-            {selectedObject && (
-              <motion.div
-                className="glossy p-2 rounded-xl flex flex-col gap-2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <button
-                  onClick={deleteSelected}
-                  className="glass-button p-2 text-rose-500"
-                  title="Eliminar"
+            
+            {isEditing && (
+              <div className="flex items-center gap-2">
+                <motion.button
+                  onClick={handleUndo}
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={historyIndex <= 0 || isLoading || isSaving}
+                  title="Deshacer"
                 >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={toggleLock}
-                  className="glass-button p-2"
-                  title="Bloquear/Desbloquear"
+                  <Undo className="w-4 h-4" />
+                </motion.button>
+                <motion.button
+                  onClick={handleRedo}
+                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={historyIndex >= canvasHistory.length - 1 || isLoading || isSaving}
+                  title="Rehacer"
                 >
-                  {selectedObject.lockMovementX ? (
-                    <Lock className="w-5 h-5" />
-                  ) : (
-                    <Unlock className="w-5 h-5" />
-                  )}
-                </button>
-                <button
-                  onClick={() => adjustLayer('forward')}
-                  className="glass-button p-2"
-                  title="Traer adelante"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => adjustLayer('backward')}
-                  className="glass-button p-2"
-                  title="Enviar atrás"
-                >
-                  <Minus className="w-5 h-5" />
-                </button>
-              </motion.div>
+                  <Redo className="w-4 h-4" />
+                </motion.button>
+              </div>
             )}
-
-            <AnimatePresence>
-              {showColorPicker && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute left-16 top-0 glossy p-4 rounded-xl"
-                >
-                  <HexColorPicker
-                    color={selectedObject?.fill?.toString() || '#000000'}
-                    onChange={handleColorChange}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         )}
 
-        {/* Canvas */}
-        <div className={`relative rounded-2xl overflow-hidden ${isEditing ? 'border-2 border-dashed border-violet-300' : ''}`}>
-          <canvas ref={canvasRef} />
+        {/* Main content container with proper positioning */}
+        <div className="relative flex flex-col items-center">
+          {/* Left sidebar space for desktop */}
+          {isEditing && !isMobile && (
+            <div className="absolute left-0 top-0 bottom-0 w-16 flex-shrink-0"></div>
+          )}
+          
+          {/* Canvas component */}
+          <div className="w-full">
+            <ProfileCanvas 
+              userId={userId}
+              isOwner={isOwner}
+              isEditing={isEditing}
+              isLoading={isLoading || isSaving}
+              setIsLoading={setIsLoading}
+              canvasHistory={canvasHistory}
+              setCanvasHistory={setCanvasHistory}
+              historyIndex={historyIndex}
+              setHistoryIndex={setHistoryIndex}
+            />
+          </div>
         </div>
       </div>
     </div>

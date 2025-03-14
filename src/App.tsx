@@ -1,148 +1,53 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { Outlet } from '@tanstack/react-router';
 import { supabase } from './lib/supabase';
-import { Header } from './components/Header';
-import { CountrySelector } from './components/CountrySelector';
-import { CitySelector } from './components/CitySelector';
-import { CircularMenu } from './components/CircularMenu';
-import { HallButtons } from './components/HallButtons';
 import { AuthScreen } from './components/AuthScreen';
-import { getCountries, getCitiesByCountry, Country } from './lib/location';
-import { MapPinOff } from 'lucide-react';
 
-interface LocationState {
-  countries: Country[];
-  cities: string[];
-  selectedCountry: string;
-  selectedCity: string;
-}
-
+/**
+ * App - Root component that handles authentication state
+ * and provides global styles
+ */
 export default function App() {
   const [session, setSession] = useState<boolean>(false);
-  const [userEmail, setUserEmail] = useState<string>('');
-  const [state, setState] = useState<LocationState>({
-    countries: getCountries(),
-    cities: getCountries()[0].cities,
-    selectedCountry: getCountries()[0].name,
-    selectedCity: getCountries()[0].cities[0]
-  });
 
   useEffect(() => {
-    if (state.selectedCountry) {
-      const cities = getCitiesByCountry(state.selectedCountry);
-      setState(prev => ({ ...prev, cities, selectedCity: cities[0] }));
-    }
-  }, [state.selectedCountry]);
-
-  function handleCountrySelect(country: string) {
-    setState(prev => ({ ...prev, selectedCountry: country }));
-  }
-
-  function handleCitySelect(city: string) {
-    setState(prev => ({ ...prev, selectedCity: city }));
-  }
-
-  function handleResetLocation() {
-    setState(prev => ({
-      ...prev,
-      selectedCountry: getCountries()[0].name,
-      selectedCity: getCountries()[0].cities[0]
-    }));
-  }
-
-  useEffect(() => {
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserEmail(session.user.email || '');
-      }
       setSession(!!session);
     });
 
+    // Subscribe to auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserEmail(session.user.email || '');
-      }
       setSession(!!session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  // Add global styles for cyan theme
+  useEffect(() => {
+    // Add a style element to the document head
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      a, button { color: #22d3ee; }
+      a:hover, button:hover { color: #67e8f9; }
+      h1, h2, h3, h4, h5, h6 { color: #a5f3fc; }
+    `;
+    document.head.appendChild(styleElement);
+
+    // Clean up function to remove the style element when component unmounts
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
+  // Show auth screen if not authenticated
   if (!session) {
     return <AuthScreen onAuthSuccess={() => setSession(true)} />;
   }
 
-  return (
-    <div 
-      className="min-h-screen bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-sky-400 via-blue-500 to-indigo-500 flex flex-col fixed inset-0"
-      style={{
-        backgroundImage: `
-          linear-gradient(135deg, 
-            rgba(56, 189, 248, 0.8),
-            rgba(14, 165, 233, 0.8),
-            rgba(2, 132, 199, 0.8)
-          ),
-          url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop')
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}
-    >
-      <Header unreadChats={3} userEmail={userEmail} />
-      
-      <div className="flex flex-col lg:flex-row lg:items-center p-3 sm:p-6 lg:p-8 mt-24 sm:mt-20 mb-32 sm:mb-28 lg:mb-32">
-        <div className="flex flex-col gap-2 mb-4 lg:mb-0 max-w-md lg:max-w-xl mx-auto lg:mx-0 lg:ml-auto w-full">
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.6,
-            ease: [0.6, -0.05, 0.01, 0.99]
-          }}>
-          <div className="glossy p-4 sm:p-5 rounded-2xl">
-            <div className="flex items-center gap-3 mb-3">
-              <h2 className="text-sky-900 font-semibold">Ubicación</h2>
-              <motion.button
-                onClick={handleResetLocation}
-                className="ml-auto glass-button flex items-center gap-2 px-3 py-1.5 text-sm"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <MapPinOff className="w-3.5 h-3.5 text-violet-500" strokeWidth={2.5} />
-                <span className="text-violet-600 font-medium">Reestablecer</span>
-              </motion.button>
-            </div>
-            <div className="space-y-3">
-              <CountrySelector
-                items={state.countries.map(c => c.name)}
-                selected={state.selectedCountry}
-                onSelect={handleCountrySelect}
-              />
-              <CitySelector
-                items={state.cities}
-                selected={state.selectedCity}
-                onSelect={handleCitySelect}
-              />
-            </div>
-          </div>
-        </motion.div>
-      </div>
-        
-        <motion.div
-        className="mt-4 lg:mt-0 max-w-md lg:max-w-xl mx-auto lg:mx-0 lg:mr-auto w-full lg:ml-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.6,
-          delay: 0.2,
-          ease: [0.6, -0.05, 0.01, 0.99]
-        }}>
-        <HallButtons />
-      </motion.div>
-      <CircularMenu />
-    </div>
-    </div>
-  )
+  // Render the outlet which will be the MainLayout via the router
+  return <Outlet />;
 }

@@ -1,21 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Sparkles } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { getOrCreateTopicGroupChat } from '../lib/chat';
 
-const hallColors = [
-  'from-violet-400 to-indigo-600',
-  'from-fuchsia-400 to-purple-600',
-  'from-rose-400 to-pink-600',
-  'from-amber-400 to-orange-600'
+const hallCategories = [
+  { id: 'universidad', name: 'University', color: 'from-violet-400 to-indigo-600' },
+  { id: 'arte', name: 'Art', color: 'from-fuchsia-400 to-purple-600' },
+  { id: 'planes', name: 'Plans', color: 'from-amber-400 to-orange-600' },
+  { id: 'amistad', name: 'Friends', color: 'from-rose-400 to-pink-600' }
 ];
 
-export function HallButtons() {
+interface HallButtonsProps {
+  selectedCity?: string;
+}
+
+export function HallButtons({ selectedCity = 'Madrid' }: HallButtonsProps) {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
+
+  const handleHallClick = async (topicId: string) => {
+    try {
+      // Set loading state for this topic
+      setIsLoading(prev => ({ ...prev, [topicId]: true }));
+      
+      // Get or create the group chat for this topic and city
+      const groupChatId = await getOrCreateTopicGroupChat(topicId, selectedCity);
+      
+      // Navigate to the group chat page with the group chat ID
+      navigate({ 
+        to: '/group-chat/$id', 
+        params: { id: groupChatId }
+      });
+    } catch (error) {
+      console.error('Error creating group chat:', error);
+      // If there's an error, fall back to a simpler navigation
+      navigate({ 
+        to: '/group-chat/$id', 
+        params: { id: topicId },
+        search: { city: selectedCity }
+      });
+    } finally {
+      // Clear loading state
+      setIsLoading(prev => ({ ...prev, [topicId]: false }));
+    }
+  };
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-      {[1, 2, 3, 4].map((i, index) => (
+      {hallCategories.map((hall, index) => (
         <motion.button
-          key={i}
-          className="hall-button group relative"
+          key={hall.id}
+          onClick={() => handleHallClick(hall.id)}
+          className="relative"
           whileHover={{ scale: 1.02, translateZ: 20 }}
           whileTap={{ scale: 0.98, translateZ: 10 }}
           transition={{
@@ -23,21 +60,21 @@ export function HallButtons() {
             stiffness: 400,
             damping: 17
           }}
+          disabled={isLoading[hall.id]}
         >
-          <div className="relative overflow-hidden rounded-2xl w-full bg-gradient-to-br from-white/90 to-white/40">
-            {/* Glass effect layers */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-white/30" />
-            <div className="absolute inset-0 bg-gradient-to-t from-transparent via-sky-100/20 to-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            
-            {/* Dynamic reflection */}
-            <div className="absolute -inset-full bg-gradient-to-r from-transparent via-white/50 to-transparent group-hover:animate-[shine_2s_ease-in-out_infinite] translate-x-[-100%] skew-x-12" />
+          <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(124,58,237,0.1)]">
+            {/* Prismatic edge effect */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+            <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
             
             {/* Content */}
             <div className="relative z-10 flex flex-col items-center gap-3 sm:gap-4 p-4 sm:p-5">
               <div className="relative">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center transform group-hover:scale-110 transition-all duration-300 relative">
                   {/* Glass base */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${hallColors[index]} opacity-90 rounded-2xl`} />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${hall.color} opacity-90 rounded-2xl`} />
                   
                   {/* Glass reflections */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/50 via-transparent to-white/10" />
@@ -52,11 +89,18 @@ export function HallButtons() {
                   {/* Border */}
                   <div className="absolute inset-0 rounded-2xl ring-2 ring-white/90 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]" />
                   
-                  {/* Icon */}
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
+                  {/* Icon or Loading Spinner */}
+                  {isLoading[hall.id] ? (
+                    <svg className="animate-spin w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
+                  )}
                   
                   {/* Outer glow */}
-                  <div className={`absolute -inset-1 ${hallColors[index].replace('from-', '').replace('to-', '')} rounded-3xl blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300`} />
+                  <div className={`absolute -inset-1 ${hall.color.replace('from-', '').replace('to-', '')} rounded-3xl blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-300`} />
                 </div>
                 <motion.div
                   className="absolute -top-1 -right-1"
@@ -68,16 +112,13 @@ export function HallButtons() {
                     ease: "easeInOut"
                   }}
                 >
-                  <Sparkles className={`w-3 h-3 sm:w-4 sm:h-4 ${hallColors[index].split(' ')[0].replace('from-', 'text-')}`} />
+                  <Sparkles className={`w-3 h-3 sm:w-4 sm:h-4 ${hall.color.split(' ')[0].replace('from-', 'text-')}`} />
                 </motion.div>
               </div>
-              <span className={`font-semibold bg-gradient-to-b ${hallColors[index]} bg-clip-text text-transparent transition-colors text-base sm:text-lg lg:text-xl opacity-90`}>
-                Hall {i}
+              <span className={`font-semibold bg-gradient-to-b ${hall.color} bg-clip-text text-transparent transition-colors text-base sm:text-lg lg:text-xl opacity-90`}>
+                {hall.name}
               </span>
             </div>
-            
-            {/* Bottom highlight */}
-            <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
         </motion.button>
       ))}

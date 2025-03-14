@@ -8,9 +8,9 @@ interface ProfileState {
   setIsEditing: (isEditing: boolean) => void;
 }
 
-export const useProfileStore = create<ProfileState>((set) => ({
+export const useProfileStore = create<ProfileState>((set, get) => ({
   canvas: null,
   isEditing: false,
   setCanvas: (canvas) => set({ canvas }),
-  setIsEditing: (isEditing) => set({ isEditing }),
+  setIsEditing: (isEditing) => set({ isEditing })
 }));

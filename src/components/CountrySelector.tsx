@@ -1,6 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, ChevronDown, Search } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
 
 interface CountrySelectorProps {
   items: string[];
@@ -9,81 +7,161 @@ interface CountrySelectorProps {
 }
 
 export function CountrySelector({ items, selected, onSelect }: CountrySelectorProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [internalSelected, setInternalSelected] = useState(selected);
 
-  const filteredItems = items.filter(item =>
-    item.toLowerCase().includes(search.toLowerCase())
-  );
-
+  // Update internal state when external selection changes
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setIsOpen(false);
+    setInternalSelected(selected);
+  }, [selected]);
+
+  // Center the selected item when it changes externally
+  useEffect(() => {
+    if (isScrolling) return; // Skip if user is currently scrolling
+    
+    const container = containerRef.current;
+    if (container) {
+      const selectedElement = container.querySelector(`[data-item="${internalSelected}"]`);
+      if (selectedElement) {
+        const elementTop = (selectedElement as HTMLElement).offsetTop;
+        container.scrollTop = elementTop - 16; // Align with selection window
       }
     }
+  }, [internalSelected, isScrolling]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  const handleScroll = () => {
+    // Set scrolling state
+    setIsScrolling(true);
+    
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Set a timeout to handle selection after scrolling stops
+    scrollTimeoutRef.current = setTimeout(() => {
+      const container = containerRef.current;
+      if (!container) {
+        setIsScrolling(false);
+        return;
+      }
+      
+      const containerRect = container.getBoundingClientRect();
+      const middleY = containerRect.top + (containerRect.height / 2);
+      
+      // Find the element closest to the middle
+      let closestElement: Element | null = null;
+      let closestDistance = Infinity;
+      
+      items.forEach((item) => {
+        const element = container.querySelector(`[data-item="${item}"]`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const elementMiddleY = rect.top + (rect.height / 2);
+          const distance = Math.abs(elementMiddleY - middleY);
+          
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestElement = element;
+          }
+        }
+      });
+      
+      if (closestElement) {
+        // Use type assertion to tell TypeScript this is an Element with getAttribute
+        const newSelected = (closestElement as Element).getAttribute('data-item');
+        if (newSelected && newSelected !== internalSelected) {
+          setInternalSelected(newSelected);
+          onSelect(newSelected);
+        }
+      }
+      
+      setIsScrolling(false);
+    }, 200); // Increased timeout for better stability
+  };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
-    <div ref={ref} className="relative w-full">
-      <motion.button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full glass-button p-2.5 flex items-center gap-2 relative"
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <MapPin className="w-3.5 h-3.5 text-violet-500" strokeWidth={2.5} />
-        <span className="text-gray-700 font-medium text-sm flex-1 text-left">{selected}</span>
-        <ChevronDown
-          className={`w-4 h-4 text-violet-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-        />
-      </motion.button>
+    <div className="relative pt-3 pb-1">
+      {/* Label */}
+      <div className="absolute left-3 top-0 px-2 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 rounded-full z-10">
+        <span className="text-xs font-medium text-cyan-300">País</span>
+      </div>
+      
+      <div className="relative h-[64px] rounded-[32px] overflow-hidden bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)]">
+        {/* Prismatic edge effect */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+        
+        {/* Center highlight */}
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[32px] pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-blue-500/10" />
+          <div className="absolute inset-x-0 top-0 border-t border-cyan-500/20" />
+          <div className="absolute inset-x-0 bottom-0 border-t border-cyan-500/20" />
+        </div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute z-50 w-full mt-2 glossy rounded-xl overflow-hidden"
-          >
-            <div className="p-2 border-b border-violet-100">
-              <div className="relative">
-                <Search className="w-4 h-4 text-violet-400 absolute left-2 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar país..."
-                  className="w-full pl-8 pr-3 py-2 bg-white/60 rounded-lg text-sm outline-none border border-violet-100 focus:border-violet-300 transition-colors"
-                />
+        {/* Top fade */}
+        <div className="absolute inset-x-0 top-0 h-[16px] bg-gradient-to-b from-transparent to-transparent pointer-events-none z-10" />
+        
+        {/* Bottom fade */}
+        <div className="absolute inset-x-0 bottom-0 h-[16px] bg-gradient-to-t from-transparent to-transparent pointer-events-none z-10" />
+
+        <div 
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto scrollbar-none"
+          style={{ scrollBehavior: 'smooth' }}
+        >
+          {/* Top spacer */}
+          <div className="h-[16px]" />
+          
+          {items.map((item) => (
+            <div
+              key={item}
+              data-item={item}
+              className="h-[32px] px-4"
+            >
+              <div 
+                className={`h-full flex items-center justify-center transition-all duration-300 ${
+                  internalSelected === item 
+                    ? 'text-cyan-300 font-medium scale-100 translate-z-0' 
+                    : 'text-cyan-100/60 scale-90 -translate-z-10'
+                }`}
+                style={{
+                  transform: internalSelected === item 
+                    ? 'translateZ(0) scale(1)' 
+                    : 'translateZ(-10px) scale(0.9)',
+                  transformStyle: 'preserve-3d',
+                  perspective: '500px',
+                  textShadow: internalSelected === item ? '0 0 10px rgba(6, 182, 212, 0.5)' : 'none'
+                }}
+              >
+                {item}
               </div>
             </div>
-            <div className="max-h-48 overflow-y-auto py-1">
-              {filteredItems.map((item) => (
-                <motion.button
-                  key={item}
-                  onClick={() => {
-                    onSelect(item);
-                    setIsOpen(false);
-                    setSearch('');
-                  }}
-                  className={`w-full px-4 py-2.5 text-sm text-left hover:bg-violet-50 transition-colors
-                    ${item === selected ? 'text-violet-600 font-medium bg-violet-50' : 'text-gray-600'}`}
-                  whileHover={{ x: 4 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {item}
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ))}
+          
+          {/* Bottom spacer */}
+          <div className="h-[16px]" />
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute right-2 inset-y-0 flex flex-col items-center justify-center gap-1 opacity-60">
+          <div className="w-1 h-6 rounded-full bg-gradient-to-b from-cyan-300/80 to-blue-400/80 animate-pulse" />
+        </div>
+      </div>
     </div>
   );
 }

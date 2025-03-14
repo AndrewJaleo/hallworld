@@ -1,50 +1,39 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, User, LogOut, Settings } from 'lucide-react';
+import { Bell, User, LogOut, Settings, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 interface HeaderProps {
   unreadChats: number;
   userEmail: string;
 }
 
+interface ChatNotification {
+  id: string;
+  sender_email: string;
+  content: string;
+  created_at: string;
+  chat_id: string;
+}
+
 export function Header({ unreadChats, userEmail }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [notifications, setNotifications] = useState<ChatNotification[]>([]);
+  const [loading, setLoading] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-
-  const mockChats = [
-    {
-      id: 1,
-      user: 'Laura García',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&h=256&auto=format&fit=crop',
-      message: 'Hola! ¿Qué tal todo?',
-      time: '2min'
-    },
-    {
-      id: 2,
-      user: 'Carlos Ruiz',
-      avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=256&h=256&auto=format&fit=crop',
-      message: '¿Te apuntas al evento?',
-      time: '5min'
-    },
-    {
-      id: 3,
-      user: 'Ana Martínez',
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=256&h=256&auto=format&fit=crop',
-      message: 'El concierto estuvo genial!',
-      time: '15min'
-    }
-  ];
+  const navigate = useNavigate();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        console.log('Click outside notifications detected');
         setShowNotifications(false);
       }
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        console.log('Click outside profile detected');
         setShowProfile(false);
       }
     }
@@ -53,136 +42,192 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (showNotifications) {
+      console.log('Notifications opened, fetching unread messages');
+      fetchUnreadMessages();
+    }
+  }, [showNotifications]);
+
+  const fetchUnreadMessages = async () => {
+    try {
+      setLoading(true);
+      console.log('Starting to fetch unread messages');
+      
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.log('No user session found');
+        return;
+      }
+      
+      const userId = session.user.id;
+      
+      // Get all chats where the current user is either user1 or user2
+      const { data: chatsData, error: chatsError } = await supabase
+        .from('private_chats')
+        .select('id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+      
+      if (chatsError) throw chatsError;
+      
+      if (chatsData && chatsData.length > 0) {
+        // Get all unread messages in these chats
+        const chatIds = chatsData.map(chat => chat.id);
+        
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('private_messages')
+          .select(`
+            id,
+            chat_id,
+            content,
+            created_at,
+            sender_id
+          `)
+          .in('chat_id', chatIds)
+          .neq('sender_id', userId)
+          .is('read_at', null)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (messagesError) throw messagesError;
+        
+        if (!messagesData || messagesData.length === 0) {
+          setNotifications([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Get all sender IDs
+        const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
+        
+        // Fetch profiles for all senders in a single query
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', senderIds);
+          
+        if (profilesError) {
+          console.error('Error fetching sender profiles:', profilesError);
+          setLoading(false);
+          return;
+        }
+        
+        // Create a map of user IDs to emails for quick lookup
+        const userEmailMap = profilesData.reduce((map, profile) => {
+          map[profile.id] = profile.email;
+          return map;
+        }, {} as Record<string, string>);
+        
+        // Format notifications
+        const formattedNotifications = messagesData.map((msg) => ({
+          id: msg.id,
+          sender_email: userEmailMap[msg.sender_id] || 'Unknown User',
+          content: msg.content,
+          created_at: msg.created_at,
+          chat_id: msg.chat_id
+        }));
+        
+        setNotifications(formattedNotifications);
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching unread messages:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleNotificationClick = (chatId: string) => {
+    setShowNotifications(false);
+    navigate({ to: `/chat/${chatId}` });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+      return 'now';
+    } else if (diffInMinutes < 60) {
+      return `${diffInMinutes}min`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)}h`;
+    } else {
+      return `${Math.floor(diffInMinutes / 1440)}d`;
+    }
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[100] px-4 pt-4 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-[100] px-4 pt-4 pointer-events-none overflow-visible">
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.6, -0.05, 0.01, 0.99] }}
-        className="relative mx-auto max-w-7xl pointer-events-auto"
+        className="relative mx-auto max-w-7xl pointer-events-auto overflow-visible"
       >
-        {/* Animated background glow */}
+        {/* Subtle background glow - Updated to match the darker blue cube colors */}
         <motion.div
           animate={{
             scale: [1, 1.02, 1],
-            opacity: [0.3, 0.4, 0.3],
+            opacity: [0.2, 0.3, 0.2],
           }}
           transition={{
             duration: 3,
             repeat: Infinity,
             ease: "easeInOut"
           }}
-          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-emerald-400/30 via-teal-400/30 to-cyan-400/30 blur-2xl transform-gpu"
+          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-2xl transform-gpu"
         />
-        <motion.div
-          animate={{
-            scale: [1, 1.02, 1],
-            opacity: [0.5, 0.6, 0.5],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-violet-400/30 via-fuchsia-400/30 to-pink-400/30 blur-2xl transform-gpu"
-        />
-        <motion.div
-          animate={{
-            scale: [1.02, 1, 1.02],
-            opacity: [0.4, 0.5, 0.4],
-          }}
-          transition={{
-            duration: 7,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5
-          }}
-          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-cyan-400/30 via-sky-400/30 to-blue-400/30 blur-2xl transform-gpu"
-        />
-        <motion.div
-          animate={{
-            opacity: [0.3, 0.4, 0.3],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1
-          }}
-          className="absolute inset-0 rounded-[32px] bg-gradient-to-r from-amber-400/30 via-orange-400/30 to-rose-400/30 blur-2xl transform-gpu"
-        />
-        <div className="absolute inset-0 rounded-[32px] bg-gradient-to-b from-white/90 to-white/20 backdrop-blur-2xl">
-          {/* Prismatic edge effect */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-90" />
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-70" />
-          <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white to-transparent opacity-90" />
-          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white to-transparent opacity-70" />
-        </div>
 
-        <div className="relative rounded-[32px] overflow-hidden border border-white/60">
-          {/* Frutiger Aero glass effects */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.5),transparent)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.6),transparent)]" />
-          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-white/90 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-
-          {/* Dynamic light reflection */}
-          <motion.div
-            animate={{
-              opacity: [0.2, 0.4, 0.2],
-              backgroundPosition: ['100% 0', '0 0', '100% 0'],
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent bg-[length:50%_100%] bg-no-repeat"
-          />
-          <motion.div
-            animate={{
-              opacity: [0.1, 0.3, 0.1],
-              backgroundPosition: ['0 0', '100% 0', '0 0'],
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 1
-            }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent bg-[length:30%_100%] bg-no-repeat"
-          />
-
+        {/* Main container with glassy effect - Updated to match the darker blue cube colors */}
+        <div className="relative rounded-[32px] overflow-visible bg-cyan-900/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
           {/* Content */}
-          <div className="relative px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between">
+          <div className="relative px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between overflow-visible">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-lg sm:text-xl font-bold bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 bg-clip-text text-transparent [text-shadow:0_2px_4px_rgba(255,255,255,0.5)]"
+              className="flex items-center gap-2"
             >
-              HallWorld
+              {/* Logo - Make it clickable and redirect to home page */}
+              <div 
+                onClick={() => navigate({ to: '/' })}
+                className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <img 
+                  src="/logo_hallworld.png" 
+                  alt="HallWorld Logo" 
+                  className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+                />
+                {/* Brand name with updated gradient */}
+                <span className="text-lg sm:text-xl font-bold bg-gradient-to-br from-cyan-300 via-blue-300 to-indigo-400 bg-clip-text text-transparent">
+                  HallWorld
+                </span>
+              </div>
             </motion.div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Notifications */}
-              <div className="relative" ref={notificationsRef}>
+              {/* Notifications - Updated colors */}
+              <div className="relative z-[150] overflow-visible" ref={notificationsRef}>
                 <motion.button
-                  onClick={() => setShowNotifications(!showNotifications)}
+                  onClick={() => {
+                    console.log('Notification button clicked, current state:', !showNotifications);
+                    setShowNotifications(!showNotifications);
+                  }}
                   className="relative group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/30 via-fuchsia-400/30 to-pink-400/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
-                  <div className="relative p-1.5 sm:p-2 rounded-full bg-gradient-to-b from-white/90 to-white/40 border border-white/80 shadow-lg backdrop-blur-xl">
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-white/20 to-white/40" />
-                    <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-violet-500" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-800/30 via-blue-900/30 to-indigo-950/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
+                  <div className="relative p-1.5 sm:p-2 rounded-full bg-white/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
+                    <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
                     {unreadChats > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-medium bg-gradient-to-br from-rose-500 to-pink-500 text-white rounded-full shadow-lg shadow-rose-500/30 border border-white/80">
+                      <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-medium bg-gradient-to-br from-blue-700 to-indigo-900 text-white rounded-full shadow-lg shadow-blue-900/30 border border-white/20">
                         {unreadChats}
                       </span>
                     )}
@@ -196,53 +241,58 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="fixed right-2 sm:right-4 mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-[20rem] sm:max-w-none z-[200]"
+                      className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-[20rem] sm:max-w-none z-[999]"
                     >
                       <div className="relative">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl border border-white/40 overflow-hidden backdrop-blur-xl">
-                          <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-transparent" />
-
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-xl transform-gpu" />
+                        <div className="relative rounded-2xl bg-black/20 backdrop-blur-xl border border-cyan-700/20 shadow-lg overflow-hidden">
                           <div className="relative">
-                            <div className="p-4 border-b border-white/20">
+                            <div className="p-4 border-b border-white/10">
                               <div className="flex items-center justify-between">
-                                <h3 className="font-semibold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                                  Notificaciones
+                                <h3 className="font-semibold bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
+                                  Mensajes
                                 </h3>
-                                <span className="text-xs font-medium px-2 py-1 rounded-full bg-gradient-to-r from-violet-100 to-fuchsia-100 text-violet-600">
+                                <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/10 text-cyan-200">
                                   {unreadChats} nuevos
                                 </span>
                               </div>
                             </div>
 
                             <div className="divide-y divide-white/10">
-                              {mockChats.map(chat => (
-                                <motion.div
-                                  key={chat.id}
-                                  className="relative group cursor-pointer"
-                                  whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                                >
-                                  <div className="p-4">
-                                    <div className="flex items-center gap-3">
-                                      <div className="relative">
-                                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 blur-sm" />
-                                        <img loading="lazy"
-                                          src={chat.avatar}
-                                          alt={chat.user}
-                                          className="w-10 h-10 rounded-full object-cover border-2 border-white/80 relative"
-                                        />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                          <p className="font-medium text-gray-800 truncate text-sm sm:text-base">{chat.user}</p>
-                                          <span className="text-[10px] sm:text-xs text-violet-600 ml-2">{chat.time}</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 truncate">{chat.message}</p>
-                                      </div>
+                              {loading ? (
+                                <div className="p-4 text-center text-sm text-white/70">
+                                  Cargando mensajes...
+                                </div>
+                              ) : notifications.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-white/70">
+                                  No tienes mensajes nuevos
+                                </div>
+                              ) : (
+                                notifications.map((notification) => (
+                                  <button
+                                    key={notification.id}
+                                    onClick={() => handleNotificationClick(notification.chat_id)}
+                                    className="w-full p-3 flex items-start gap-3 hover:bg-white/5 transition-colors text-left"
+                                  >
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-cyan-600 to-blue-800 flex items-center justify-center text-white font-medium text-sm">
+                                      {notification.sender_email.charAt(0).toUpperCase()}
                                     </div>
-                                  </div>
-                                </motion.div>
-                              ))}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex justify-between items-start">
+                                        <p className="text-sm font-medium text-white truncate">
+                                          {notification.sender_email}
+                                        </p>
+                                        <span className="text-xs text-white/60 ml-2 flex-shrink-0">
+                                          {formatTime(notification.created_at)}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-white/80 mt-1 line-clamp-2">
+                                        {notification.content}
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))
+                              )}
                             </div>
                           </div>
                         </div>
@@ -252,19 +302,17 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                 </AnimatePresence>
               </div>
 
-              {/* Profile */}
-              <div className="relative" ref={profileRef}>
+              {/* Profile Menu - Updated colors */}
+              <div className="relative z-[150] overflow-visible" ref={profileRef}>
                 <motion.button
                   onClick={() => setShowProfile(!showProfile)}
                   className="relative group"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/30 via-fuchsia-400/30 to-pink-400/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
-                  <div className="relative p-0.5 sm:p-1 rounded-full bg-gradient-to-b from-white/90 to-white/40 border border-white/80 shadow-lg backdrop-blur-xl">
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-violet-400 via-fuchsia-500 to-pink-500 flex items-center justify-center text-white text-xs sm:text-sm font-medium shadow-inner">
-                      {userEmail.charAt(0).toUpperCase()}
-                    </div>
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-800/30 via-blue-900/30 to-indigo-950/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
+                  <div className="relative p-1.5 sm:p-2 rounded-full bg-white/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
                   </div>
                 </motion.button>
 
@@ -275,58 +323,59 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="fixed right-2 sm:right-4 mt-2 w-[calc(100vw-1rem)] sm:w-72 max-w-[18rem] sm:max-w-none z-[200]"
+                      className="absolute right-0 top-full mt-2 w-56 z-[999]"
                     >
                       <div className="relative">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-400/20 via-fuchsia-400/20 to-pink-400/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl border border-white/40 overflow-hidden backdrop-blur-xl">
-                          <div className="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-transparent" />
-
-                          <div className="relative">
-                            <div className="p-4 border-b border-white/20">
-                              <div className="flex items-center gap-3">
-                                <div className="relative">
-                                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-violet-400/20 to-fuchsia-400/20 blur-sm" />
-                                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-400 via-fuchsia-500 to-pink-500 flex items-center justify-center text-white text-xl font-medium border-2 border-white/80 relative">
-                                    {userEmail.charAt(0).toUpperCase()}
-                                  </div>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent truncate">
-                                    {userEmail}
-                                  </div>
-                                  <div className="text-sm text-gray-500">Usuario</div>
-                                </div>
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-xl transform-gpu" />
+                        <div className="relative rounded-2xl bg-black/20 backdrop-blur-xl border border-cyan-700/20 shadow-lg overflow-hidden">
+                          <div className="p-4 border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-600 to-blue-800 flex items-center justify-center text-white font-medium">
+                                {userEmail.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">
+                                  {userEmail}
+                                </p>
+                                <p className="text-xs text-white/60 mt-0.5">
+                                  Usuario
+                                </p>
                               </div>
                             </div>
+                          </div>
 
-                            <div className="p-1">
-                              <Link
-                                to="/profile"
-                                onClick={() => setShowProfile(false)}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-700 rounded-lg relative group"
-                              >
-                                <User className="w-4 h-4 text-violet-500" />
-                                Mi perfil
-                              </Link>
+                          <div className="p-2">
+                            <Link
+                              to="/profile"
+                              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+                              onClick={() => setShowProfile(false)}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                <Settings className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <span className="text-sm text-white">Perfil</span>
+                            </Link>
 
-                              <motion.button
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-gray-700 rounded-lg relative group"
-                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                              >
-                                <Settings className="w-4 h-4 text-violet-500" />
-                                Ajustes
-                              </motion.button>
+                            <Link
+                              to="/"
+                              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+                              onClick={() => setShowProfile(false)}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                <MessageSquare className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <span className="text-sm text-white">Chats</span>
+                            </Link>
 
-                              <motion.button
-                                onClick={handleLogout}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left text-rose-600 rounded-lg relative group"
-                                whileHover={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                              >
-                                <LogOut className="w-4 h-4 text-rose-500" />
-                                Cerrar sesión
-                              </motion.button>
-                            </div>
+                            <button
+                              onClick={handleLogout}
+                              className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-white/5 transition-colors text-left"
+                            >
+                              <div className="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
+                                <LogOut className="w-4 h-4 text-cyan-300" />
+                              </div>
+                              <span className="text-sm text-white">Cerrar sesión</span>
+                            </button>
                           </div>
                         </div>
                       </div>
