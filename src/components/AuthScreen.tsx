@@ -114,7 +114,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
           <div className="relative z-10">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-cyan-300 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
-                {isLogin ? 'Bienvenido de nuevo' : 'Crear cuenta'}
+                {isLogin ? 'Bienvenido a tu mundo' : 'Crear cuenta'}
               </h1>
               <p className="text-cyan-400 mt-2 font-medium [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
                 {isLogin

@@ -74,14 +74,14 @@ function MemberModal({
       'from-rose-400 to-rose-600',
       'from-pink-400 to-pink-600'
     ];
-    
+
     // Use a simple hash function to get a consistent index
     let hash = 0;
     for (let i = 0; i < id.length; i++) {
       hash = ((hash << 5) - hash) + id.charCodeAt(i);
       hash = hash & hash; // Convert to 32bit integer
     }
-    
+
     const index = Math.abs(hash) % colors.length;
     return colors[index];
   };
@@ -112,7 +112,7 @@ function MemberModal({
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-              
+
               {/* Close button */}
               <button
                 onClick={onClose}
@@ -120,24 +120,24 @@ function MemberModal({
               >
                 <X className="w-4 h-4" />
               </button>
-              
+
               {/* Member info */}
               <div className="flex flex-col items-center text-center">
                 {/* Avatar */}
                 <div className={`w-24 h-24 rounded-full bg-gradient-to-r ${getRandomColor(member.id)} flex items-center justify-center text-white text-3xl font-semibold mb-4 border-2 border-white/30 shadow-lg`}>
                   {getInitials(member.email)}
                 </div>
-                
+
                 {/* Name */}
                 <h3 className="text-xl font-semibold text-cyan-300 mb-1">
                   {member.email.split('@')[0]}
                 </h3>
-                
+
                 {/* Email */}
                 <p className="text-cyan-400 mb-6">
                   {member.email}
                 </p>
-                
+
                 {/* Actions */}
                 <div className="flex gap-3 w-full">
                   <button
@@ -147,7 +147,7 @@ function MemberModal({
                     <MessageSquare className="w-4 h-4" />
                     <span>Message</span>
                   </button>
-                  
+
                   <button
                     onClick={() => onViewProfile(member.id)}
                     className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 text-cyan-300 hover:bg-cyan-700/30 transition-colors"
@@ -168,12 +168,12 @@ function MemberModal({
 export function GroupChatPage() {
   const { id } = useParams({ from: '/layout/group-chat/$id' });
   const navigate = useNavigate();
-  
+
   // User state
   const [userEmail, setUserEmail] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  
+
   // Chat state
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>("");
@@ -183,18 +183,18 @@ export function GroupChatPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [showMembers, setShowMembers] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 1024 });
-  
+
   // Use a ref to track message IDs to prevent duplicates
   const processedMessageIdsRef = useRef<Set<string>>(new Set());
-  
+
   // Add state for selected member
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  
+
   // Debug: Log members whenever they change
   useEffect(() => {
     console.log("Members state updated:", members);
   }, [members]);
-  
+
   // Get current user and authenticate
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -207,7 +207,7 @@ export function GroupChatPage() {
         navigate({ to: "/" });
       }
     });
-    
+
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -220,64 +220,64 @@ export function GroupChatPage() {
         }
       }
     );
-    
+
     return () => {
       authListener?.subscription.unsubscribe();
     };
   }, [navigate]);
-  
+
   // Fetch group chat data and messages
   useEffect(() => {
     if (!id || !isAuthenticated) return;
-    
+
     const fetchGroupChatData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch group chat info
         const { data: chatData, error: chatError } = await supabase
           .from("group_chats")
           .select("*")
           .eq("id", id)
           .single();
-        
+
         if (chatError) throw chatError;
         setGroupInfo(chatData);
-        
+
         // Fetch messages for this group chat without trying to join with profiles
         const { data: messagesData, error: messagesError } = await supabase
           .from("group_messages")
           .select("id, content, sender_id, created_at")
           .eq("group_id", id)
           .order("created_at", { ascending: true });
-        
+
         if (messagesError) throw messagesError;
-        
+
         // Get unique sender IDs from messages
         const senderIds = [...new Set(messagesData.map((msg: any) => msg.sender_id))];
         console.log("Unique sender IDs:", senderIds);
         console.log("Messages data:", messagesData);
-        
+
         // If there are no messages yet, we'll still need to show the current user
-        let memberIds = [...senderIds]; // Create a new array to avoid modifying senderIds
-        
+        const memberIds = [...senderIds]; // Create a new array to avoid modifying senderIds
+
         // Always include the current user's ID if authenticated
         if (userId && !memberIds.includes(userId)) {
           memberIds.push(userId);
         }
-        
+
         console.log("Member IDs including current user:", memberIds);
-        
+
         // Fetch profiles for all members in a single query
         let profilesData = null;
         let profilesError = null;
-        
+
         if (memberIds.length > 0) {
           const response = await supabase
             .from("profiles")
             .select("id, email, avatar_url")
             .in("id", memberIds);
-            
+
           profilesData = response.data;
           profilesError = response.error;
           console.log("Fetched profiles data:", profilesData);
@@ -285,45 +285,45 @@ export function GroupChatPage() {
           // If no member IDs, we'll just create an empty array
           profilesData = [];
         }
-        
+
         // Create maps for sender information lookup
         const senderEmailMap: Record<string, string> = {};
         const senderNameMap: Record<string, string> = {};
         const senderAvatarMap: Record<string, string> = {};
-        
+
         // Create a map of user IDs to their full profile data for easy lookup
         const userProfileMap: Record<string, any> = {};
-        
+
         profilesData?.forEach((profile: any) => {
           // Store the full profile in our map
           userProfileMap[profile.id] = profile;
-          
+
           // Also maintain the individual field maps for backward compatibility
           senderEmailMap[profile.id] = profile.email || "";
           // Use email username as display name since name field doesn't exist
           senderNameMap[profile.id] = profile.email ? profile.email.split('@')[0] : "";
           senderAvatarMap[profile.id] = profile.avatar_url || "";
         });
-        
+
         console.log("User profile map:", userProfileMap);
-        
+
         // Format messages with sender information
         const formattedMessages = messagesData.map((msg: any) => {
           // Get the sender profile from our map
           const senderProfile = userProfileMap[msg.sender_id];
           console.log(`Sender profile for message ${msg.id}:`, senderProfile);
-          
+
           // If sender profile is not found, log a warning
           if (!senderProfile) {
             console.warn(`Sender profile not found for message ${msg.id} with sender ID ${msg.sender_id}`);
           }
-          
+
           // If we have the sender profile, use it; otherwise, use empty values
           const senderEmail = senderProfile?.email || "";
           // Use email username as display name since name field doesn't exist
           const senderName = senderProfile?.email ? senderProfile.email.split('@')[0] : "";
           const senderAvatar = senderProfile?.avatar_url || "";
-          
+
           const formattedMessage = {
             id: msg.id,
             content: msg.content,
@@ -333,59 +333,59 @@ export function GroupChatPage() {
             sender_name: senderName,
             sender_avatar: senderAvatar
           };
-          
+
           console.log(`Formatted message ${msg.id}:`, formattedMessage);
           return formattedMessage;
         });
-        
+
         console.log("Formatted messages with sender information:", formattedMessages);
-        
+
         // Initialize processed message IDs in our ref
         processedMessageIdsRef.current = new Set(formattedMessages.map(msg => msg.id));
-        
+
         setMessages(formattedMessages);
-        
+
         // Fetch members of this group chat based on message senders and current user
         // This ensures we show users who have participated in the chat and the current user
         let membersData = null;
         let membersError = null;
-        
+
         if (memberIds.length > 0) {
           const response = await supabase
             .from("profiles")
             .select("id, email, avatar_url")
             .in("id", memberIds);
-            
+
           membersData = response.data;
           membersError = response.error;
         } else {
           // If no member IDs, we'll just create an empty array
           membersData = [];
         }
-        
+
         console.log("Members data from senders:", membersData);
-        
+
         if (membersError) throw membersError;
-        
+
         // Add the current user to the members list if they're not already included
         let membersList: Member[] = membersData || [];
         const isCurrentUserInMembers = membersList.some(member => member.id === userId);
         console.log("Current user ID:", userId);
         console.log("Is current user in members:", isCurrentUserInMembers);
-        
+
         if (!isCurrentUserInMembers && userId) {
           const { data: currentUserProfile, error: currentUserError } = await supabase
             .from("profiles")
             .select("id, email, avatar_url")
             .eq("id", userId);
-            
+
           console.log("Current user profile:", currentUserProfile);
-            
+
           if (!currentUserError && currentUserProfile && currentUserProfile.length > 0) {
             membersList = [...membersList, currentUserProfile[0]];
           }
         }
-        
+
         // If we still have no members (which shouldn't happen since we added the current user),
         // make sure to add the current user profile
         if (membersList.length === 0 && userId) {
@@ -393,12 +393,12 @@ export function GroupChatPage() {
             .from("profiles")
             .select("id, email, avatar_url")
             .eq("id", userId);
-            
+
           if (!currentUserError && currentUserProfile && currentUserProfile.length > 0) {
             membersList = [currentUserProfile[0]];
           }
         }
-        
+
         // Ensure members list has no duplicates
         const uniqueMemberIds = new Set();
         const uniqueMembers = membersList.filter(member => {
@@ -408,19 +408,19 @@ export function GroupChatPage() {
           uniqueMemberIds.add(member.id);
           return true;
         });
-        
+
         console.log("Final members list:", uniqueMembers);
         setMembers(uniqueMembers);
-        
+
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching group chat data:", error);
         setIsLoading(false);
       }
     };
-    
+
     fetchGroupChatData();
-    
+
     // Subscribe to new messages
     console.log(`Setting up real-time subscription for group chat: ${id}`);
     const subscription = supabase
@@ -435,43 +435,43 @@ export function GroupChatPage() {
         },
         async (payload) => {
           console.log("Received real-time message:", payload.new);
-          
+
           // Skip if we've already processed this message
           if (processedMessageIdsRef.current.has(payload.new.id)) {
             console.log("Skipping already processed message:", payload.new.id);
             return;
           }
-          
+
           // Add this message ID to our processed set
           processedMessageIdsRef.current.add(payload.new.id);
-          
+
           try {
             // Fetch the sender's complete profile information
             const { data: senderData, error: senderError } = await supabase
               .from("profiles")
               .select("id, email, avatar_url")
               .eq("id", payload.new.sender_id);
-            
+
             if (senderError) {
               console.error("Error fetching sender data:", senderError);
               return;
             }
-            
+
             // Get the sender profile from the response
             const senderProfile = senderData && senderData.length > 0 ? senderData[0] : null;
             console.log("Sender profile for new message:", senderProfile);
-            
+
             if (!senderProfile) {
               console.error("Sender profile not found for ID:", payload.new.sender_id);
               return;
             }
-            
+
             // Extract sender information from the profile
             const senderEmail = senderProfile.email || "";
             // Use email username as display name since name field doesn't exist
             const senderName = senderEmail ? senderEmail.split('@')[0] : "";
             const senderAvatar = senderProfile.avatar_url || "";
-            
+
             // Create the new message object with sender information
             const newMsg: Message = {
               id: payload.new.id,
@@ -482,22 +482,22 @@ export function GroupChatPage() {
               sender_name: senderName,
               sender_avatar: senderAvatar
             };
-            
+
             // Check if this message is from the current user
             const isFromCurrentUser = newMsg.sender_id === userId;
             console.log("Is message from current user:", isFromCurrentUser);
-            
+
             // Update messages state
             setMessages(prev => {
               // For messages from the current user, try to replace any temporary message
               if (isFromCurrentUser) {
                 // Look for a temporary message with the same content
                 const tempIndex = prev.findIndex(
-                  msg => msg.id.startsWith('temp-') && 
-                        msg.content === newMsg.content &&
-                        msg.sender_id === userId
+                  msg => msg.id.startsWith('temp-') &&
+                    msg.content === newMsg.content &&
+                    msg.sender_id === userId
                 );
-                
+
                 // If we found a matching temporary message, replace it
                 if (tempIndex >= 0) {
                   console.log("Replacing temporary message at index:", tempIndex);
@@ -506,18 +506,18 @@ export function GroupChatPage() {
                   return newMessages;
                 }
               }
-              
+
               // Otherwise, just add the new message
               console.log("Adding new message to state");
               return [...prev, newMsg];
             });
-            
+
             // Check if this sender is already in our members list
             // If not, add them to the members list
             setMembers(prevMembers => {
               const senderExists = prevMembers.some(member => member.id === payload.new.sender_id);
               console.log("Sender exists in members list:", senderExists);
-              
+
               if (!senderExists) {
                 // Fetch the complete profile of the new member
                 supabase
@@ -540,7 +540,7 @@ export function GroupChatPage() {
                     }
                   });
               }
-              
+
               return prevMembers;
             });
           } catch (error) {
@@ -551,17 +551,17 @@ export function GroupChatPage() {
       .subscribe((status) => {
         console.log(`Subscription status for group chat ${id}:`, status);
       });
-    
+
     return () => {
       subscription.unsubscribe();
     };
   }, [id, isAuthenticated, navigate, userId, userEmail]);
-  
+
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -574,10 +574,10 @@ export function GroupChatPage() {
   const handleSendDirectMessage = async (memberId: string) => {
     // Close the modal first for better UX
     setSelectedMember(null);
-    
+
     // Show loading state
     setIsLoading(true);
-    
+
     try {
       // First, check if a private chat already exists between these users
       const { data: existingChats, error: chatError } = await supabase
@@ -585,20 +585,20 @@ export function GroupChatPage() {
         .select("id, user1_id, user2_id")
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
         .or(`user1_id.eq.${memberId},user2_id.eq.${memberId}`);
-      
+
       if (chatError) {
         console.error("Error checking for existing chat:", chatError);
         throw chatError;
       }
-      
+
       // Find a chat where both users are participants
-      const existingChat = existingChats?.find(chat => 
-        (chat.user1_id === userId && chat.user2_id === memberId) || 
+      const existingChat = existingChats?.find(chat =>
+        (chat.user1_id === userId && chat.user2_id === memberId) ||
         (chat.user1_id === memberId && chat.user2_id === userId)
       );
-      
+
       let chatId;
-      
+
       if (existingChat) {
         // Use existing chat
         chatId = existingChat.id;
@@ -613,16 +613,16 @@ export function GroupChatPage() {
             created_at: new Date().toISOString()
           })
           .select();
-        
+
         if (createError) {
           console.error("Error creating new chat:", createError);
           throw createError;
         }
-        
+
         chatId = newChat?.[0]?.id;
         console.log("Created new private chat:", chatId);
       }
-      
+
       if (chatId) {
         // Navigate to the private chat
         navigate({ to: `/chat/${chatId}` });
@@ -648,30 +648,30 @@ export function GroupChatPage() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !userId) return;
-    
+
     // Store the message content and clear input immediately for better UX
     const messageContent = newMessage;
     setNewMessage("");
-    
+
     try {
       console.log("Sending message:", messageContent);
-      
+
       // Find the current user's profile in the members list
       const currentUserProfile = members.find(member => member.id === userId);
       console.log("Current user profile from members:", currentUserProfile);
-      
+
       if (!currentUserProfile) {
         console.warn("Current user profile not found in members list. Using fallback values.");
       }
-      
+
       // Use profile data if available, otherwise fallback to basic info
       // Use email username as display name since name field doesn't exist
       const userName = currentUserProfile?.email ? currentUserProfile.email.split('@')[0] : userEmail.split('@')[0];
       const userAvatar = currentUserProfile?.avatar_url || "";
-      
+
       console.log("Using sender name:", userName);
       console.log("Using sender avatar:", userAvatar);
-      
+
       // Create a temporary local message to show immediately
       const tempId = `temp-${Date.now()}`;
       const tempMessage: Message = {
@@ -683,29 +683,29 @@ export function GroupChatPage() {
         sender_avatar: userAvatar,
         created_at: new Date().toISOString()
       };
-      
+
       // Add the temporary message to the UI immediately
       setMessages(prev => [...prev, tempMessage]);
-      
+
       // Scroll to bottom after adding the temporary message
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
-      
+
       // Insert the message into the group_messages table
       const { data, error } = await supabase.from("group_messages").insert({
         group_id: id,
         sender_id: userId,
         content: messageContent
       }).select();
-      
+
       if (error) {
         console.error("Error sending message:", error);
         return;
       }
-      
+
       console.log("Message sent successfully:", data);
-      
+
       if (data && data.length > 0) {
         // Replace the temporary message with the real one
         const realMessage: Message = {
@@ -717,18 +717,18 @@ export function GroupChatPage() {
           sender_name: userName,
           sender_avatar: userAvatar
         };
-        
+
         // Add the real message ID to our processed set to prevent duplicates from realtime
         processedMessageIdsRef.current.add(realMessage.id);
-        
+
         // Replace the temporary message with the real one
-        setMessages(prev => 
+        setMessages(prev =>
           prev.map(msg => msg.id === tempId ? realMessage : msg)
         );
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      
+
       // If there was an error, keep the temporary message as is
       // It will at least show the user their message was sent locally
     }
@@ -774,7 +774,7 @@ export function GroupChatPage() {
 
       <div className="flex flex-row items-start gap-2 mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
         <div className="flex-1 flex flex-col">
-          <div className="max-w-4xl w-full flex flex-col h-[calc(100vh-96px)]">
+          <div className="max-w-4xl w-full flex flex-col h-[calc(100vh-10px)]">
             {/* Chat Header */}
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -786,14 +786,14 @@ export function GroupChatPage() {
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-              
+
               <button
                 onClick={goBack}
                 className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
               >
                 <ArrowLeft className="w-5 h-5 text-cyan-300" />
               </button>
-              
+
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium border border-cyan-500/20 shadow-md">
                   {groupInfo.name?.charAt(0).toUpperCase() || "G"}
@@ -810,7 +810,7 @@ export function GroupChatPage() {
 
               {/* Only show the members toggle button on mobile */}
               {isMobile && (
-                <button 
+                <button
                   onClick={() => setShowMembers(!showMembers)}
                   className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto"
                 >
@@ -832,7 +832,7 @@ export function GroupChatPage() {
                   <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
                   <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                   <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                  
+
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mx-auto mb-3 border border-cyan-500/20 shadow-md">
                     <MessageSquare className="w-8 h-8 text-white" />
                   </div>
@@ -852,13 +852,13 @@ export function GroupChatPage() {
                     "from-purple-500 to-fuchsia-500",
                     "from-rose-500 to-pink-500"
                   ];
-                  
+
                   // Use the sender ID to deterministically select a color
-                  const colorIndex = message.sender_id ? 
+                  const colorIndex = message.sender_id ?
                     message.sender_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length : 0;
-                  
+
                   const senderColor = colorOptions[colorIndex];
-                  
+
                   return (
                     <motion.div
                       key={message.id}
@@ -874,13 +874,13 @@ export function GroupChatPage() {
                         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
                         <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
                         <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
-                        
+
                         <div className="flex items-center mb-1">
                           <div className="flex-shrink-0 mr-2">
                             {message.sender_avatar ? (
-                              <img 
-                                src={message.sender_avatar} 
-                                alt={(message.sender_email || "").split('@')[0]} 
+                              <img
+                                src={message.sender_avatar}
+                                alt={(message.sender_email || "").split('@')[0]}
                                 className="w-6 h-6 rounded-full object-cover border border-white/20 shadow-md"
                               />
                             ) : (
@@ -909,7 +909,7 @@ export function GroupChatPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 sticky bottom-0 w-full"
+              className="px-0 md:pb-0 pb-9 md:mb-0 mb-20 mt-10 sticky md:bottom-10 bottom-20 mx-auto w-full z-50"
             >
               <form onSubmit={handleSendMessage} className="relative overflow-hidden rounded-full bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-2 flex gap-2">
                 {/* Prismatic edge effect */}
@@ -917,14 +917,14 @@ export function GroupChatPage() {
                 <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
                 <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                 <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                
+
                 <button
                   type="button"
                   className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                 >
                   <Paperclip className="w-5 h-5 text-cyan-300" />
                 </button>
-                
+
                 <input
                   type="text"
                   value={newMessage}
@@ -932,13 +932,12 @@ export function GroupChatPage() {
                   placeholder="Type a message..."
                   className="bg-transparent flex-grow px-4 py-2 outline-none text-cyan-100 placeholder:text-cyan-500"
                 />
-                
+
                 <button
                   type="submit"
                   disabled={!newMessage.trim()}
-                  className={`relative overflow-hidden rounded-full ${
-                    !newMessage.trim() ? "bg-cyan-800/30 opacity-50" : "bg-gradient-to-r from-cyan-500 to-blue-500"
-                  } p-3 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
+                  className={`relative overflow-hidden rounded-full ${!newMessage.trim() ? "bg-cyan-800/30 opacity-50" : "bg-gradient-to-r from-cyan-500 to-blue-500"
+                    } p-3 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
                 >
                   <Send className={`w-5 h-5 ${!newMessage.trim() ? "text-cyan-300" : "text-white"}`} />
                 </button>
@@ -960,11 +959,11 @@ export function GroupChatPage() {
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-              
+
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-cyan-300">Members ({members.length})</h3>
               </div>
-              
+
               <div className="flex-grow overflow-y-auto space-y-3">
                 {members.map((member) => (
                   <div
@@ -977,7 +976,7 @@ export function GroupChatPage() {
                     <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
                     <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                     <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                    
+
                     <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
                       {member.email.charAt(0).toUpperCase()}
                     </div>
@@ -1008,10 +1007,10 @@ export function GroupChatPage() {
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-              
+
               {/* Drag indicator */}
               <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-4"></div>
-              
+
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-cyan-300">Members ({members.length})</h3>
                 <button
@@ -1021,7 +1020,7 @@ export function GroupChatPage() {
                   <X className="w-5 h-5 text-cyan-300" />
                 </button>
               </div>
-              
+
               <div className="flex-grow overflow-y-auto space-y-3">
                 {members.map((member) => (
                   <div
@@ -1034,7 +1033,7 @@ export function GroupChatPage() {
                     <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
                     <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                     <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                    
+
                     <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
                       {member.email.charAt(0).toUpperCase()}
                     </div>

@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase';
 export function MainLayout() {
   const [userEmail, setUserEmail] = useState<string>('');
   const [unreadChats, setUnreadChats] = useState<number>(0);
-  
+
   useEffect(() => {
     // Get current user
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -78,26 +78,26 @@ export function MainLayout() {
         .from('private_chats')
         .select('id')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
-      
+
       if (chatsError) {
         return;
       }
-      
+
       if (chatsData && chatsData.length > 0) {
         // Get all unread messages in these chats
         const chatIds = chatsData.map(chat => chat.id);
-        
+
         const { count, error: countError } = await supabase
           .from('private_messages')
           .select('*', { count: 'exact', head: true })
           .in('chat_id', chatIds)
           .neq('sender_id', userId)
           .is('read_at', null);
-        
+
         if (countError) {
           return;
         }
-        
+
         setUnreadChats(count || 0);
       } else {
         setUnreadChats(0);
@@ -111,17 +111,18 @@ export function MainLayout() {
     <div className="min-h-screen relative overflow-hidden text-cyan-100" style={{ backgroundColor: '#0c2a4a' }}>
       {/* Video Background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="relative w-full md:w-4/5 lg:w-3/4 max-w-5xl" style={{ maxHeight: '80vh' }}>
+        <div className="relative w-screen" style={{ maxHeight: '140vh' }}>
           {/* Gradient overlay to help with transition */}
-          <div className="absolute inset-0 bg-[#0c2a4a] opacity-30 z-10"></div>
-          
+          <div className="absolute top-0 w-screen h-full inset-0 bg-[#0c2a4a] opacity-30 z-10"></div>
+
           {/* Video with fade effect */}
           <video
             autoPlay
             loop
             muted
+            playsInline
             className="w-full h-full object-contain opacity-70 shadow-none"
-            style={{ 
+            style={{
               maskImage: 'radial-gradient(circle, black 50%, transparent 100%)',
               WebkitMaskImage: 'radial-gradient(circle, black 50%, transparent 100%)',
               boxShadow: 'none'
@@ -132,9 +133,9 @@ export function MainLayout() {
           </video>
         </div>
       </div>
-      
+
       {/* Content overlay with cyan accent colors */}
-      <div className="min-h-screen relative z-20 flex flex-col">
+      <div className="min-h-screen relative z-10 flex flex-col">
         <Header unreadChats={unreadChats} userEmail={userEmail} />
         <Outlet />
       </div>

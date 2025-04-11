@@ -6,4 +6,5 @@ export { HomePage } from './HomePage';
 export { ProfilePage } from './ProfilePage';
 export { ProfileViewPage } from './ProfileViewPage';
 export { ChatPage } from './ChatPage';
-export { GroupChatPage } from './GroupChatPage'; 
+export { GroupChatPage } from './GroupChatPage.tsx'; 
+export { MessagesPage } from './MessagesPage.tsx';

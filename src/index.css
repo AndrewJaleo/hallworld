@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+.animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+.animate-fade-out { animation: fadeOut 0.5s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(10px); } }
+
+.glass-effect {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
 @layer base {
   :root {
     --glass-border: rgba(255, 255, 255, 0.95);
@@ -29,12 +39,10 @@
   background: var(--glass-bg);
   backdrop-filter: blur(32px);
   border: 2px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 
-    0 15px 40px -10px rgba(31, 38, 135, 0.25),
+  box-shadow: 0 15px 40px -10px rgba(31, 38, 135, 0.25),
     inset 0 0 0 1px rgba(255, 255, 255, 0.8),
     inset 0 2px 24px rgba(255, 255, 255, 0.9),
-    inset 0 -4px 12px rgba(255, 255, 255, 0.4),
-    0 0 20px rgba(14, 116, 144, 0.2);
+    inset 0 -4px 12px rgba(255, 255, 255, 0.4), 0 0 20px rgba(14, 116, 144, 0.2);
   background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.9),
@@ -45,7 +53,7 @@
 }
 
 .glossy::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -59,7 +67,7 @@
 }
 
 .glossy::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -134,8 +142,7 @@
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(24px);
-  box-shadow: 
-    0 12px 36px rgba(0, 0, 0, 0.15),
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.15),
     inset 0 2px 8px rgba(255, 255, 255, 0.5),
     inset 0 -2px 4px rgba(255, 255, 255, 0.2),
     inset 0 0 0 1px var(--glass-highlight);
@@ -149,8 +156,7 @@
     rgba(56, 189, 248, 0.6) 0%,
     rgba(37, 99, 235, 0.4) 100%
   );
-  box-shadow: 
-    0 0 32px var(--neon-glow),
+  box-shadow: 0 0 32px var(--neon-glow),
     inset 0 2px 12px rgba(255, 255, 255, 0.7),
     inset 0 -2px 6px rgba(255, 255, 255, 0.3);
   border-color: var(--glass-highlight);
@@ -162,8 +168,7 @@
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(32px);
-  box-shadow:
-    0 25px 65px -15px rgba(31, 38, 135, 0.35),
+  box-shadow: 0 25px 65px -15px rgba(31, 38, 135, 0.35),
     inset 0 0 0 1px rgba(255, 255, 255, 0.98),
     inset 0 2px 20px rgba(255, 255, 255, 0.95),
     inset 0 -4px 10px rgba(255, 255, 255, 0.5);
@@ -178,7 +183,7 @@
 }
 
 .menu-item::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -192,7 +197,7 @@
 }
 
 .menu-item::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -209,12 +214,10 @@
 
 .menu-item:hover {
   transform: translateY(-3px) translateZ(12px);
-  box-shadow:
-    0 30px 70px -15px rgba(31, 38, 135, 0.4),
+  box-shadow: 0 30px 70px -15px rgba(31, 38, 135, 0.4),
     inset 0 0 0 1px rgba(255, 255, 255, 0.98),
     inset 0 2px 24px rgba(255, 255, 255, 0.98),
-    inset 0 -4px 12px rgba(255, 255, 255, 0.6),
-    0 0 25px rgba(56, 189, 248, 0.5);
+    inset 0 -4px 12px rgba(255, 255, 255, 0.6), 0 0 25px rgba(56, 189, 248, 0.5);
   background-image: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.85),
@@ -247,20 +250,17 @@
   backdrop-filter: blur(32px);
   transform-style: preserve-3d;
   perspective: 1000px;
-  box-shadow:
-    0 20px 60px -15px rgba(31, 38, 135, 0.25),
+  box-shadow: 0 20px 60px -15px rgba(31, 38, 135, 0.25),
     inset 0 0 0 1px var(--glass-highlight),
     inset 0 2px 12px rgba(255, 255, 255, 0.7),
     inset 0 -2px 6px rgba(255, 255, 255, 0.3);
 }
 
 .hall-button:hover {
-  box-shadow:
-    0 25px 65px -15px rgba(31, 38, 135, 0.35),
+  box-shadow: 0 25px 65px -15px rgba(31, 38, 135, 0.35),
     inset 0 0 0 1px var(--glass-highlight),
     inset 0 2px 16px rgba(255, 255, 255, 0.8),
-    inset 0 -2px 8px rgba(255, 255, 255, 0.4),
-    0 0 20px rgba(56, 189, 248, 0.4);
+    inset 0 -2px 8px rgba(255, 255, 255, 0.4), 0 0 20px rgba(56, 189, 248, 0.4);
   border-color: white;
 }
 
@@ -273,19 +273,17 @@
     rgba(255, 255, 255, 0.85)
   );
   border: 2px solid var(--glass-highlight);
-  box-shadow:
-    0 20px 40px -10px rgba(31, 38, 135, 0.35),
+  box-shadow: 0 20px 40px -10px rgba(31, 38, 135, 0.35),
     inset 0 0 0 1px var(--glass-highlight),
     inset 0 2px 30px var(--glass-inner-shadow),
-    inset 0 -4px 15px rgba(255, 255, 255, 0.7),
-    0 0 25px rgba(124, 58, 237, 0.4);
+    inset 0 -4px 15px rgba(255, 255, 255, 0.7), 0 0 25px rgba(124, 58, 237, 0.4);
   transform-style: preserve-3d;
   transition: all 0.2s ease;
   overflow: hidden;
 }
 
 .glass-button::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -307,12 +305,10 @@
     rgba(255, 255, 255, 1),
     rgba(255, 255, 255, 0.95)
   );
-  box-shadow:
-    0 20px 40px -10px rgba(31, 38, 135, 0.4),
+  box-shadow: 0 20px 40px -10px rgba(31, 38, 135, 0.4),
     inset 0 0 0 1px var(--glass-highlight),
     inset 0 2px 30px var(--glass-inner-shadow),
-    inset 0 -4px 15px rgba(255, 255, 255, 0.7),
-    0 0 30px rgba(124, 58, 237, 0.6);
+    inset 0 -4px 15px rgba(255, 255, 255, 0.7), 0 0 30px rgba(124, 58, 237, 0.6);
   transform: translateY(-3px) translateZ(12px);
 }
 
@@ -323,8 +319,7 @@
 
 .glass-button:active {
   transform: translateY(0) translateZ(4px);
-  box-shadow:
-    0 6px 12px -3px rgba(31, 38, 135, 0.2),
+  box-shadow: 0 6px 12px -3px rgba(31, 38, 135, 0.2),
     inset 0 0 0 1px var(--glass-highlight),
     inset 0 1px 8px var(--glass-inner-shadow),
     inset 0 -1px 4px rgba(255, 255, 255, 0.4);
@@ -334,22 +329,22 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
-  
+
   .scrollbar-thumb-sky-400\/50 {
     scrollbar-color: rgba(56, 189, 248, 0.5) transparent;
   }
-  
+
   /* For Webkit browsers */
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: rgba(56, 189, 248, 0.5);
     border-radius: 3px;

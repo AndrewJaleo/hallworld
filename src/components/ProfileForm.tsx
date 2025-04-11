@@ -25,7 +25,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
     avatar_url: null,
     biography: ''
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'warning' } | null>(null);
@@ -38,7 +38,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
     async function getProfile() {
       try {
         setLoading(true);
-        
+
         // Initialize with default values
         const defaultProfile = {
           name: '',
@@ -48,11 +48,11 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           avatar_url: null,
           biography: ''
         };
-        
+
         // Try to fetch each field individually to handle missing columns
         const fields = ['name', 'likings', 'age', 'gender', 'avatar_url', 'biography'];
         const profileData = { ...defaultProfile };
-        
+
         for (const field of fields) {
           try {
             const { data, error } = await supabase
@@ -60,11 +60,11 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               .select(`${field}`)
               .eq('id', userId)
               .single();
-            
+
             if (!error && data && data[field as keyof typeof data] !== null) {
               // Set the field in profileData
               (profileData as any)[field] = data[field as keyof typeof data];
-              
+
               // Set avatar preview if we have an avatar_url
               if (field === 'avatar_url' && typeof data[field as keyof typeof data] === 'string') {
                 setAvatarPreview(data[field as keyof typeof data] as string);
@@ -74,10 +74,10 @@ export function ProfileForm({ userId }: ProfileFormProps) {
             console.warn(`Could not fetch field ${field}:`, fieldError);
           }
         }
-        
+
         // Set the profile with all the data we could fetch
         setProfile(profileData);
-        
+
         // Log the profile data for debugging
         console.log('Loaded profile data:', profileData);
       } catch (error) {
@@ -86,14 +86,14 @@ export function ProfileForm({ userId }: ProfileFormProps) {
         setLoading(false);
       }
     }
-    
+
     getProfile();
   }, [userId]);
 
   // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     setProfile(prev => ({
       ...prev,
       [name]: name === 'age' ? (value ? parseInt(value) : null) : value
@@ -105,10 +105,10 @@ export function ProfileForm({ userId }: ProfileFormProps) {
     if (!e.target.files || e.target.files.length === 0) {
       return;
     }
-    
+
     const file = e.target.files[0];
     setAvatarFile(file);
-    
+
     // Create preview
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -131,23 +131,23 @@ export function ProfileForm({ userId }: ProfileFormProps) {
   // Upload avatar to storage
   const uploadAvatar = async (): Promise<string | null> => {
     if (!avatarFile) return profile.avatar_url;
-    
+
     try {
       // Create a unique file path
       const fileExt = avatarFile.name.split('.').pop();
       // Make sure userId is the first folder in the path to match the storage policy
       const filePath = `${userId}/${Date.now()}.${fileExt}`;
-      
+
       // Try to upload to the default 'avatars' bucket
       // If that fails, try to create the bucket first
       try {
         console.log('Uploading to path:', filePath);
-        
+
         // Upload the file to the 'avatars' bucket
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(filePath, avatarFile, { upsert: true });
-        
+
         if (uploadError) {
           console.error('Upload error:', uploadError);
           if (uploadError.message && uploadError.message.includes('Bucket not found')) {
@@ -156,12 +156,12 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           }
           throw uploadError;
         }
-        
+
         // Get the public URL
         const { data } = supabase.storage
           .from('avatars')
           .getPublicUrl(filePath);
-        
+
         console.log('Upload successful, URL:', data.publicUrl);
         return data.publicUrl;
       } catch (bucketError: any) {
@@ -170,7 +170,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           // For security reasons, we can't create buckets from the client
           // Instead, we'll use a fallback approach - store the image as base64 in the avatar_url field
           console.warn('Bucket not found. Using base64 fallback...');
-          
+
           return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -180,14 +180,14 @@ export function ProfileForm({ userId }: ProfileFormProps) {
             reader.readAsDataURL(avatarFile);
           });
         }
-        
+
         throw bucketError;
       }
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      setMessage({ 
-        text: 'Error al subir la imagen. Por favor, contacta con soporte.', 
-        type: 'error' 
+      setMessage({
+        text: 'Error al subir la imagen. Por favor, contacta con soporte.',
+        type: 'error'
       });
       return profile.avatar_url;
     }
@@ -196,34 +196,34 @@ export function ProfileForm({ userId }: ProfileFormProps) {
   // Save profile
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSaving(true);
       setMessage(null);
-      
+
       // Upload avatar if changed
       let avatarUrl = profile.avatar_url;
       if (avatarFile) {
         avatarUrl = await uploadAvatar();
       }
-      
+
       // Create an update object with only the avatar_url first
       // This is guaranteed to work since avatar_url is in the original schema
       const updateData: any = {
         avatar_url: avatarUrl,
         updated_at: new Date()
       };
-      
+
       // Try to update just the avatar first
       const { error: avatarError } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', userId);
-      
+
       if (avatarError) {
         throw avatarError;
       }
-      
+
       // Now try to update each field individually to identify which ones exist
       const fields = [
         { key: 'name', value: profile.name },
@@ -232,10 +232,10 @@ export function ProfileForm({ userId }: ProfileFormProps) {
         { key: 'gender', value: profile.gender },
         { key: 'biography', value: profile.biography }
       ];
-      
+
       let successCount = 1; // Start with 1 for avatar_url
-      let totalFields = fields.length + 1; // +1 for avatar_url
-      
+      const totalFields = fields.length + 1; // +1 for avatar_url
+
       for (const field of fields) {
         try {
           const fieldUpdate = { [field.key]: field.value };
@@ -243,7 +243,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
             .from('profiles')
             .update(fieldUpdate)
             .eq('id', userId);
-          
+
           if (!error) {
             successCount++;
           } else {
@@ -253,25 +253,25 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           console.warn(`Error updating field ${field.key}:`, fieldError);
         }
       }
-      
+
       // Update local state with the new avatar URL
       if (avatarUrl !== profile.avatar_url) {
         setProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
         setAvatarFile(null);
       }
-      
+
       // Set appropriate message based on how many fields were updated
       if (successCount === totalFields) {
         setMessage({ text: 'Perfil actualizado con éxito!', type: 'success' });
       } else if (successCount > 1) {
-        setMessage({ 
-          text: `Perfil actualizado parcialmente (${successCount} de ${totalFields} campos). Algunos campos no pudieron guardarse debido a un problema en la base de datos. Por favor, contacta con soporte.`, 
-          type: 'warning' 
+        setMessage({
+          text: `Perfil actualizado parcialmente (${successCount} de ${totalFields} campos). Algunos campos no pudieron guardarse debido a un problema en la base de datos. Por favor, contacta con soporte.`,
+          type: 'warning'
         });
       } else {
-        setMessage({ 
-          text: 'Solo se actualizó la imagen de perfil. Otros campos no pudieron guardarse debido a un problema en la base de datos. Por favor, contacta con soporte.', 
-          type: 'warning' 
+        setMessage({
+          text: 'Solo se actualizó la imagen de perfil. Otros campos no pudieron guardarse debido a un problema en la base de datos. Por favor, contacta con soporte.',
+          type: 'warning'
         });
       }
     } catch (error) {
@@ -297,7 +297,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
       <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-      
+
       <h2 className="text-2xl font-bold text-cyan-300 mb-6 flex items-center justify-between">
         Información Personal
         {loading && (
@@ -307,16 +307,16 @@ export function ProfileForm({ userId }: ProfileFormProps) {
           </div>
         )}
       </h2>
-      
+
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Avatar Upload */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative group">
             <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-cyan-400/30 to-blue-500/30 mb-3 border-4 border-cyan-500/30 shadow-lg transition-transform duration-300 group-hover:scale-105">
               {avatarPreview ? (
-                <img 
-                  src={avatarPreview} 
-                  alt="Perfil" 
+                <img
+                  src={avatarPreview}
+                  alt="Perfil"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -325,7 +325,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
                 </div>
               )}
             </div>
-            
+
             {avatarFile && (
               <button
                 type="button"
@@ -336,7 +336,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               </button>
             )}
           </div>
-          
+
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -345,7 +345,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
             <Upload size={16} className="text-cyan-300" />
             <span className="text-cyan-300 font-medium">Subir Foto</span>
           </button>
-          
+
           <input
             ref={fileInputRef}
             type="file"
@@ -354,7 +354,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
             className="hidden"
           />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Name */}
           <div className="col-span-2 md:col-span-1">
@@ -371,7 +371,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               placeholder="Tu nombre"
             />
           </div>
-          
+
           {/* Age */}
           <div className="col-span-2 md:col-span-1">
             <label htmlFor="age" className="block text-cyan-300 text-sm font-medium mb-2">
@@ -389,7 +389,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               placeholder="Tu edad"
             />
           </div>
-          
+
           {/* Gender */}
           <div className="col-span-2 md:col-span-1">
             <label htmlFor="gender" className="block text-cyan-300 text-sm font-medium mb-2">
@@ -410,7 +410,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               <option value="prefer-not-to-say">Prefiero no decirlo</option>
             </select>
           </div>
-          
+
           {/* Likings */}
           <div className="col-span-2 md:col-span-1">
             <label htmlFor="likings" className="block text-cyan-300 text-sm font-medium mb-2">
@@ -426,7 +426,7 @@ export function ProfileForm({ userId }: ProfileFormProps) {
               placeholder="Tus gustos e intereses"
             />
           </div>
-          
+
           {/* Biography */}
           <div className="col-span-2">
             <label htmlFor="biography" className="block text-cyan-300 text-sm font-medium mb-2">
@@ -443,20 +443,19 @@ export function ProfileForm({ userId }: ProfileFormProps) {
             ></textarea>
           </div>
         </div>
-        
+
         {/* Status Message */}
         {message && (
-          <div className={`p-4 rounded-lg ${
-            message.type === 'success' 
-              ? 'bg-green-500/20 text-cyan-300 border-l-4 border-green-400' 
-              : message.type === 'warning' 
-                ? 'bg-yellow-500/20 text-cyan-300 border-l-4 border-yellow-400' 
+          <div className={`p-4 rounded-lg ${message.type === 'success'
+              ? 'bg-green-500/20 text-cyan-300 border-l-4 border-green-400'
+              : message.type === 'warning'
+                ? 'bg-yellow-500/20 text-cyan-300 border-l-4 border-yellow-400'
                 : 'bg-red-500/20 text-cyan-300 border-l-4 border-red-400'
-          }`}>
+            }`}>
             {message.text}
           </div>
         )}
-        
+
         {/* Submit Button */}
         <motion.button
           type="submit"

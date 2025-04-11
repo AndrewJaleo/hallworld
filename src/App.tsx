@@ -2,6 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Outlet } from '@tanstack/react-router';
 import { supabase } from './lib/supabase';
 import { AuthScreen } from './components/AuthScreen';
+import { BuzzNotificationProvider } from './lib/BuzzNotificationProvider';
+import { CallNotificationProvider } from './lib/CallNotificationProvider';
+
+declare global {
+  interface Window {
+    incomingCallAudio: HTMLAudioElement | null;
+  }
+}
 
 /**
  * App - Root component that handles authentication state
@@ -49,5 +57,11 @@ export default function App() {
   }
 
   // Render the outlet which will be the MainLayout via the router
-  return <Outlet />;
+  return (
+    <BuzzNotificationProvider>
+      <CallNotificationProvider>
+        <Outlet />
+      </CallNotificationProvider>
+    </BuzzNotificationProvider>
+  );
 }

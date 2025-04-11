@@ -92,13 +92,8 @@ export function CountrySelector({ items, selected, onSelect }: CountrySelectorPr
   }, []);
 
   return (
-    <div className="relative pt-3 pb-1">
-      {/* Label */}
-      <div className="absolute left-3 top-0 px-2 bg-gradient-to-r from-cyan-500/30 to-blue-500/30 rounded-full z-10">
-        <span className="text-xs font-medium text-cyan-300">País</span>
-      </div>
-      
-      <div className="relative h-[64px] rounded-[32px] overflow-hidden bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)]">
+    <div className="relative py-0 flex justify-center">
+      <div className="relative h-[64px] w-full rounded-[16px] overflow-hidden bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)]">
         {/* Prismatic edge effect */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />

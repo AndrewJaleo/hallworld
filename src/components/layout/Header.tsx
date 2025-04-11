@@ -104,27 +104,27 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
   const fetchUnreadMessages = async () => {
     try {
       setLoading(true);
-      
+
       // Get current user
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         return;
       }
-      
+
       const userId = session.user.id;
-      
+
       // Get all chats where the current user is either user1 or user2
       const { data: chatsData, error: chatsError } = await supabase
         .from('private_chats')
         .select('id')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
-      
+
       if (chatsError) throw chatsError;
-      
+
       if (chatsData && chatsData.length > 0) {
         // Get all unread messages in these chats
         const chatIds = chatsData.map(chat => chat.id);
-        
+
         const { data: messagesData, error: messagesError } = await supabase
           .from('private_messages')
           .select(`
@@ -139,35 +139,35 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
           .is('read_at', null)
           .order('created_at', { ascending: false })
           .limit(5);
-        
+
         if (messagesError) throw messagesError;
-        
+
         if (!messagesData || messagesData.length === 0) {
           setNotifications([]);
           setLoading(false);
           return;
         }
-        
+
         // Get all sender IDs
         const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
-        
+
         // Fetch profiles for all senders in a single query
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, email')
           .in('id', senderIds);
-          
+
         if (profilesError) {
           setLoading(false);
           return;
         }
-        
+
         // Create a map of user IDs to emails for quick lookup
         const userEmailMap = profilesData.reduce((map, profile) => {
           map[profile.id] = profile.email;
           return map;
         }, {} as Record<string, string>);
-        
+
         // Format notifications
         const formattedNotifications = messagesData.map((msg) => ({
           id: msg.id,
@@ -176,10 +176,10 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
           created_at: msg.created_at,
           chat_id: msg.chat_id
         }));
-        
+
         setNotifications(formattedNotifications);
       }
-      
+
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -195,7 +195,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) {
       return 'now';
     } else if (diffInMinutes < 60) {
@@ -243,13 +243,13 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
               className="flex items-center gap-2"
             >
               {/* Logo - Make it clickable and redirect to home page */}
-              <div 
+              <div
                 onClick={() => navigate({ to: '/' })}
                 className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
               >
-                <img 
-                  src="/logo_hallworld.png" 
-                  alt="HallWorld Logo" 
+                <img
+                  src="/logo_hallworld.png"
+                  alt="HallWorld Logo"
                   className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                 />
                 {/* Brand name with updated gradient */}
@@ -271,7 +271,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                   whileTap={{ scale: 0.95 }}
                 >
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-800/30 via-blue-900/30 to-indigo-950/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
-                  <div className="relative p-1.5 sm:p-2 rounded-full bg-white/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
+                  <div className="relative p-1.5 sm:p-2 rounded-full z-[9999] border border-cyan-700/20 shadow-lg">
                     <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
                     {unreadChats > 0 && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-medium bg-gradient-to-br from-blue-700 to-indigo-900 text-white rounded-full shadow-lg shadow-blue-900/30 border border-white/20">
@@ -288,16 +288,24 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-[20rem] sm:max-w-none z-[999]"
+                      className="absolute right-0 top-full mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-[20rem] sm:max-w-none z-[200]"
+                      style={{ isolation: 'isolate' }}
                     >
                       <div className="relative">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl bg-black/20 backdrop-blur-xl border border-cyan-700/20 shadow-lg overflow-hidden">
-                          <div className="relative">
+                        {/* Background blur effect - moved outside the content container */}
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800 via-blue-900 to-indigo-950 transform-gpu" />
+
+                        {/* Content container with explicit backdrop-blur */}
+                        <div className="relative rounded-2xl overflow-hidden shadow-lg">
+                          {/* Explicit backdrop-blur layer */}
+                          <div className="absolute inset-0 bg-gradient-to-tr from-teal-950 to-to-blue-800 via-blue-900" />
+
+                          {/* Content with border */}
+                          <div className="relative border border-cyan-700/20 rounded-2xl overflow-hidden">
                             <div className="p-4 border-b border-white/10">
                               <h3 className="text-sm font-semibold text-cyan-100">Notifications</h3>
                             </div>
-                            
+
                             {loading ? (
                               <div className="p-4 flex justify-center">
                                 <div className="w-6 h-6 border-2 border-cyan-300 border-t-transparent rounded-full animate-spin"></div>
@@ -305,7 +313,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                             ) : notifications.length > 0 ? (
                               <div className="max-h-[60vh] overflow-y-auto">
                                 {notifications.map((notification) => (
-                                  <div 
+                                  <div
                                     key={notification.id}
                                     onClick={() => handleNotificationClick(notification.chat_id)}
                                     className="p-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
@@ -336,10 +344,10 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                                 <p className="text-xs text-cyan-400">No new notifications</p>
                               </div>
                             )}
-                            
+
                             <div className="p-2 border-t border-white/10 bg-black/20">
-                              <Link 
-                                to="/"
+                              <Link
+                                to="/messages"
                                 className="block w-full py-1.5 px-3 text-xs text-center text-cyan-300 hover:text-cyan-100 hover:bg-white/5 rounded-lg transition-colors"
                                 onClick={() => setShowNotifications(false)}
                               >
@@ -375,57 +383,67 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 top-full mt-2 w-48 z-[999]"
+                      className="absolute right-0 top-full mt-2 w-48 z-[200]"
+                      style={{ isolation: 'isolate' }}
                     >
                       <div className="relative">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800/20 via-blue-900/20 to-indigo-950/20 blur-xl transform-gpu" />
-                        <div className="relative rounded-2xl bg-black/20 backdrop-blur-xl border border-cyan-700/20 shadow-lg overflow-hidden">
-                          <div className="p-3 border-b border-white/10">
-                            <p className="text-xs font-medium text-cyan-100 truncate">{userEmail}</p>
-                          </div>
-                          
-                          <div className="py-1">
-                            <Link
-                              to="/profile"
-                              className="flex items-center gap-2 px-3 py-2 text-xs text-cyan-300 hover:bg-white/5 transition-colors"
-                              onClick={() => setShowProfile(false)}
-                            >
-                              <User className="w-3.5 h-3.5" />
-                              <span>Profile</span>
-                            </Link>
-                            
-                            <Link
-                              to="/"
-                              className="flex items-center gap-2 px-3 py-2 text-xs text-cyan-300 hover:bg-white/5 transition-colors"
-                              onClick={() => setShowProfile(false)}
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              <span>Messages</span>
-                              {unreadChats > 0 && (
-                                <span className="ml-auto w-4 h-4 flex items-center justify-center text-[10px] font-medium bg-gradient-to-br from-blue-700 to-indigo-900 text-white rounded-full">
-                                  {unreadChats}
-                                </span>
-                              )}
-                            </Link>
-                            
-                            <Link
-                              to="/"
-                              className="flex items-center gap-2 px-3 py-2 text-xs text-cyan-300 hover:bg-white/5 transition-colors"
-                              onClick={() => setShowProfile(false)}
-                            >
-                              <Settings className="w-3.5 h-3.5" />
-                              <span>Settings</span>
-                            </Link>
-                          </div>
-                          
-                          <div className="py-1 border-t border-white/10">
-                            <button
-                              onClick={handleLogout}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-white/5 transition-colors"
-                            >
-                              <LogOut className="w-3.5 h-3.5" />
-                              <span>Logout</span>
-                            </button>
+                        {/* Background blur effect */}
+                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-800 via-blue-900 to-indigo-950 transform-gpu" />
+
+                        {/* Content container with explicit backdrop-blur */}
+                        <div className="relative rounded-2xl overflow-hidden shadow-lg">
+                          {/* Explicit backdrop-blur layer */}
+                          <div className="absolute inset-0 bg-gradient-to-tr from-teal-950 to-to-blue-800 via-blue-900" />
+
+                          {/* Content with border */}
+                          <div className="relative border border-cyan-700/20 rounded-2xl overflow-hidden">
+                            <div className="p-3 border-b border-white/10">
+                              <p className="text-xs font-medium text-cyan-100 truncate">{userEmail}</p>
+                            </div>
+
+                            <div className="py-1">
+                              <Link
+                                to="/profile"
+                                className="flex items-center gap-2 px-3 py-2 text-xs text-cyan-300 hover:bg-white/5 transition-colors"
+                                onClick={() => setShowProfile(false)}
+                              >
+                                <User className="w-3.5 h-3.5" />
+                                <span>Profile</span>
+                              </Link>
+
+                              <Link
+                                to="/messages"
+                                className="flex items-center gap-2 px-3 py-2 text-xs text-cyan-300 hover:bg-white/5 transition-colors"
+                                onClick={() => setShowProfile(false)}
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>Messages</span>
+                                {unreadChats > 0 && (
+                                  <span className="ml-auto w-4 h-4 flex items-center justify-center text-[10px] font-medium bg-gradient-to-br from-blue-700 to-indigo-900 text-white rounded-full">
+                                    {unreadChats}
+                                  </span>
+                                )}
+                              </Link>
+
+                              <Link
+                                to="/"
+                                className="flex items-center gap-2 px-3 py-2 text-xs text-cyan-300 hover:bg-white/5 transition-colors"
+                                onClick={() => setShowProfile(false)}
+                              >
+                                <Settings className="w-3.5 h-3.5" />
+                                <span>Settings</span>
+                              </Link>
+                            </div>
+
+                            <div className="py-1 border-t border-white/10">
+                              <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-white/5 transition-colors"
+                              >
+                                <LogOut className="w-3.5 h-3.5" />
+                                <span>Logout</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -439,4 +457,4 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
       </motion.div>
     </header>
   );
-} 
+}

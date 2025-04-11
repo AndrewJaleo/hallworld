@@ -6,7 +6,8 @@ import {
   ProfilePage, 
   ProfileViewPage, 
   ChatPage, 
-  GroupChatPage 
+  GroupChatPage,
+  MessagesPage
 } from './pages';
 
 // Create the root route
@@ -56,6 +57,12 @@ const groupChatRoute = new Route({
   component: GroupChatPage,
 });
 
+const messagesRoute = new Route({
+  getParentRoute: () => layoutRoute,
+  path: '/messages',
+  component: MessagesPage,
+});
+
 // Create the route tree
 const routeTree = rootRoute.addChildren([
   layoutRoute.addChildren([
@@ -64,6 +71,7 @@ const routeTree = rootRoute.addChildren([
     profileViewRoute,
     chatRoute,
     groupChatRoute,
+    messagesRoute,
   ]),
 ]);
 

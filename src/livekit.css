@@ -1,0 +1,35 @@
+@import '@livekit/components-styles';
+
+/* You can add custom styles here */
+.lk-video-conference {
+  background: transparent;
+}
+
+.lk-participant-tile {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(8, 145, 178, 0.3);
+}
+
+.lk-control-bar {
+  background: transparent;
+  padding: 0.5rem;
+}
+
+.lk-button {
+  background-color: rgba(8, 145, 178, 0.3);
+  border: 1px solid rgba(8, 145, 178, 0.3);
+  color: rgb(103, 232, 249);
+}
+
+.lk-button:hover {
+  background-color: rgba(8, 145, 178, 0.5);
+}
+
+.lk-button.lk-leave {
+  background-color: rgba(220, 38, 38, 0.8);
+}
+
+.lk-button.lk-leave:hover {
+  background-color: rgba(220, 38, 38, 1);
+}

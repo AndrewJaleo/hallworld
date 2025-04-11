@@ -82,16 +82,16 @@ interface ProfileCanvasProps {
 }
 
 // Add constants for the canvas dimensions
-const CANVAS_ASPECT_RATIO = 2/3; // 2:3 aspect ratio (taller, portrait orientation)
+const CANVAS_ASPECT_RATIO = 2 / 3; // 2:3 aspect ratio (taller, portrait orientation)
 const MAX_CANVAS_WIDTH = 800;
 const MAX_CANVAS_HEIGHT = 1200; // Maximum height for the canvas
 const CANVAS_PADDING = 32;
 
-export function ProfileCanvas({ 
-  userId, 
-  isOwner, 
-  isEditing, 
-  isLoading, 
+export function ProfileCanvas({
+  userId,
+  isOwner,
+  isEditing,
+  isLoading,
   setIsLoading,
   canvasHistory,
   setCanvasHistory,
@@ -111,11 +111,11 @@ export function ProfileCanvas({
   const [brushColor, setBrushColor] = useState('#000000');
   const [showBrushSettings, setShowBrushSettings] = useState(false);
   const [isFillMode, setIsFillMode] = useState(false);
-  
+
   // Add refs for the popovers
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const brushSettingsRef = useRef<HTMLDivElement>(null);
-  
+
   // Add a ref to track canvas initialization attempts
   const initAttemptsRef = useRef(0);
   const MAX_INIT_ATTEMPTS = 3;
@@ -125,7 +125,7 @@ export function ProfileCanvas({
 
   // Add a ref to track if we're currently initializing the canvas
   const isInitializingRef = useRef(false);
-  
+
   // Track if component is mounted
   const isMountedRef = useRef(false);
 
@@ -134,15 +134,15 @@ export function ProfileCanvas({
     const handleWindowResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     window.addEventListener('resize', handleWindowResize);
     return () => window.removeEventListener('resize', handleWindowResize);
   }, []);
-  
+
   // Set mounted ref on mount
   useEffect(() => {
     isMountedRef.current = true;
-    
+
     return () => {
       isMountedRef.current = false;
     };
@@ -154,13 +154,13 @@ export function ProfileCanvas({
       console.error('Cannot load: Canvas is null');
       return;
     }
-    
+
     // Check if component is still mounted
     if (!isMountedRef.current) {
       console.error('Cannot load: Component is unmounted');
       return;
     }
-    
+
     // Check if canvas has a valid context
     try {
       if (!canvas.getContext()) {
@@ -171,15 +171,15 @@ export function ProfileCanvas({
       console.error('Error checking canvas context:', contextError);
       return;
     }
-    
+
     if (!userId) {
       console.error('Cannot load: User ID is missing');
       return;
     }
-    
+
     setIsLoading(true);
     console.log('Loading canvas state from database for user:', userId);
-    
+
     try {
       // Fetch data from Supabase
       const { data, error } = await supabase
@@ -192,16 +192,16 @@ export function ProfileCanvas({
         console.error('Supabase error:', error);
         throw error;
       }
-      
+
       // Check again if component is mounted
       if (!isMountedRef.current) {
         console.error('Component unmounted during data fetch');
         return;
       }
-      
+
       if (data?.canvas_state) {
         console.log('Canvas data found, parsing...');
-        
+
         // Validate the canvas state before loading
         let canvasState;
         try {
@@ -215,7 +215,7 @@ export function ProfileCanvas({
             canvasState = data.canvas_state;
             console.log('Using canvas_state object directly');
           }
-          
+
           // Verify that the parsed data has the expected structure
           if (!canvasState.objects || !Array.isArray(canvasState.objects)) {
             console.warn('Canvas state has unexpected structure:', canvasState);
@@ -231,53 +231,53 @@ export function ProfileCanvas({
           console.error('Raw canvas_state:', data.canvas_state);
           throw new Error('Corrupted canvas data');
         }
-        
+
         // Double-check that canvas is still available before loading
         if (!canvas || !isMountedRef.current) {
           console.error('Canvas became null or component unmounted during loading process');
           throw new Error('Canvas is no longer available or component unmounted');
         }
-        
+
         // Load the canvas state with error handling
         try {
           console.log('Loading canvas from JSON...');
-          
+
           // Check if canvas is still valid before clearing
           if (!canvas || !canvas.getContext()) {
             console.error('Canvas or canvas context is null before loading JSON');
             throw new Error('Canvas context is not available');
           }
-          
+
           // Use try-catch for canvas.clear() operation
           try {
             canvas.clear(); // Clear existing canvas before loading
           } catch (clearError) {
             console.error('Error clearing canvas:', clearError);
-            
+
             // Check if component is still mounted
             if (!isMountedRef.current) {
               console.error('Component unmounted during canvas clear');
               return;
             }
-            
+
             // Try to reinitialize the canvas if clearing fails
             if (containerRef.current && canvasRef.current) {
               console.log('Attempting to reinitialize canvas after clear error');
-              
+
               try {
                 // Get container reference
                 const container = containerRef.current; // This ensures the type is not null
-                
+
                 // Remove the old canvas element completely
                 if (canvasRef.current.parentNode) {
                   canvasRef.current.parentNode.removeChild(canvasRef.current);
                 }
-                
+
                 // Create a new canvas element
                 const newCanvasElement = document.createElement('canvas');
                 newCanvasElement.id = 'fabric-canvas';
                 newCanvasElement.className = 'w-full h-full';
-                
+
                 // Check if containerRef.current is not null before appending
                 if (container) {
                   container.appendChild(newCanvasElement);
@@ -285,14 +285,14 @@ export function ProfileCanvas({
                   console.error('Container reference is null, cannot append canvas');
                   return;
                 }
-                
+
                 // Update the ref
                 canvasRef.current = newCanvasElement;
-                
+
                 // Create a new fabric canvas
                 const fabricCanvas = new fabric.Canvas(newCanvasElement);
                 setCanvas(fabricCanvas);
-                
+
                 // Exit the current loading attempt - we'll retry when the canvas is reinitialized
                 throw new Error('Canvas needed reinitialization');
               } catch (reinitError) {
@@ -301,13 +301,13 @@ export function ProfileCanvas({
               }
             }
           }
-          
+
           // Double check canvas is still valid after clearing
           if (!canvas || !canvas.getContext() || !isMountedRef.current) {
             console.error('Canvas or canvas context became null after clearing or component unmounted');
             throw new Error('Canvas context was lost after clearing or component unmounted');
           }
-          
+
           // Use a timeout to give React a chance to complete any pending updates
           setTimeout(() => {
             // Check if component is still mounted
@@ -315,7 +315,7 @@ export function ProfileCanvas({
               console.error('Component unmounted during timeout');
               return;
             }
-            
+
             try {
               canvas.loadFromJSON(canvasState, () => {
                 // Check if component is still mounted
@@ -323,23 +323,23 @@ export function ProfileCanvas({
                   console.error('Component unmounted during loadFromJSON callback');
                   return;
                 }
-                
+
                 // Check if canvas is still valid before rendering
                 if (!canvas || !canvas.getContext()) {
                   console.error('Canvas or canvas context became null during loadFromJSON callback');
                   return;
                 }
-                
+
                 try {
                   canvas.renderAll();
                   console.log('Canvas rendered successfully');
-                  
+
                   // Initialize history with loaded state
                   // Ensure we're storing the state as a string consistently
-                  const stateString = typeof canvasState === 'string' 
-                    ? canvasState 
+                  const stateString = typeof canvasState === 'string'
+                    ? canvasState
                     : JSON.stringify(canvasState);
-                    
+
                   const newHistory = [stateString];
                   setCanvasHistory(newHistory);
                   setHistoryIndex(0);
@@ -355,7 +355,7 @@ export function ProfileCanvas({
               });
             } catch (loadJsonError) {
               console.error('Error in loadFromJSON:', loadJsonError);
-              
+
               // If component is still mounted, try to recover with empty canvas
               if (isMountedRef.current && canvas) {
                 try {
@@ -379,7 +379,7 @@ export function ProfileCanvas({
           console.error('Component unmounted or canvas became null during no-data branch');
           return;
         }
-        
+
         console.log('No saved canvas found, initializing empty canvas.');
         // Initialize empty history with current state
         try {
@@ -394,50 +394,50 @@ export function ProfileCanvas({
       }
     } catch (error) {
       console.error('Error loading canvas state:', error);
-      
+
       // Check if component is still mounted
       if (!isMountedRef.current) {
         console.error('Component unmounted during error handling');
         return;
       }
-      
+
       // Initialize empty history with current state even if there's an error
       try {
         if (canvas) {
           // Check if canvas context is still valid
           if (!canvas.getContext()) {
             console.error('Canvas context is null during error recovery');
-            
+
             // If we have a canvas reference, try to reinitialize after a short delay
             if (containerRef.current && canvasRef.current) {
               console.log('Will attempt to reinitialize canvas after delay');
-              
+
               // Set a timeout to allow the browser to potentially recover the context
               setTimeout(() => {
                 // Check if component is still mounted
                 if (!isMountedRef.current) return;
-                
+
                 try {
                   console.log('Reinitializing canvas after error');
-                  
+
                   // Remove the old canvas element completely
                   if (canvasRef.current && canvasRef.current.parentNode) {
                     canvasRef.current.parentNode.removeChild(canvasRef.current);
                   }
-                  
+
                   // Create a new canvas element
                   const newCanvasElement = document.createElement('canvas');
                   newCanvasElement.id = 'fabric-canvas';
                   newCanvasElement.className = 'w-full h-full';
                   containerRef.current?.appendChild(newCanvasElement);
-                  
+
                   // Update the ref
                   canvasRef.current = newCanvasElement;
-                  
+
                   // Create a new fabric canvas
                   const fabricCanvas = new fabric.Canvas(newCanvasElement);
                   setCanvas(fabricCanvas);
-                  
+
                   // Initialize with empty state
                   const json = JSON.stringify(fabricCanvas.toJSON());
                   setCanvasHistory([json]);
@@ -450,7 +450,7 @@ export function ProfileCanvas({
             }
             return;
           }
-          
+
           // If context is valid, try to clear and initialize empty history
           try {
             canvas.clear(); // Ensure canvas is empty
@@ -478,46 +478,46 @@ export function ProfileCanvas({
     // Skip if there's no container, if canvas already exists,
     // or if we're already initializing
     if (!containerRef.current || canvas || isInitializingRef.current) return;
-    
+
     // Store the container reference for safety
     const currentContainer = containerRef.current;
-    
+
     // Set initialization flag
     isInitializingRef.current = true;
     console.log('Starting canvas initialization process');
-    
+
     // Create a new canvas element first
     const canvasElement = document.createElement('canvas');
     canvasElement.id = 'fabric-canvas';
     canvasElement.className = 'w-full h-full';
-    
+
     // Clear any existing canvas elements from the container
     while (currentContainer.firstChild) {
       currentContainer.removeChild(currentContainer.firstChild);
     }
-    
+
     // Append the new canvas element to the container
     currentContainer.appendChild(canvasElement);
-    
+
     // Update the ref
     canvasRef.current = canvasElement;
-    
+
     const initializeCanvas = () => {
       try {
         console.log(`Initializing canvas (attempt ${initAttemptsRef.current + 1}/${MAX_INIT_ATTEMPTS})...`);
         initAttemptsRef.current += 1;
-        
+
         // Calculate the optimal canvas dimensions based on container width and height
         const availableWidth = Math.min(MAX_CANVAS_WIDTH, window.innerWidth - CANVAS_PADDING);
         const availableHeight = Math.min(MAX_CANVAS_HEIGHT, window.innerHeight - CANVAS_PADDING * 2);
-        
+
         // Determine dimensions while respecting aspect ratio and maximum constraints
         let containerWidth, containerHeight;
-        
+
         // Calculate dimensions based on aspect ratio
         const heightBasedOnWidth = availableWidth / CANVAS_ASPECT_RATIO;
         const widthBasedOnHeight = availableHeight * CANVAS_ASPECT_RATIO;
-        
+
         if (heightBasedOnWidth <= availableHeight) {
           // Width is the limiting factor
           containerWidth = availableWidth;
@@ -527,7 +527,7 @@ export function ProfileCanvas({
           containerWidth = widthBasedOnHeight;
           containerHeight = availableHeight;
         }
-        
+
         // Set canvas dimensions
         if (canvasRef.current) {
           canvasRef.current.width = containerWidth;
@@ -537,15 +537,15 @@ export function ProfileCanvas({
           retryInitialization();
           return;
         }
-        
+
         // Double check the canvas element is still in the DOM
         if (!currentContainer.contains(canvasRef.current)) {
           console.error('Canvas element is no longer in the DOM');
-          
+
           // Re-append it if needed
           currentContainer.appendChild(canvasRef.current);
         }
-        
+
         // Check if the canvas context can be obtained
         const ctx = canvasRef.current.getContext('2d');
         if (!ctx) {
@@ -553,7 +553,7 @@ export function ProfileCanvas({
           retryInitialization();
           return;
         }
-        
+
         // Initialize fabric canvas directly without StaticCanvas step
         let newCanvas;
         try {
@@ -591,21 +591,21 @@ export function ProfileCanvas({
           console.error('Error configuring brush:', brushError);
           // Non-critical error, continue
         }
-        
+
         // Handle window resize
         const handleResize = () => {
           try {
             // Calculate new dimensions while maintaining aspect ratio and respecting maximums
             const availableWidth = Math.min(MAX_CANVAS_WIDTH, window.innerWidth - CANVAS_PADDING);
             const availableHeight = Math.min(MAX_CANVAS_HEIGHT, window.innerHeight - CANVAS_PADDING * 2);
-            
+
             // Determine dimensions while respecting aspect ratio and maximum constraints
             let newWidth, newHeight;
-            
+
             // Calculate dimensions based on aspect ratio
             const heightBasedOnWidth = availableWidth / CANVAS_ASPECT_RATIO;
             const widthBasedOnHeight = availableHeight * CANVAS_ASPECT_RATIO;
-            
+
             if (heightBasedOnWidth <= availableHeight) {
               // Width is the limiting factor
               newWidth = availableWidth;
@@ -615,16 +615,16 @@ export function ProfileCanvas({
               newWidth = widthBasedOnHeight;
               newHeight = availableHeight;
             }
-            
+
             // Update canvas dimensions
             newCanvas.setWidth(newWidth);
             newCanvas.setHeight(newHeight);
-            
+
             // Scale canvas content to fit new dimensions
             const scaleX = newWidth / newCanvas.getWidth();
             const scaleY = newHeight / newCanvas.getHeight();
             const objects = newCanvas.getObjects();
-            
+
             for (const obj of objects) {
               // Check if properties exist before accessing them
               if (obj.scaleX !== undefined) obj.scaleX *= scaleX;
@@ -633,7 +633,7 @@ export function ProfileCanvas({
               if (obj.top !== undefined) obj.top *= scaleY;
               obj.setCoords();
             }
-            
+
             newCanvas.renderAll();
             console.log(`Canvas resized to ${newWidth}x${newHeight}`);
           } catch (resizeError) {
@@ -643,32 +643,32 @@ export function ProfileCanvas({
 
         window.addEventListener('resize', handleResize);
         console.log('Canvas initialized successfully');
-        
+
         // Reset initialization attempts on success
         initAttemptsRef.current = 0;
-        
+
         // Reset the initialization flag
         isInitializingRef.current = false;
-        
+
         // Update the canvas in the store
         setCanvas(newCanvas);
 
         return () => {
           window.removeEventListener('resize', handleResize);
-          
+
           // Reset the initialization flag when the component unmounts
           isInitializingRef.current = false;
           console.log('Canvas initialization flag reset during cleanup');
-          
+
           // If canvas was set in the store, clean it up when the component unmounts
           if (newCanvas) {
             try {
               // Remove all event listeners
               newCanvas.off();
-              
+
               // Dispose the canvas
               newCanvas.dispose();
-              
+
               console.log('Canvas disposed properly during cleanup');
             } catch (disposeError) {
               console.error('Error disposing canvas during cleanup:', disposeError);
@@ -680,7 +680,7 @@ export function ProfileCanvas({
         retryInitialization();
       }
     };
-    
+
     // Function to retry initialization with exponential backoff
     const retryInitialization = () => {
       if (initAttemptsRef.current < MAX_INIT_ATTEMPTS) {
@@ -696,28 +696,28 @@ export function ProfileCanvas({
         console.log('Canvas initialization flag reset after max attempts');
       }
     };
-    
+
     // Start initialization
     initializeCanvas();
-    
+
     // Cleanup function for the useEffect
     return () => {
       // Reset the initialization flag when the component unmounts
       isInitializingRef.current = false;
       console.log('Canvas initialization flag reset during cleanup');
-      
+
       // If canvas was set in the store, clean it up when the component unmounts
       if (canvas) {
         try {
           // Remove all event listeners
           (canvas as fabric.Canvas).off();
-          
+
           // Dispose the canvas
           (canvas as fabric.Canvas).dispose();
-          
+
           // Clear the canvas from the store
           setCanvas(null);
-          
+
           console.log('Canvas cleaned up during component unmount');
         } catch (error) {
           console.error('Error cleaning up canvas during unmount:', error);
@@ -735,7 +735,7 @@ export function ProfileCanvas({
       try {
         if (!canvas.getContext()) {
           console.error('Canvas context is not available before loading state');
-          
+
           // If canvas is invalid, try to reinitialize it
           if (canvasRef.current && initAttemptsRef.current < MAX_INIT_ATTEMPTS) {
             console.log('Canvas context lost, will attempt to reinitialize');
@@ -749,7 +749,7 @@ export function ProfileCanvas({
             return;
           }
         }
-        
+
         // Canvas is valid, proceed with loading
         console.log('Loading canvas state for the first time');
         hasLoadedCanvasState.current = true;
@@ -758,7 +758,7 @@ export function ProfileCanvas({
         console.error('Error checking canvas before loading state:', error);
       }
     }
-    
+
     // Reset the flag when the component unmounts or when userId changes
     return () => {
       if (userId) {
@@ -772,7 +772,7 @@ export function ProfileCanvas({
   useEffect(() => {
     if (!canvas) return;
     canvas.isDrawingMode = isDrawingMode;
-    
+
     // If entering drawing mode, deselect any selected objects
     if (isDrawingMode && selectedObject) {
       canvas.discardActiveObject();
@@ -784,7 +784,7 @@ export function ProfileCanvas({
   // Update brush settings when they change
   useEffect(() => {
     if (!canvas || !canvas.freeDrawingBrush || !isMountedRef.current) return;
-    
+
     try {
       canvas.freeDrawingBrush.color = brushColor;
       canvas.freeDrawingBrush.width = brushSize;
@@ -799,43 +799,43 @@ export function ProfileCanvas({
       console.warn('Cannot add to history: Canvas is null');
       return;
     }
-    
+
     try {
       // Get current canvas state with specific properties to reduce size
       const canvasJSON = canvas.toJSON([
         'id', 'selectable', 'lockMovementX', 'lockMovementY',
         'lockRotation', 'lockScalingX', 'lockScalingY'
       ]);
-      
+
       // Serialize with error handling
       const json = JSON.stringify(canvasJSON);
-      
+
       // Prevent adding identical states to history
       const currentLastState = canvasHistory[historyIndex];
       if (currentLastState === json) {
         console.log('State unchanged, not adding to history');
         return;
       }
-      
+
       // If we're not at the end of the history, remove everything after current index
       let newHistory = canvasHistory;
       if (historyIndex < canvasHistory.length - 1) {
         newHistory = canvasHistory.slice(0, historyIndex + 1);
       }
-      
+
       // Limit history size to prevent memory issues (keep last 50 states)
       const MAX_HISTORY_SIZE = 50;
       if (newHistory.length >= MAX_HISTORY_SIZE) {
         newHistory = newHistory.slice(newHistory.length - MAX_HISTORY_SIZE + 1);
       }
-      
+
       // Add new state to history
       newHistory = [...newHistory, json];
-      
+
       // Update state
       setCanvasHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
-      
+
       // Log for debugging
       console.log(`Added to history. New index: ${newHistory.length - 1}, History length: ${newHistory.length}`);
     } catch (error) {
@@ -850,9 +850,9 @@ export function ProfileCanvas({
     // Use setTimeout to ensure React's rendering is complete
     const setupTimeout = setTimeout(() => {
       if (!canvas || !isMountedRef.current) return;
-      
+
       console.log('Setting up canvas event listeners');
-      
+
       const handleSelection = () => {
         if (!isMountedRef.current) return;
         setSelectedObject(canvas.getActiveObject());
@@ -893,13 +893,13 @@ export function ProfileCanvas({
       canvas.on('object:modified', handleObjectModified);
       canvas.on('path:created', handlePathCreated);
       canvas.on('object:added', handleObjectAdded);
-      
+
       console.log('Canvas event listeners set up successfully');
     }, 50); // 50ms delay
 
     return () => {
       clearTimeout(setupTimeout);
-      
+
       if (canvas) {
         try {
           canvas.off('selection:created');
@@ -919,25 +919,25 @@ export function ProfileCanvas({
   // Undo/Redo functions
   const undo = () => {
     console.log(`Undo called. Current index: ${historyIndex}, History length: ${canvasHistory.length}`);
-    
+
     if (!canvas) {
       console.warn('Cannot undo: Canvas is null');
       return;
     }
-    
+
     if (historyIndex <= 0) {
       console.log('Cannot undo: At beginning of history');
       return;
     }
-    
+
     if (canvasHistory.length === 0) {
       console.log('Cannot undo: History is empty');
       return;
     }
-    
+
     const newIndex = historyIndex - 1;
     console.log(`Undoing to index ${newIndex}`);
-    
+
     try {
       // Validate the history state before loading
       let historyState;
@@ -952,7 +952,7 @@ export function ProfileCanvas({
         console.error('Error parsing history state:', parseError);
         throw new Error('Corrupted history data');
       }
-      
+
       // Load the canvas state with proper error handling
       canvas.loadFromJSON(historyState, () => {
         canvas.renderAll();
@@ -974,25 +974,25 @@ export function ProfileCanvas({
 
   const redo = () => {
     console.log(`Redo called. Current index: ${historyIndex}, History length: ${canvasHistory.length}`);
-    
+
     if (!canvas) {
       console.warn('Cannot redo: Canvas is null');
       return;
     }
-    
+
     if (historyIndex >= canvasHistory.length - 1) {
       console.log('Cannot redo: At end of history');
       return;
     }
-    
+
     if (canvasHistory.length === 0) {
       console.log('Cannot redo: History is empty');
       return;
     }
-    
+
     const newIndex = historyIndex + 1;
     console.log(`Redoing to index ${newIndex}`);
-    
+
     try {
       // Validate the history state before loading
       let historyState;
@@ -1007,7 +1007,7 @@ export function ProfileCanvas({
         console.error('Error parsing history state:', parseError);
         throw new Error('Corrupted history data');
       }
-      
+
       // Load the canvas state with proper error handling
       canvas.loadFromJSON(historyState, () => {
         canvas.renderAll();
@@ -1046,18 +1046,18 @@ export function ProfileCanvas({
     if (!canvas) return;
     const shape = type === 'rect'
       ? new fabric.Rect({
-          left: 50,
-          top: 50,
-          width: 100,
-          height: 100,
-          fill: '#4F46E5'
-        })
+        left: 50,
+        top: 50,
+        width: 100,
+        height: 100,
+        fill: '#4F46E5'
+      })
       : new fabric.Circle({
-          left: 50,
-          top: 50,
-          radius: 50,
-          fill: '#4F46E5'
-        });
+        left: 50,
+        top: 50,
+        radius: 50,
+        fill: '#4F46E5'
+      });
     canvas.add(shape);
     canvas.setActiveObject(shape);
     canvas.renderAll();
@@ -1073,35 +1073,35 @@ export function ProfileCanvas({
     console.log('File selected:', e.target.files[0].name);
     const file = e.target.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = (event) => {
       if (!event.target?.result) {
         console.log('FileReader result is null');
         return;
       }
-      
+
       console.log('File loaded, creating image');
       const imgUrl = event.target.result.toString();
-      
+
       // Use fabric.Image.fromURL instead of creating an HTML element
       fabric.Image.fromURL(imgUrl, (fabricImage) => {
         console.log('Image created, dimensions:', fabricImage.width, 'x', fabricImage.height);
-        
+
         // Position the image
         fabricImage.set({
           left: 50,
           top: 50
         });
-        
+
         // Scale the image to a reasonable size
         fabricImage.scaleToWidth(200);
-        
+
         // Add the image to the canvas
         canvas.add(fabricImage);
         canvas.setActiveObject(fabricImage);
         canvas.renderAll();
         console.log('Image added to canvas');
-        
+
         // Clear the file input so the same file can be selected again
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
@@ -1110,24 +1110,42 @@ export function ProfileCanvas({
         crossOrigin: 'anonymous'
       });
     };
-    
+
     reader.onerror = (error) => {
       console.error('Error reading file:', error);
     };
-    
+
     reader.readAsDataURL(file);
   };
 
   const handleColorChange = (color: string) => {
     if (isDrawingMode) {
-      // In drawing mode, update brush color
+      // En modo dibujo, actualizar el color del pincel
+      setBrushColor(color);
+      if (canvas && canvas.freeDrawingBrush) {
+        canvas.freeDrawingBrush.color = color;
+      }
+    } else if (isFillMode) {
+      // En modo relleno, actualizar el color de relleno
       setBrushColor(color);
     } else if (selectedObject && canvas) {
-      // In selection mode, update selected object color
-      selectedObject.set('fill', color);
+      // En modo selección, actualizar el color del objeto seleccionado
+      if (selectedObject.type === 'i-text' || selectedObject.type === 'text') {
+        // Para objetos de texto, actualizar el color del texto
+        selectedObject.set('fill', color);
+      } else {
+        // Para otros objetos (formas), actualizar el color de relleno
+        selectedObject.set('fill', color);
+      }
+
+      // Renderizar el canvas para mostrar los cambios
       canvas.renderAll();
+
+      // Añadir el cambio al historial
+      addToHistory();
     }
   };
+
 
   const deleteSelected = () => {
     if (!canvas || !selectedObject) return;
@@ -1149,7 +1167,7 @@ export function ProfileCanvas({
 
   const adjustLayer = (direction: 'forward' | 'backward' | 'front' | 'back') => {
     if (!selectedObject || !canvas) return;
-    
+
     switch (direction) {
       case 'forward':
         selectedObject.bringForward();
@@ -1164,7 +1182,7 @@ export function ProfileCanvas({
         selectedObject.sendToBack();
         break;
     }
-    
+
     canvas.renderAll();
     console.log('Layer adjusted, adding to history');
     addToHistory(); // Need to explicitly add to history since layer changes don't trigger object:modified
@@ -1172,7 +1190,7 @@ export function ProfileCanvas({
 
   const duplicateSelected = () => {
     if (!canvas || !selectedObject) return;
-    
+
     selectedObject.clone((cloned: fabric.Object) => {
       cloned.set({
         left: selectedObject.left! + 20,
@@ -1187,17 +1205,17 @@ export function ProfileCanvas({
 
   const exportCanvas = () => {
     if (!canvas) return;
-    
+
     const dataURL = canvas.toDataURL({
       format: 'png',
       quality: 1
     });
-    
+
     // Use a simpler approach without DOM manipulation
     const link = document.createElement('a');
     link.download = `canvas-${new Date().toISOString().slice(0, 10)}.png`;
     link.href = dataURL;
-    
+
     // Use click() directly without appending to DOM
     link.click();
   };
@@ -1206,25 +1224,25 @@ export function ProfileCanvas({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       // Handle color picker
-      if (showColorPicker && 
-          colorPickerRef.current && 
-          !colorPickerRef.current.contains(event.target as Node)) {
+      if (showColorPicker &&
+        colorPickerRef.current &&
+        !colorPickerRef.current.contains(event.target as Node)) {
         setShowColorPicker(false);
       }
-      
+
       // Handle brush settings
-      if (showBrushSettings && 
-          brushSettingsRef.current && 
-          !brushSettingsRef.current.contains(event.target as Node) &&
-          // Don't close brush settings when clicking the pencil button
-          !(event.target as Element).closest('[data-brush-toggle]')) {
+      if (showBrushSettings &&
+        brushSettingsRef.current &&
+        !brushSettingsRef.current.contains(event.target as Node) &&
+        // Don't close brush settings when clicking the pencil button
+        !(event.target as Element).closest('[data-brush-toggle]')) {
         setShowBrushSettings(false);
       }
     };
 
     // Add event listener
     document.addEventListener('mousedown', handleClickOutside);
-    
+
     // Clean up
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -1235,7 +1253,7 @@ export function ProfileCanvas({
   const toggleDrawingMode = () => {
     const newDrawingMode = !isDrawingMode;
     setIsDrawingMode(newDrawingMode);
-    
+
     // Only show brush settings when entering drawing mode
     if (newDrawingMode) {
       setShowBrushSettings(true);
@@ -1256,22 +1274,22 @@ export function ProfileCanvas({
     if (canvas && canvasHistory.length === 0) {
       try {
         console.log('Canvas ready but history empty, initializing history');
-        
+
         // Check if canvas context is valid
         if (!canvas.getContext()) {
           console.error('Canvas context is not available when initializing history');
           return;
         }
-        
+
         // Create a safe copy of the canvas state
         const canvasJSON = canvas.toJSON();
         const json = JSON.stringify(canvasJSON);
-        
+
         // Update history in a safe way
         const newHistory = [json];
         setCanvasHistory(newHistory);
         setHistoryIndex(0);
-        
+
         console.log('History initialized with empty canvas state');
       } catch (error) {
         console.error('Error initializing history:', error);
@@ -1282,12 +1300,12 @@ export function ProfileCanvas({
   // Add fill functionality
   const activateFillMode = () => {
     if (!canvas) return;
-    
+
     // Disable drawing mode if it's active
     if (isDrawingMode) {
       setIsDrawingMode(false);
     }
-    
+
     // Toggle fill mode
     setIsFillMode(!isFillMode);
   };
@@ -1301,12 +1319,12 @@ export function ProfileCanvas({
       const pointer = canvas.getPointer(options.e);
       const x = Math.round(pointer.x);
       const y = Math.round(pointer.y);
-      
+
       // Get the current fill color
       const fillColor = brushColor;
-      
+
       console.log(`Fill operation at (${x}, ${y}) with color ${fillColor}`);
-      
+
       // Create a new rect that covers the entire canvas
       const rect = new fabric.Rect({
         left: 0,
@@ -1316,23 +1334,23 @@ export function ProfileCanvas({
         fill: fillColor,
         selectable: true
       });
-      
+
       // Add the rectangle to the canvas
       canvas.add(rect);
-      
+
       // Send it to the back so it becomes the background
       rect.sendToBack();
-      
+
       // Render the canvas
       canvas.renderAll();
-      
+
       // Add to history
       addToHistory();
     };
 
     // Add event listener for mouse down
     canvas.on('mouse:down', handleCanvasClick);
-    
+
     // Return cleanup function
     return () => {
       if (canvas) {
@@ -1344,7 +1362,7 @@ export function ProfileCanvas({
   // Update cursor based on active mode
   useEffect(() => {
     if (!canvas) return;
-    
+
     if (isFillMode) {
       canvas.defaultCursor = 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M12 19l7-7 3 3-7 7-3-3z\'/><path d=\'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z\'/><path d=\'M2 2l7.586 7.586\'/><circle cx=\'11\' cy=\'11\' r=\'2\'/></svg>"), auto';
     } else if (isDrawingMode) {
@@ -1365,7 +1383,7 @@ export function ProfileCanvas({
     <div className="relative">
       {/* Add style tag for range input styling */}
       <style>{rangeInputStyles}</style>
-      
+
       {/* Hidden file input for image uploads */}
       <input
         ref={fileInputRef}
@@ -1375,12 +1393,12 @@ export function ProfileCanvas({
         onChange={handleImageUpload}
         id="file-input"
       />
-      
+
       {/* Canvas container - updated for better mobile centering */}
       <div className="w-full flex justify-center px-0 sm:px-4">
-        <div 
-          className={`relative rounded-2xl overflow-hidden ${isEditing ? 'border-2 border-dashed border-cyan-300' : ''}`} 
-          style={{ 
+        <div
+          className={`relative rounded-2xl overflow-hidden ${isEditing ? 'border-2 border-dashed border-cyan-300' : ''}`}
+          style={{
             zIndex: 0,
             width: '100%',
             maxWidth: `${MAX_CANVAS_WIDTH}px`,
@@ -1414,7 +1432,7 @@ export function ProfileCanvas({
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
             <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
             <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-            
+
             {/* Toolbar buttons for desktop */}
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -1460,17 +1478,19 @@ export function ProfileCanvas({
               <Droplet className="w-5 h-5" />
             </button>
             <button
-              onClick={() => setShowColorPicker(!showColorPicker)}
+              onClick={() => {
+                console.log("Color picker toggled, current state:", !showColorPicker); // Añadir log para depuración
+                setShowColorPicker(!showColorPicker);
+              }}
               className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300"
               title="Color"
-              style={{ 
+              style={{
                 backgroundColor: (isDrawingMode || isFillMode) ? brushColor : 'transparent',
                 color: (isDrawingMode || isFillMode) && brushColor !== '#ffffff' ? 'white' : 'cyan-300'
               }}
             >
               <Palette className="w-5 h-5" />
             </button>
-            
             {/* Add undo/redo buttons */}
             <div className="border-t border-cyan-500/20 my-1 pt-1"></div>
             <button
@@ -1505,7 +1525,7 @@ export function ProfileCanvas({
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-              
+
               <button
                 onClick={deleteSelected}
                 className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-red-500"
@@ -1578,23 +1598,23 @@ export function ProfileCanvas({
                 <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
                 <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                 <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                
+
                 <div className="flex flex-col gap-4">
                   <h3 className="text-sm font-semibold text-cyan-300">Ajustes de pincel</h3>
-                  
+
                   {/* Brush preview */}
                   <div className="flex items-center justify-center p-3 bg-cyan-800/30 rounded-lg border border-cyan-500/20">
-                    <div 
+                    <div
                       className="rounded-full border border-cyan-500/20 shadow-sm"
-                      style={{ 
-                        width: `${Math.min(brushSize * 2, 100)}px`, 
+                      style={{
+                        width: `${Math.min(brushSize * 2, 100)}px`,
                         height: `${Math.min(brushSize * 2, 100)}px`,
                         backgroundColor: brushColor,
                         transition: 'all 0.2s ease'
                       }}
                     ></div>
                   </div>
-                  
+
                   {/* Brush size slider */}
                   <div>
                     <label className="block text-sm font-medium text-cyan-300 mb-2">Tamaño del pincel</label>
@@ -1675,14 +1695,14 @@ export function ProfileCanvas({
               onClick={() => setShowColorPicker(!showColorPicker)}
               className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] text-cyan-300 flex-shrink-0"
               title="Color"
-              style={{ 
+              style={{
                 backgroundColor: (isDrawingMode || isFillMode) ? brushColor : 'transparent',
                 color: (isDrawingMode || isFillMode) && brushColor !== '#ffffff' ? 'white' : 'cyan-300'
               }}
             >
               <Palette className="w-5 h-5" />
             </button>
-            
+
             {/* Add undo/redo buttons */}
             <div className="h-full border-l border-cyan-500/20 mx-1"></div>
             <button
@@ -1703,7 +1723,7 @@ export function ProfileCanvas({
             >
               <Redo className="w-5 h-5" />
             </button>
-            
+
             {selectedObject && !isDrawingMode && (
               <>
                 <button
@@ -1726,14 +1746,14 @@ export function ProfileCanvas({
                   title="Bloquear/Desbloquear"
                 >
                   {selectedObject.lockMovementX ? (
-                  <Lock className="w-5 h-5" />
-                ) : (
-                  <Unlock className="w-5 h-5" />
-                )}
-              </button>
+                    <Lock className="w-5 h-5" />
+                  ) : (
+                    <Unlock className="w-5 h-5" />
+                  )}
+                </button>
               </>
             )}
-            
+
             {/* Mobile brush settings */}
             <AnimatePresence>
               {showBrushSettings && isDrawingMode && isMobile && (
@@ -1749,23 +1769,23 @@ export function ProfileCanvas({
                   <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
                   <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                   <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                  
+
                   <div className="max-w-md mx-auto">
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="text-sm font-semibold text-cyan-300">Ajustes de pincel</h3>
-                      <button 
+                      <button
                         onClick={() => setShowBrushSettings(false)}
                         className="text-cyan-400 hover:text-cyan-300 text-xs bg-cyan-800/50 px-2 py-1 rounded-md"
                       >
                         Cerrar
                       </button>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 mb-3">
-                      <div 
+                      <div
                         className="rounded-full border border-cyan-500/20 shadow-sm flex-shrink-0"
-                        style={{ 
-                          width: `${Math.min(brushSize * 1.5, 40)}px`, 
+                        style={{
+                          width: `${Math.min(brushSize * 1.5, 40)}px`,
                           height: `${Math.min(brushSize * 1.5, 40)}px`,
                           backgroundColor: brushColor,
                           transition: 'all 0.2s ease'
@@ -1791,10 +1811,10 @@ export function ProfileCanvas({
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="overflow-x-auto pb-1">
                       <div className="flex gap-2 min-w-max">
-                        {['#000000', '#ffffff', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', 
+                        {['#000000', '#ffffff', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
                           '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e', '#10b981', '#14b8a6'].map((color) => (
                             <button
                               key={color}
@@ -1820,45 +1840,56 @@ export function ProfileCanvas({
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {/* Color Picker - Desktop Only */}
             <AnimatePresence>
-              {showColorPicker && !isMobile && (
+              {showColorPicker && (
                 <motion.div
                   ref={colorPickerRef}
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute left-16 top-0 bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 p-4 rounded-xl shadow-lg"
-                  style={{ zIndex: 70 }}
+                  className="absolute left-16 top-0 bg-cyan-900/80 backdrop-blur-xl border border-cyan-500/20 p-4 rounded-xl shadow-lg"
+                  style={{ zIndex: 1000 }}
                 >
-                  {/* Prismatic edge effect */}
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                  
                   <div className="flex flex-col gap-3">
                     <div className="flex justify-between items-center">
                       <h3 className="text-sm font-semibold text-cyan-300">Selector de color</h3>
-                      <button 
+                      <button
                         onClick={() => setShowColorPicker(false)}
                         className="text-cyan-400 hover:text-cyan-300 text-sm"
                       >
                         Cerrar
                       </button>
                     </div>
-                    
-                    <HexColorPicker
-                      color={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
-                      onChange={handleColorChange}
-                    />
-                    
+
+                    {/* Grid de colores predefinidos */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00',
+                        '#00ffff', '#ff00ff', '#ff9900', '#9900ff', '#00ff99', '#990000',
+                        '#009900', '#000099', '#999900', '#990099'].map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => handleColorChange(color)}
+                            className="w-8 h-8 rounded-full transition-all hover:scale-110"
+                            style={{
+                              backgroundColor: color,
+                              border: '2px solid white',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                            }}
+                            aria-label={`Color ${color}`}
+                          />
+                        ))}
+                    </div>
+
+                    {/* Input de color nativo */}
                     <div className="flex items-center gap-2 mt-2">
-                      <div 
-                        className="w-4 h-4 rounded-full border border-cyan-500/20 shadow-sm" 
-                        style={{ backgroundColor: isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000') }}
-                      ></div>
+                      <input
+                        type="color"
+                        value={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
+                        onChange={(e) => handleColorChange(e.target.value)}
+                        className="w-8 h-8"
+                      />
                       <input
                         type="text"
                         value={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
@@ -1870,7 +1901,7 @@ export function ProfileCanvas({
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {/* Mobile Color Picker */}
             <AnimatePresence>
               {showColorPicker && isMobile && (
@@ -1886,27 +1917,27 @@ export function ProfileCanvas({
                   <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
                   <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                   <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                  
+
                   <div className="max-w-md mx-auto">
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="text-sm font-semibold text-cyan-300">Selector de color</h3>
-                      <button 
+                      <button
                         onClick={() => setShowColorPicker(false)}
                         className="text-cyan-400 hover:text-cyan-300 text-xs bg-cyan-800/50 px-2 py-1 rounded-md"
                       >
                         Cerrar
                       </button>
                     </div>
-                    
+
                     <HexColorPicker
                       color={isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000')}
                       onChange={handleColorChange}
                       className="w-full max-h-[180px]"
                     />
-                    
+
                     <div className="flex items-center gap-2 mt-3">
-                      <div 
-                        className="w-6 h-6 rounded-full border border-cyan-500/20 shadow-sm" 
+                      <div
+                        className="w-6 h-6 rounded-full border border-cyan-500/20 shadow-sm"
                         style={{ backgroundColor: isDrawingMode ? brushColor : (selectedObject?.fill?.toString() || '#000000') }}
                       ></div>
                       <input
@@ -1931,17 +1962,17 @@ export function ProfileCanvas({
 export const canvasUtils = {
   exportCanvas: (canvas: fabric.Canvas | null) => {
     if (!canvas) return;
-    
+
     const dataURL = canvas.toDataURL({
       format: 'png',
       quality: 1
     });
-    
+
     // Use a simpler approach without DOM manipulation
     const link = document.createElement('a');
     link.download = `canvas-${new Date().toISOString().slice(0, 10)}.png`;
     link.href = dataURL;
-    
+
     // Use click() directly without appending to DOM
     link.click();
   }

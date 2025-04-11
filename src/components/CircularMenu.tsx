@@ -15,7 +15,7 @@ const menuItems = [
   { id: 'ligar', label: 'Ligar', icon: Heart, color: 'from-rose-500 via-pink-500 to-red-600' },
   { id: 'universidad', label: 'Universidad', icon: GraduationCap, color: 'from-amber-500 via-orange-500 to-yellow-600' },
   { id: 'planes', label: 'Planes', icon: Calendar, color: 'from-emerald-500 via-teal-500 to-green-600' },
-  { id: 'cerca', label: 'Cerca de mí', icon: MapPin, color: 'from-sky-500 via-blue-500 to-cyan-600' },
+  { id: 'cerca', label: 'Cerca', icon: MapPin, color: 'from-sky-500 via-blue-500 to-cyan-600' },
   { id: 'amistad', label: 'Amistad', icon: UserPlus, color: 'from-fuchsia-500 via-purple-500 to-pink-600' },
   { id: 'arte', label: 'Arte', icon: Palette, color: 'from-cyan-500 via-sky-500 to-blue-600' },
   { id: 'ciudad', label: 'Ciudad', icon: Building2, color: 'from-violet-500 via-indigo-500 to-purple-600' }
@@ -37,12 +37,12 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
   const countryName = findCountryForCity(selectedCity);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
-  
+
   // City item that will be displayed in the center
-  const cityItem = { 
-    id: 'currentCity', 
+  const cityItem = {
+    id: 'currentCity',
     label: selectedCity, // Use the selected city from props
-    icon: Building2, 
+    icon: Building2,
     color: 'from-blue-600 via-indigo-600 to-purple-700',
     country: countryName // Store the country name
   };
@@ -50,7 +50,7 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
   // Calculate positions for items in a circle
   const calculateCirclePosition = (index: number, total: number, radius: number) => {
     // Calculate angle in radians - offset by -Math.PI/2 to start from the top
-    const angle = (index / total) * 2 * Math.PI - Math.PI/2;
+    const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
     // Calculate x and y coordinates
     const x = radius * Math.cos(angle);
     const y = radius * Math.sin(angle);
@@ -62,20 +62,20 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
     try {
       // Set loading state for this topic
       setIsLoading(prev => ({ ...prev, [topicId]: true }));
-      
+
       // Get or create the group chat for this topic and city
       const groupChatId = await getOrCreateTopicGroupChat(topicId, selectedCity);
-      
+
       // Navigate to the group chat page with the group chat ID
-      navigate({ 
-        to: '/group-chat/$id', 
+      navigate({
+        to: '/group-chat/$id',
         params: { id: groupChatId }
       });
     } catch (error) {
       console.error('Error creating group chat:', error);
       // If there's an error, fall back to the mock implementation
-      navigate({ 
-        to: '/group-chat/$id', 
+      navigate({
+        to: '/group-chat/$id',
         params: { id: topicId },
         search: { city: selectedCity }
       });
@@ -98,7 +98,7 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
       // Fixed radius for perfect circle
       const radius = 150;
       const position = calculateCirclePosition(index, menuItems.length, radius);
-      
+
       return {
         x: position.x,
         y: position.y,
@@ -117,7 +117,7 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
       // Fixed radius for perfect circle
       const radius = 150;
       const position = calculateCirclePosition(index, menuItems.length, radius);
-      
+
       return {
         x: position.x,
         y: position.y,
@@ -134,7 +134,7 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
   };
 
   return (
-    <div className="mt-8 bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6 pb-6 sm:pb-safe z-50 lg:max-w-7xl lg:mx-auto">
+    <div className="mt-8 md:mt-0 bottom-0 left-0 right-0 p-3 sm:p-4 lg:p-6 pb-6 sm:pb-safe z-50 lg:max-w-7xl lg:mx-auto">
       <div className="relative max-w-xl lg:max-w-full mx-auto">
         {/* Subtle background glow */}
         <motion.div
@@ -180,16 +180,16 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                 }}
               >
                 {/* Rounded rectangle card for center city */}
-                <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg w-32 sm:w-36 lg:w-40">
+                <div className="relative overflow-hidden rounded-[32px] shadow-lg w-44 md:w-32 sm:w-36 lg:w-40">
                   {/* Pulse animation on city change */}
-                  <motion.div 
+                  <motion.div
                     key={`pulse-${cityItem.label}`}
                     initial={{ opacity: 0.5, scale: 0.95 }}
-                    animate={{ 
+                    animate={{
                       opacity: [0.5, 0, 0],
                       scale: [0.95, 1.2, 1.2]
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 1.5,
                       times: [0, 0.7, 1]
                     }}
@@ -197,22 +197,22 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                   />
 
                   {/* Content */}
-                  <div className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 p-4 sm:p-5">
+                  <div className="relative z-10 flex flex-col items-center gap-2 sm:gap-3 p-4 md:p-4 sm:p-5">
                     {/* Circular icon */}
                     <div className="relative">
-                      <motion.div 
+                      <motion.div
                         key={`icon-${cityItem.label}`}
                         initial={{ scale: 0.9, rotate: -5 }}
                         animate={{ scale: 1, rotate: 0 }}
-                        transition={{ 
-                          type: "spring", 
-                          stiffness: 300, 
-                          damping: 15 
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 15
                         }}
-                        className="w-16 h-16 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br from-blue-400/90 to-blue-600/90"
+                        className="md:w-16 md:h-16 w-24 h-24 sm:w-18 sm:h-18 lg:w-20 lg:h-20 rounded-full flex items-center justify-center relative shadow-lg bg-gradient-to-br from-blue-400/90 to-blue-600/90"
                       >
                         {/* Border */}
-                        <div className="absolute inset-0 rounded-full ring-1 ring-white/30" />
+                        <div className="absolute inset-0 rounded-full ring-2 ring-white" />
 
                         {/* Icon */}
                         <cityItem.icon className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-white relative z-10" />
@@ -232,24 +232,24 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                         </motion.div>
                       </motion.div>
                     </div>
-                    
+
                     {/* City Label */}
                     <AnimatePresence mode="wait">
-                      <motion.span 
+                      <motion.span
                         key={`city-${cityItem.label}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
-                        className="text-lg sm:text-xl lg:text-2xl font-semibold text-white/90 line-clamp-1"
+                        className="text-lg sm:text-xl md:text-md font-semibold text-white line-clamp-1"
                       >
                         {cityItem.label}
                       </motion.span>
                     </AnimatePresence>
-                    
+
                     {/* Country Label */}
                     <AnimatePresence mode="wait">
-                    
+
                     </AnimatePresence>
                   </div>
                 </div>
@@ -258,7 +258,7 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
               {/* Circle arrangement of menu items */}
               {menuItems.map((item, index) => {
                 const Icon = item.icon;
-                
+
                 // Determine text color based on item
                 const textColorMap: Record<string, string> = {
                   'politica': 'text-violet-300',
@@ -270,7 +270,7 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                   'arte': 'text-cyan-300',
                   'ciudad': 'text-violet-300'
                 };
-                
+
                 // Determine icon background color
                 const bgColorMap: Record<string, string> = {
                   'politica': 'from-violet-400/90 to-violet-600/90',
@@ -282,10 +282,10 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                   'arte': 'from-cyan-400/90 to-cyan-600/90',
                   'ciudad': 'from-violet-400/90 to-violet-600/90'
                 };
-                
+
                 const textColor = textColorMap[item.id] || 'text-blue-300';
                 const bgColor = bgColorMap[item.id] || 'from-blue-400/90 to-blue-600/90';
-                
+
                 return (
                   <motion.button
                     key={`${item.id}-${cityItem.label}`}
@@ -303,16 +303,16 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                     disabled={isLoading[item.id]}
                   >
                     {/* Rounded rectangle card */}
-                    <div className="relative overflow-hidden rounded-[32px] bg-white/10 backdrop-blur-xl border border-white/20 shadow-lg w-24 sm:w-28">
+                    <div className="relative overflow-hidden rounded-[32px] shadow-lg w-24 sm:w-28">
                       {/* Ripple effect on city change */}
-                      <motion.div 
+                      <motion.div
                         key={`ripple-${item.id}-${cityItem.label}`}
                         initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ 
+                        animate={{
                           opacity: [0.3, 0, 0],
                           scale: [0.5, 1.3, 1.3]
                         }}
-                        transition={{ 
+                        transition={{
                           duration: 1,
                           delay: index * 0.05,
                           times: [0, 0.7, 1]
@@ -331,19 +331,23 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                               </div>
                             )}
-                            
+
                             {/* Border */}
-                            <div className="absolute inset-0 rounded-full ring-1 ring-white/30" />
+                            <div className="absolute inset-0 rounded-full ring-2 ring-white" />
+
+                            {/* Glass reflections */}
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/50 via-transparent to-white/10" />
+                            <div className="absolute inset-0 rounded-full bg-gradient-to-t from-transparent via-sky-200/30 to-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                             {/* Icon */}
                             <motion.div
                               key={`icon-${item.id}-${cityItem.label}`}
                               initial={{ scale: 1 }}
-                              animate={{ 
+                              animate={{
                                 scale: [1, 1.2, 1],
                                 rotate: [0, index % 2 === 0 ? 10 : -10, 0]
                               }}
-                              transition={{ 
+                              transition={{
                                 duration: 0.5,
                                 delay: 0.1 + index * 0.04,
                                 times: [0, 0.5, 1]
@@ -351,7 +355,6 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                             >
                               <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white relative z-10" />
                             </motion.div>
-
                             {/* Sparkle */}
                             <motion.div
                               className="absolute -top-1 -right-1"
@@ -363,20 +366,20 @@ export function CircularMenu({ selectedCity = 'Madrid' }: CircularMenuProps) {
                                 ease: "easeInOut"
                               }}
                             >
-                              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-white/80" />
+                              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-blue-200" />
                             </motion.div>
                           </div>
                         </div>
-                        
+
                         {/* Label */}
-                        <motion.span 
+                        <motion.span
                           key={`label-${item.id}-${cityItem.label}`}
                           initial={{ opacity: 1 }}
-                          animate={{ 
+                          animate={{
                             opacity: [1, 0.7, 1],
                             y: [0, -2, 0]
                           }}
-                          transition={{ 
+                          transition={{
                             duration: 0.5,
                             delay: 0.2 + index * 0.04,
                             times: [0, 0.5, 1]

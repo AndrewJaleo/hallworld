@@ -56,7 +56,7 @@ export function HomePage() {
         }
       )
       .subscribe();
-      
+
     // Also subscribe to updates (when messages are marked as read)
     const updateSubscription = supabase
       .channel('read_messages_homepage')
@@ -98,22 +98,22 @@ export function HomePage() {
         .from('private_chats')
         .select('id')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
-      
+
       if (chatsError) throw chatsError;
-      
+
       if (chatsData && chatsData.length > 0) {
         // Get all unread messages in these chats
         const chatIds = chatsData.map(chat => chat.id);
-        
+
         const { count, error: countError } = await supabase
           .from('private_messages')
           .select('*', { count: 'exact', head: true })
           .in('chat_id', chatIds)
           .neq('sender_id', userId)
           .is('read_at', null);
-        
+
         if (countError) throw countError;
-        
+
         setUnreadChats(count || 0);
       }
     } catch (error) {
@@ -138,10 +138,11 @@ export function HomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 pt-24 pb-12">
-      <div className="flex flex-col lg:flex-row lg:items-start p-3 sm:p-6 lg:p-8  sm:mt-20 mb-32 sm:mb-28 lg:mb-32">
-        <div className="flex flex-col gap-4 mb-4 lg:mb-0 max-w-md lg:max-w-xl mx-auto lg:mx-0 lg:ml-auto w-full">
-          <motion.div 
+    <div className="max-h-screen mx-auto px-0 pt-20 md:pt-0">
+      <div className="flex flex-col p-3 sm:p-6 lg:p-8 sm:mt-20 mb-32 sm:mb-28 lg:mb-32">
+        <div className="flex flex-col gap-8 max-w-md lg:max-w-xl mx-auto w-full">
+          {/* Country/City Selectors - At the top */}
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -149,18 +150,29 @@ export function HomePage() {
               ease: [0.6, -0.05, 0.01, 0.99]
             }}
           >
-            <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 sm:p-5">
+            <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-2 sm:p-5">
               {/* Prismatic edge effect */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-              
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-cyan-300 font-semibold">Ubicación</h2>
+
+              <div className="flex items-center justify-between gap-4">
+                <CountrySelector
+                  items={state.countries.map(c => c.name)}
+                  selected={state.selectedCountry}
+                  onSelect={handleCountrySelect}
+                />
+
+                <CitySelector
+                  items={state.cities}
+                  selected={state.selectedCity}
+                  onSelect={handleCitySelect}
+                />
+
                 <motion.button
                   onClick={handleResetLocation}
-                  className="ml-auto relative overflow-hidden rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 flex items-center gap-2 px-3 py-1.5 text-sm shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                  className="relative overflow-hidden rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 flex items-center gap-2 px-3 py-2 text-sm shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -168,60 +180,38 @@ export function HomePage() {
                   <span className="text-cyan-300 font-medium">Reestablecer</span>
                 </motion.button>
               </div>
-              <div className="space-y-4">
-                <CountrySelector
-                  items={state.countries.map(c => c.name)}
-                  selected={state.selectedCountry}
-                  onSelect={handleCountrySelect}
-                />
-                <CitySelector
-                  items={state.cities}
-                  selected={state.selectedCity}
-                  onSelect={handleCitySelect}
-                />
-              </div>
             </div>
           </motion.div>
-          
+
+          {/* HallButtons - In the middle */}
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.6,
               delay: 0.1,
               ease: [0.6, -0.05, 0.01, 0.99]
             }}
+            className='-my-4'
           >
-            <PrivateChatsList />
+            <HallButtons selectedCity={state.selectedCity} />
           </motion.div>
-          
-          {/* <motion.div
-            initial={{ opacity: 0, y: -10 }}
+
+          {/* CircularMenu - At the bottom */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.6,
               delay: 0.2,
               ease: [0.6, -0.05, 0.01, 0.99]
             }}
+            className='-mt-4 md:-mt-10'
           >
-            <UsersList />
-          </motion.div> */}
+            <CircularMenu selectedCity={state.selectedCity} />
+          </motion.div>
         </div>
-        
-        <motion.div
-          className="mt-4 lg:mt-0 max-w-md lg:max-w-xl mx-auto lg:mx-0 lg:mr-auto w-full lg:ml-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: 0.6,
-            delay: 0.2,
-            ease: [0.6, -0.05, 0.01, 0.99]
-          }}
-        >
-          <HallButtons selectedCity={state.selectedCity} />
-          <CircularMenu selectedCity={state.selectedCity} />
-        </motion.div>
       </div>
     </div>
   );
-} 
+}
