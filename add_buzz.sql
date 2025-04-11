@@ -1,0 +1,1 @@
+ALTER TABLE private_messages ADD COLUMN is_buzz BOOLEAN DEFAULT FALSE;

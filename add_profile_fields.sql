@@ -21,4 +21,4 @@ COMMENT ON COLUMN public.profiles.biography IS 'User''s biography or about me te
 COMMENT ON COLUMN public.profiles.location IS 'User''s location';
 COMMENT ON COLUMN public.profiles.interests IS 'Array of user''s interests';
 COMMENT ON COLUMN public.profiles.social_links IS 'JSON object containing user''s social media links';
-COMMENT ON COLUMN public.profiles.canvas_state IS 'JSON representation of the user''s canvas editor state'; 
+COMMENT ON COLUMN public.profiles.canvas_state IS 'JSON representation of the user''s canvas editor state';
