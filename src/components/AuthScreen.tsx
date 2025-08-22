@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn, UserPlus, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, ArrowRight, Loader2, User, Calendar, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface AuthScreenProps {
@@ -11,8 +11,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGenderOpen, setIsGenderOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,11 +30,27 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signUp({
+        // Register new user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         });
-        if (error) throw error;
+        
+        if (signUpError) throw signUpError;
+        
+        // If signup successful and we have a user, update their profile with age and gender
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: authData.user.id,
+              age: parseInt(age) || null,
+              gender,
+              updated_at: new Date().toISOString(),
+            });
+            
+          if (profileError) throw profileError;
+        }
       }
       onAuthSuccess();
     } catch (err) {
@@ -40,6 +59,21 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       setLoading(false);
     }
   }
+
+  // Opciones de género para el desplegable
+  const genderOptions = [
+    { value: "masculino", label: "Masculino" },
+    { value: "femenino", label: "Femenino" },
+    { value: "no-binario", label: "No binario" },
+    { value: "otro", label: "Otro" },
+    { value: "no-decir", label: "Prefiero no decirlo" }
+  ];
+
+  // Función para seleccionar un género
+  const selectGender = (value: string) => {
+    setGender(value);
+    setIsGenderOpen(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 relative overflow-hidden">
@@ -158,6 +192,72 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
                     />
                   </div>
                 </div>
+
+                {/* Campos adicionales para registro */}
+                {!isLogin && (
+                  <>
+                    <div className="relative">
+                      <div className="relative overflow-hidden rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 group hover:shadow-lg hover:shadow-cyan-700/20 transition-all duration-300">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 rounded-full blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
+                          <Calendar className="w-5 h-5 text-cyan-300 relative z-10" />
+                        </div>
+                        <input
+                          type="number"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          placeholder="Edad"
+                          min="1"
+                          max="120"
+                          className="flex-1 bg-transparent outline-none text-white placeholder-cyan-300/70 relative z-10"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Nuevo selector de género mejorado */}
+                    <div className="z-[1000] relative">
+                      <div 
+                        className="relative overflow-hidden rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 group hover:shadow-lg hover:shadow-cyan-700/20 transition-all duration-300 cursor-pointer"
+                        onClick={() => setIsGenderOpen(!isGenderOpen)}
+                      >
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 rounded-full blur-xl opacity-0 group-hover:opacity-60 transition-opacity duration-300" />
+                          <User className="w-5 h-5 text-cyan-300 relative z-10" />
+                        </div>
+                        <div className="flex-1 relative z-10 text-white">
+                          {gender ? genderOptions.find(opt => opt.value === gender)?.label : "Selecciona género"}
+                        </div>
+                        <ChevronDown className={`w-5 h-5 text-cyan-300 transition-transform duration-300 ${isGenderOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                      
+                      {/* Dropdown de opciones */}
+                      {isGenderOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute z-50 mt-1 w-full rounded-xl bg-cyan-800/90 backdrop-blur-xl border border-cyan-500/30 shadow-[0_4px_15px_rgba(0,0,0,0.2)] divide-y divide-cyan-700/30"
+                        >
+                          {genderOptions.map((option) => (
+                            <div
+                              key={option.value}
+                              className="px-3 hover:bg-cyan-700/40 cursor-pointer text-cyan-100 transition-colors duration-200 flex items-center gap-2"
+                              onClick={() => selectGender(option.value)}
+                            >
+                              {gender === option.value && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-cyan-300"></div>
+                              )}
+                              <span className={gender === option.value ? "text-cyan-300 font-medium" : ""}>
+                                {option.label}
+                              </span>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               {error && (

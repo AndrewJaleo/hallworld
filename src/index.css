@@ -358,3 +358,300 @@
     display: none;
   }
 }
+
+/* Rich Text Editor Styles - Fully Responsive */
+.rich-text-editor-container {
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor-container .quill {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* Toolbar with all options */
+.rich-text-editor-container .ql-toolbar {
+  background-color: rgba(8, 47, 73, 0.5);
+  border-color: rgba(6, 182, 212, 0.2);
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  padding: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+/* Make toolbar buttons responsive */
+.rich-text-editor-container .ql-toolbar button {
+  height: 26px;
+  width: 26px;
+  padding: 2px;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 640px) {
+  .rich-text-editor-container .ql-toolbar {
+    padding: 4px;
+    gap: 1px;
+  }
+  
+  .rich-text-editor-container .ql-toolbar button {
+    height: 24px;
+    width: 24px;
+    padding: 1px;
+  }
+  
+  .rich-text-editor-container .ql-toolbar .ql-formats {
+    margin-right: 4px;
+    margin-bottom: 2px;
+  }
+  
+  .rich-text-editor-container .ql-toolbar .ql-picker {
+    font-size: 0.8rem;
+  }
+}
+
+/* Container for the editor */
+.rich-text-editor-container .ql-container {
+  background-color: rgba(8, 47, 73, 0.3);
+  border-color: rgba(6, 182, 212, 0.2);
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  font-family: inherit;
+  min-height: 150px;
+}
+
+/* Editor area */
+.rich-text-editor-container .ql-editor {
+  color: #E0F2FE; /* Cyan-100 for text */
+  padding: 12px;
+  font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  .rich-text-editor-container .ql-editor {
+    padding: 8px;
+    font-size: 0.95rem;
+  }
+}
+
+.rich-text-editor-container .ql-editor.ql-blank::before {
+  color: rgba(6, 182, 212, 0.5); /* Placeholder color */
+  font-style: italic;
+}
+
+/* Better styling for dropdowns */
+.rich-text-editor-container .ql-picker {
+  height: 26px;
+}
+
+.rich-text-editor-container .ql-picker-label {
+  padding: 2px 4px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.rich-text-editor-container .ql-picker-label,
+.rich-text-editor-container .ql-picker-options {
+  color: #E0F2FE;
+}
+
+.rich-text-editor-container .ql-stroke {
+  stroke: #67E8F9; /* Cyan-300 for icons */
+}
+
+.rich-text-editor-container .ql-fill {
+  fill: #67E8F9;
+}
+
+/* Improve dropdown menus */
+.rich-text-editor-container .ql-picker-options {
+  background-color: rgba(8, 47, 73, 0.9);
+  border-color: rgba(6, 182, 212, 0.3);
+  border-radius: 0.25rem;
+  padding: 3px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Optimize color pickers for mobile */
+.rich-text-editor-container .ql-color-picker .ql-picker-options,
+.rich-text-editor-container .ql-background .ql-picker-options {
+  width: auto !important;
+  padding: 3px !important;
+}
+
+.rich-text-editor-container .ql-color-picker .ql-picker-item,
+.rich-text-editor-container .ql-background .ql-picker-item {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 2px !important;
+}
+
+/* Make groups of buttons visually distinct */
+.rich-text-editor-container .ql-formats {
+  margin-right: 6px;
+  border-right: 1px solid rgba(6, 182, 212, 0.1);
+  padding-right: 6px;
+}
+
+.rich-text-editor-container .ql-formats:last-child {
+  border-right: none;
+}
+
+/* Ensure dropdowns don't get cut off on mobile */
+@media (max-width: 640px) {
+  .rich-text-editor-container .ql-snow .ql-picker.ql-expanded .ql-picker-options {
+    max-width: 200px;
+    overflow-y: auto;
+    max-height: 200px;
+  }
+}
+
+/* MOBILE OPTIMIZATIONS - Creative approaches for better usability */
+
+/* Mobile-optimized toolbar layout */
+@media (max-width: 640px) {
+  /* Enhanced visual grouping with subtle gradients */
+  .rich-text-editor-container .ql-formats {
+    background: linear-gradient(to right, rgba(6, 182, 212, 0.05), rgba(6, 182, 212, 0.1));
+    border-radius: 4px;
+    margin: 1px;
+    padding: 2px;
+    border: none;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  
+  /* Slight zoom effect on active group */
+  .rich-text-editor-container .ql-formats:active,
+  .rich-text-editor-container .ql-formats:focus-within {
+    background: linear-gradient(to right, rgba(6, 182, 212, 0.1), rgba(6, 182, 212, 0.2));
+    transform: scale(1.02);
+    z-index: 1;
+  }
+  
+  /* Tactile feedback with subtle pulse animation on tap */
+  .rich-text-editor-container .ql-toolbar button:active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(6, 182, 212, 0.15);
+    border-radius: 50%;
+    animation: pulse 0.4s ease-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  
+  /* Touch-optimized active states */
+  .rich-text-editor-container .ql-toolbar button.ql-active {
+    background: rgba(6, 182, 212, 0.3);
+    box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.4) inset;
+  }
+  
+  /* Make sure dropdowns are touch-friendly */
+  .rich-text-editor-container .ql-picker-label {
+    min-height: 24px;
+    min-width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Color picker touch optimization */
+  .rich-text-editor-container .ql-color .ql-picker-label,
+  .rich-text-editor-container .ql-background .ql-picker-label {
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+
+  #root > div > div.min-h-screen.relative.z-10.flex.flex-col > div > div > div.relative > div > form > div.grid.grid-cols-1.md\:grid-cols-2.gap-6 > div:nth-child(2) > div > div > div.ql-toolbar.ql-snow > span:nth-child(1) > span > span.ql-picker-label {
+    margin-left: -10px;
+  }
+  
+  /* Add subtle depth to active elements */
+  .rich-text-editor-container .ql-toolbar .ql-active {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Optimize the toolbar layout - make it scrollable horizontally on very small screens */
+  @media (max-width: 340px) {
+    .rich-text-editor-container .ql-toolbar {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+      padding-bottom: 6px;
+    }
+    
+    .rich-text-editor-container .ql-toolbar::-webkit-scrollbar {
+      display: none; /* Chrome/Safari/Opera */
+    }
+    
+    .rich-text-editor-container .ql-formats {
+      flex-shrink: 0;
+    }
+  }
+  
+  /* Enhance color picker with a smooth opening animation */
+  .rich-text-editor-container .ql-color-picker.ql-expanded .ql-picker-options,
+  .rich-text-editor-container .ql-background.ql-expanded .ql-picker-options {
+    animation: slideIn 0.2s ease-out;
+    transform-origin: top center;
+  }
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  
+  /* Better touch targets with a subtle outer glow for active elements */
+  .rich-text-editor-container .ql-picker-options .ql-picker-item:hover,
+  .rich-text-editor-container .ql-picker-options .ql-picker-item.ql-selected {
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3);
+  }
+  
+  /* Dynamic toolbar height based on content */
+  .rich-text-editor-container .ql-toolbar {
+    height: auto;
+    min-height: 36px;
+  }
+  
+  /* Make icons slightly more visible on mobile */
+  .rich-text-editor-container .ql-stroke {
+    stroke-width: 1.5;
+  }
+  
+  /* Improve the editor height on mobile for better typing experience */
+  .rich-text-editor-container .ql-container {
+    height: auto;
+    max-height: 50vh; /* Limit height on small screens */
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 380px) {
+  /* Create a double-row layout with perfect spacing */
+  .rich-text-editor-container .ql-toolbar {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+    gap: 2px;
+    padding: 3px;
+  }
+  
+  .rich-text-editor-container .ql-formats {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+  }
+}

@@ -312,15 +312,6 @@ export function PrivateChatsList() {
       <div className="flex flex-col gap-5">
         {/* Header and search bar */}
         <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-              <MessageSquare className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-xl font-semibold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
-              Private Messages
-            </h2>
-          </div>
-          
           {filteredChats.length > 0 && (
             <div className="py-1 px-3 rounded-full bg-cyan-800/30 text-xs text-cyan-300 border border-cyan-500/20 shadow-inner">
               {filteredChats.length} {filteredChats.length === 1 ? 'conversation' : 'conversations'}
@@ -467,7 +458,7 @@ export function PrivateChatsList() {
                           
                           <div className="flex items-center">
                             {chat.unread_count === 0 && (
-                              <Check className="w-3.5 h-3.5 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+                              <Check className="w-3.5 h-3.5 mb-5 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
                             )}
                           </div>
                         </div>

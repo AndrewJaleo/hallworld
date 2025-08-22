@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { supabase } from '../lib/supabase';
 import { ProfileEditor } from '../components/ProfileEditor';
 import { ProfileForm } from '../components/ProfileForm';
 import { motion } from 'framer-motion';
-import { UserCircle, PaintBucket, Home, Mail, Calendar, User, Heart, Info } from 'lucide-react';
+import { UserCircle } from 'lucide-react';
+import '../styles/quill-preview.css'; // Importar los estilos del editor de texto enriquecido
 
 interface Profile {
   id: string;
@@ -20,94 +21,117 @@ interface Profile {
   social_links: Record<string, string> | null;
   joined_date: string | null;
   canvas_state: string | null;
+  // Añadir campos de personalización para biografía y fondo
+  bio_background_color: string | null;
+  bio_background_image: string | null;
+  bio_background_type: 'color' | 'image' | null;
+  container_background_color: string | null;
+  container_background_image: string | null;
+  container_background_type: 'color' | 'image' | null;
 }
 
-// Canvas component to render the profile background
-const ProfileCanvas: React.FC<{ canvasState: string | null }> = ({ canvasState }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// Componente para los estilos dinámicos del fondo del editor
+interface EditorBackgroundStylesProps {
+  color: string | null;
+  image: string | null;
+  type: 'color' | 'image' | null;
+}
+
+const EditorBackgroundStyles = ({ color, image, type }: EditorBackgroundStylesProps) => {
+  const background = type === 'image' && image 
+    ? `url(${image}) center/cover no-repeat` 
+    : (color || 'rgba(8, 47, 73, 0.3)');
   
-  useEffect(() => {
-    if (!canvasState || !canvasRef.current) return;
-    
-    const canvas = canvasRef.current;
-    
-    try {
-      // Import fabric dynamically to avoid SSR issues
-      import('fabric').then(({ fabric }) => {
-        // Create a static fabric canvas (non-interactive)
-        const fabricCanvas = new fabric.StaticCanvas(canvas, {
-          enableRetinaScaling: true,
-          renderOnAddRemove: true,
-          backgroundColor: 'rgba(8, 47, 73, 0.2)', // Add a semi-transparent background color
-        });
-        
-        // Set canvas dimensions to match container
-        const resizeCanvas = () => {
-          const container = canvas.parentElement;
-          if (container) {
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            
-            fabricCanvas.setWidth(width);
-            fabricCanvas.setHeight(height);
-            fabricCanvas.setDimensions({ width, height });
-          }
-        };
-        
-        // Initial resize and add resize listener
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-        
-        // Parse the canvas state and load it
-        try {
-          const canvasData = JSON.parse(canvasState);
-          console.log('Parsed canvas data:', canvasData);
-          
-          // Check if the canvas data has the expected structure
-          if (!canvasData.objects) {
-            console.warn('Canvas data does not have objects array:', canvasData);
-          }
-          
-          fabricCanvas.loadFromJSON(canvasData, () => {
-            // Ensure the background color is applied
-            if (!fabricCanvas.backgroundColor) {
-              fabricCanvas.setBackgroundColor('rgba(8, 47, 73, 0.2)', () => {});
-            }
-            fabricCanvas.renderAll();
-            console.log('Canvas background loaded successfully with', fabricCanvas.getObjects().length, 'objects');
-          }, (o: any, object: any) => {
-            // This callback is called for each object loaded
-            console.log('Loaded object:', object?.type);
-            return true;
-          });
-        } catch (parseError) {
-          console.error('Error parsing canvas state:', parseError);
-          console.error('Raw canvas state:', canvasState);
-        }
-        
-        // Cleanup
-        return () => {
-          window.removeEventListener('resize', resizeCanvas);
-          fabricCanvas.dispose();
-        };
-      }).catch(err => {
-        console.error('Error loading fabric.js:', err);
-      });
-    } catch (error) {
-      console.error('Error rendering canvas:', error);
+  const css = `
+    .rich-text-preview {
+      background: ${background};
+      padding: 1rem;
+      border-radius: 0.5rem;
+      max-height: 300px;
+      overflow-y: auto;
     }
-  }, [canvasState]);
+
+    /* Apply Quill styles to preview */
+    .rich-text-preview .ql-size-small {
+      font-size: 0.75em;
+    }
+    
+    .rich-text-preview .ql-size-large {
+      font-size: 1.5em;
+    }
+    
+    .rich-text-preview .ql-size-huge {
+      font-size: 2.5em;
+    }
+    
+    .rich-text-preview p {
+      margin-bottom: 0.5em;
+    }
+    
+    .rich-text-preview h1, 
+    .rich-text-preview h2, 
+    .rich-text-preview h3 {
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    
+    .rich-text-preview ul, 
+    .rich-text-preview ol {
+      padding-left: 2em;
+      margin-bottom: 0.5em;
+    }
+    
+    .rich-text-preview a {
+      text-decoration: underline;
+    }
+    
+    .rich-text-preview blockquote {
+      border-left: 4px solid #ccc;
+      padding-left: 16px;
+      margin-bottom: 0.5em;
+    }
+    
+    .rich-text-preview .ql-align-center {
+      text-align: center;
+    }
+    
+    .rich-text-preview .ql-align-right {
+      text-align: right;
+    }
+    
+    .rich-text-preview .ql-align-justify {
+      text-align: justify;
+    }
+  `;
   
-  return (
-    <canvas 
-      ref={canvasRef} 
-      className="absolute inset-0 w-full h-full rounded-[32px] z-0 opacity-90"
-    />
-  );
+  return <style dangerouslySetInnerHTML={{ __html: css }} />;
 };
 
-// Define a CSS class for text shadow that can be reused
-const textShadowClass = "text-shadow-sm"; // We'll define this in the component
+// Componente para los estilos de fondo del contenedor
+interface ContainerBackgroundStylesProps {
+  color: string | null;
+  image: string | null;
+  type: 'color' | 'image' | null;
+}
+
+const ContainerBackgroundStyles = ({ color, image, type }: ContainerBackgroundStylesProps) => {
+  const background = type === 'image' && image 
+    ? `url(${image}) center/cover no-repeat` 
+    : (color || 'rgba(8, 47, 73, 0.2)');
+  
+  const css = `
+    .profile-container {
+      background: ${background};
+      height: 600px; /* Altura fija de 600px */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  `;
+  
+  return <style dangerouslySetInnerHTML={{ __html: css }} />;
+};
 
 export function ProfileViewPage() {
   const { id } = useParams({ from: '/layout/profile/$id' });
@@ -187,11 +211,22 @@ export function ProfileViewPage() {
           interests: null,
           social_links: null,
           joined_date: basicData.created_at,
-          canvas_state: null
+          canvas_state: null,
+          bio_background_color: 'rgba(8, 47, 73, 0.3)',
+          bio_background_image: null,
+          bio_background_type: 'color',
+          container_background_color: 'rgba(8, 47, 73, 0.2)',
+          container_background_image: null,
+          container_background_type: 'color'
         };
         
         // Try to fetch each additional field individually
-        const additionalFields = ['name', 'likings', 'age', 'gender', 'biography', 'location', 'interests', 'social_links', 'canvas_state'];
+        const additionalFields = [
+          'name', 'likings', 'age', 'gender', 'biography', 'location', 'interests', 
+          'social_links', 'canvas_state', 'bio_background_color', 'bio_background_image', 
+          'bio_background_type', 'container_background_color', 'container_background_image', 
+          'container_background_type'
+        ];
         
         for (const field of additionalFields) {
           try {
@@ -224,13 +259,6 @@ export function ProfileViewPage() {
 
     fetchProfile();
   }, [id]);
-
-  // Add a useEffect to log the canvas_state when it changes
-  useEffect(() => {
-    if (profile?.canvas_state) {
-      console.log('Canvas state found:', profile.canvas_state);
-    }
-  }, [profile?.canvas_state]);
 
   // Handle sending a message to this user
   const handleSendMessage = async () => {
@@ -332,9 +360,23 @@ export function ProfileViewPage() {
           </div>
         ) : profile ? (
           <>
+            {/* Estilos dinámicos para el fondo */}
+            <EditorBackgroundStyles
+              color={profile.bio_background_color}
+              image={profile.bio_background_image}
+              type={profile.bio_background_type}
+            />
+            
+            {/* Estilos para el contenedor */}
+            <ContainerBackgroundStyles
+              color={profile.container_background_color}
+              image={profile.container_background_image}
+              type={profile.container_background_type}
+            />
+            
             {/* Profile Info */}
             <motion.div
-              className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-6 md:p-8 mb-8"
+              className={`profile-container relative overflow-hidden rounded-[32px] backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-6 md:p-8 mb-8`}
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -342,171 +384,68 @@ export function ProfileViewPage() {
                 ease: [0.6, -0.05, 0.01, 0.99]
               }}
             >
-              {/* Canvas Background */}
-              {profile.canvas_state && <ProfileCanvas canvasState={profile.canvas_state} />}
-              
               {/* Content Container - ensures content is above canvas */}
-              <div className="relative z-10">
+              <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-full">
                 {/* Prismatic edge effect */}
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
                 <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
                 <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
                 <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
                 
-                <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6">
-                  <div className="relative">
-                    {profile.avatar_url ? (
-                      <img 
-                        src={profile.avatar_url} 
-                        alt={profile.name || 'Perfil'} 
-                        className="w-32 h-32 rounded-full object-cover border-4 border-cyan-500/30 shadow-lg"
-                      />
-                    ) : (
-                      <div className="w-32 h-32 rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/30 flex items-center justify-center text-cyan-300 text-4xl font-bold border-4 border-cyan-500/30 shadow-lg [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
-                        {(profile.name || profile.email.split('@')[0]).charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="text-center md:text-left flex-1">
-                    <h1 className="text-cyan-300 text-3xl font-bold mb-1 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
-                      {profile.name || profile.email.split('@')[0]}
-                    </h1>
-                    <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                      <Mail size={16} className="text-cyan-400" />
-                      <p className="text-cyan-400 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.email}</p>
-                    </div>
-                    
-                    {profile.joined_date && (
-                      <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                        <Calendar size={16} className="text-cyan-400" />
-                        <p className="text-cyan-400 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
-                          Se unió el {new Date(profile.joined_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {currentUserId !== profile.id && (
-                      <button
-                        onClick={handleSendMessage}
-                        disabled={isSendingMessage}
-                        className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px] [text-shadow:0_1px_1px_rgba(0,0,0,0.5)] disabled:opacity-70 disabled:cursor-not-allowed"
-                      >
-                        {isSendingMessage ? (
-                          <span className="flex items-center justify-center">
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Conectando...
-                          </span>
-                        ) : (
-                          "Enviar Mensaje"
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 bg-cyan-800/20 p-6 rounded-xl border border-cyan-500/20">
-                  {profile.age && (
-                    <div className="flex items-start gap-3">
-                      <User className="w-5 h-5 text-cyan-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Edad</h3>
-                        <p className="text-cyan-100 text-lg [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.age} años</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {profile.gender && (
-                    <div className="flex items-start gap-3">
-                      <User className="w-5 h-5 text-cyan-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Género</h3>
-                        <p className="text-cyan-100 text-lg capitalize [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
-                          {profile.gender === 'male' ? 'Masculino' : 
-                           profile.gender === 'female' ? 'Femenino' : 
-                           profile.gender === 'non-binary' ? 'No binario' : 
-                           profile.gender === 'prefer-not-to-say' ? 'Prefiero no decirlo' : 
-                           profile.gender === 'other' ? 'Otro' : profile.gender}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {profile.location && (
-                    <div className="flex items-start gap-3">
-                      <Home className="w-5 h-5 text-cyan-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Ubicación</h3>
-                        <p className="text-cyan-100 text-lg [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.location}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {profile.likings && (
-                    <div className="flex items-start gap-3 md:col-span-2">
-                      <Heart className="w-5 h-5 text-cyan-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Gustos</h3>
-                        <p className="text-cyan-100 text-lg [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.likings}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {profile.interests && profile.interests.length > 0 && (
-                    <div className="flex items-start gap-3 md:col-span-2">
-                      <Heart className="w-5 h-5 text-cyan-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Intereses</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {profile.interests.map((interest, index) => (
-                            <span 
-                              key={index}
-                              className="px-3 py-1 bg-cyan-800/30 rounded-full text-cyan-300 border border-cyan-500/20 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]"
-                            >
-                              {interest}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {profile.social_links && Object.keys(profile.social_links).length > 0 && (
-                    <div className="flex items-start gap-3 md:col-span-2">
-                      <Info className="w-5 h-5 text-cyan-400 mt-0.5" />
-                      <div>
-                        <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-1 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Redes Sociales</h3>
-                        <div className="flex flex-col gap-2">
-                          {Object.entries(profile.social_links).map(([platform, url]) => (
-                            <a 
-                              key={platform}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-cyan-300 hover:text-cyan-100 transition-colors [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]"
-                            >
-                              {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
+                {/* Avatar */}
+                <div className="relative">
+                  {profile.avatar_url ? (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt={profile.name || 'Perfil'} 
+                      className="w-32 h-32 rounded-full object-cover border-4 border-cyan-500/30 shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-gradient-to-br from-cyan-400/30 to-blue-500/30 flex items-center justify-center text-cyan-300 text-4xl font-bold border-4 border-cyan-500/30 shadow-lg [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
+                      {(profile.name || profile.email.split('@')[0]).charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
                 
+                {/* Nombre */}
+                <h1 className="text-cyan-300 text-3xl font-bold mb-1 [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
+                  {profile.name || profile.email.split('@')[0]}
+                </h1>
+                
+                {/* Biografía con Rich Text */}
                 {profile.biography && (
-                  <div className="flex items-start gap-3">
-                    <Info className="w-5 h-5 text-cyan-400 mt-1.5" />
-                    <div className="flex-1">
-                      <h3 className="text-cyan-300 text-sm uppercase tracking-wider mb-2 [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">Biografía</h3>
-                      <div className="bg-cyan-800/20 p-6 rounded-xl border border-cyan-500/20">
-                        <p className="text-cyan-100 whitespace-pre-line [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">{profile.biography}</p>
-                      </div>
+                  <div className="w-full rich-text-preview rounded-lg">
+                    <div 
+                      className="ql-container ql-snow" 
+                      style={{ border: 'none' }}
+                    >
+                      <div 
+                        className="ql-editor" 
+                        dangerouslySetInnerHTML={{ __html: profile.biography }}
+                      />
                     </div>
                   </div>
+                )}
+                
+                {/* Botón de mensaje (solo si no es el perfil propio) */}
+                {currentUserId !== profile.id && (
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={isSendingMessage}
+                    className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg text-white font-medium hover:opacity-95 transition-all duration-300 shadow-lg hover:shadow-xl hover:translate-y-[-2px] [text-shadow:0_1px_1px_rgba(0,0,0,0.5)] disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                  >
+                    {isSendingMessage ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Conectando...
+                      </span>
+                    ) : (
+                      "Enviar Mensaje"
+                    )}
+                  </button>
                 )}
               </div>
             </motion.div>
@@ -565,4 +504,4 @@ export function ProfileViewPage() {
       </div>
     </div>
   );
-} 
+}

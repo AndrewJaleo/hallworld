@@ -150,7 +150,7 @@ export function HomePage() {
               ease: [0.6, -0.05, 0.01, 0.99]
             }}
           >
-            <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-2 sm:p-5">
+            <div className="relative overflow-hidden rounded-[28px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-2 sm:p-5">
               {/* Prismatic edge effect */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
@@ -172,12 +172,12 @@ export function HomePage() {
 
                 <motion.button
                   onClick={handleResetLocation}
-                  className="relative overflow-hidden rounded-xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 flex items-center gap-2 px-3 py-2 text-sm shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+                  className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 flex items-center gap-2 px-5 py-5 text-sm shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <MapPinOff className="w-3.5 h-3.5 text-cyan-300" strokeWidth={2.5} />
-                  <span className="text-cyan-300 font-medium">Reestablecer</span>
+                  <MapPinOff className="w-5 h-5 text-cyan-300" strokeWidth={2.5} />
+                  {/* <span className="text-cyan-300 font-medium">Reestablecer</span> */}
                 </motion.button>
               </div>
             </div>

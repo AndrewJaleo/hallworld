@@ -1,0 +1,44 @@
+/* Import Quill styles */
+@import 'react-quill/dist/quill.snow.css';
+
+/* Override Quill editor display for preview */
+.ql-editor {
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* Ensure all text formatting appears correctly */
+.ql-editor h1 { font-size: 2em; }
+.ql-editor h2 { font-size: 1.5em; }
+.ql-editor h3 { font-size: 1.17em; }
+
+.ql-editor ol, 
+.ql-editor ul {
+  padding-left: 1.5em;
+}
+
+.ql-editor ol > li,
+.ql-editor ul > li {
+  list-style-type: inherit;
+  margin-bottom: 0.25em;
+}
+
+.ql-editor ul > li {
+  list-style-type: disc;
+}
+
+.ql-editor ol > li {
+  list-style-type: decimal;
+}
+
+.ql-editor .ql-size-small {
+  font-size: 0.75em;
+}
+
+.ql-editor .ql-size-large {
+  font-size: 1.5em;
+}
+
+.ql-editor .ql-size-huge {
+  font-size: 2.5em;
+}

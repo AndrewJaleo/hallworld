@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, User, LogOut, Settings, MessageSquare } from 'lucide-react';
+import { Bell, User, LogOut, Settings, MessageSquare, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Link, useNavigate } from '@tanstack/react-router';
 
@@ -30,6 +30,59 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
   const profileRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  // Función para limpiar todas las notificaciones
+  const clearAllNotifications = async () => {
+    try {
+      // Obtener el usuario actual
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        return;
+      }
+
+      const userId = session.user.id;
+
+      // 1. Obtener todos los chats donde el usuario es participante
+      const { data: chatsData, error: chatsError } = await supabase
+        .from('private_chats')
+        .select('id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+
+      if (chatsError) {
+        console.error('Error obteniendo chats:', chatsError);
+        return;
+      }
+
+      if (!chatsData || chatsData.length === 0) {
+        return; // No hay chats para procesar
+      }
+
+      // 2. Obtener los IDs de todos los chats
+      const chatIds = chatsData.map(chat => chat.id);
+
+      // 3. Actualizar TODOS los mensajes no leídos en esos chats (sin límite)
+      const { error: updateError } = await supabase
+        .from('private_messages')
+        .update({ read_at: new Date().toISOString() })
+        .in('chat_id', chatIds)
+        .neq('sender_id', userId)
+        .is('read_at', null);
+
+      if (updateError) {
+        console.error('Error marcando mensajes como leídos:', updateError);
+        return;
+      }
+
+      // 4. Limpiar el estado de notificaciones en la UI
+      setNotifications([]);
+      
+      // 5. Opcional: También podríamos emitir un evento para actualizar el contador de notificaciones no leídas
+      // (esto dependerá de cómo se implementa el contador en la aplicación)
+      
+    } catch (error) {
+      console.error('Error al eliminar todas las notificaciones:', error);
+    }
+  };
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
@@ -44,11 +97,46 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const markMessagesAsRead = async (messageIds: string[]) => {
+    if (!messageIds.length) return;
+    
+    try {
+      // Actualizar los mensajes a leídos en Supabase
+      const { error } = await supabase
+        .from('private_messages')
+        .update({ read_at: new Date().toISOString() })
+        .in('id', messageIds);
+      
+      if (error) {
+        console.error('Error marking messages as read:', error);
+      }
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
+  // Effect para cuando se abre el panel de notificaciones - solo obtener mensajes
   useEffect(() => {
     if (showNotifications) {
       fetchUnreadMessages();
     }
   }, [showNotifications]);
+
+  // Effect para cuando se cierra el panel de notificaciones - marcar como leídos y limpiar
+  useEffect(() => {
+    return () => {
+      // Este cleanup se ejecuta cuando el componente se desmonta o cuando showNotifications cambia
+      if (!showNotifications && notifications.length > 0) {
+        const messageIds = notifications.map(notification => notification.id);
+        markMessagesAsRead(messageIds);
+        
+        // Limpiar las notificaciones después de marcarlas como leídas
+        setTimeout(() => {
+          setNotifications([]);
+        }, 100);
+      }
+    };
+  }, [showNotifications, notifications]);
 
   useEffect(() => {
     // Initial fetch of unread messages
@@ -188,7 +276,17 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
 
   const handleNotificationClick = (chatId: string) => {
     setShowNotifications(false);
+    // Las notificaciones se marcarán como leídas al cerrarse el panel
     navigate({ to: `/chat/${chatId}` });
+  };
+
+  const handleCloseNotifications = () => {
+    // Marcar mensajes como leídos antes de cerrar
+    if (notifications.length > 0) {
+      const messageIds = notifications.map(notification => notification.id);
+      markMessagesAsRead(messageIds);
+    }
+    setShowNotifications(false);
   };
 
   const formatTime = (dateString: string) => {
@@ -234,7 +332,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
         />
 
         {/* Main container with glassy effect */}
-        <div className="relative rounded-[32px] overflow-visible bg-cyan-900/10 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
+        <div className="relative rounded-[32px] overflow-visible bg-cyan-900/50 backdrop-blur-xl border border-cyan-700/20 shadow-lg">
           {/* Content */}
           <div className="relative px-4 sm:px-6 py-2 sm:py-3 flex items-center justify-between overflow-visible">
             <motion.div
@@ -253,8 +351,8 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                   className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
                 />
                 {/* Brand name with updated gradient */}
-                <span className="text-lg sm:text-xl font-bold bg-gradient-to-br from-cyan-300 via-blue-300 to-indigo-400 bg-clip-text text-transparent">
-                  HallWorld
+                <span className="text-lg sm:text-xl font-bold bg-gradient-to-br from-cyan-300 via-blue-300 to-indigo-400 bg-clip-text text-transparent ">
+                  HALLWORLD
                 </span>
               </div>
             </motion.div>
@@ -273,7 +371,7 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-800/30 via-blue-900/30 to-indigo-950/30 blur-sm sm:blur-md transform-gpu animate-pulse" />
                   <div className="relative p-1.5 sm:p-2 rounded-full z-[9999] border border-cyan-700/20 shadow-lg">
                     <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-300" />
-                    {unreadChats > 0 && (
+                                        {unreadChats > 0 && (
                       <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-medium bg-gradient-to-br from-blue-700 to-indigo-900 text-white rounded-full shadow-lg shadow-blue-900/30 border border-white/20">
                         {unreadChats}
                       </span>
@@ -345,13 +443,21 @@ export function Header({ unreadChats, userEmail }: HeaderProps) {
                               </div>
                             )}
 
-                            <div className="p-2 border-t border-white/10 bg-black/20">
+                            <div className="p-2 border-t border-white/10 bg-black/20 flex justify-between items-center">
+                              <button
+                                onClick={clearAllNotifications}
+                                className="py-1.5 px-3 text-xs text-red-400 hover:text-red-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-1"
+                              >
+                                <X size={14} />
+                                <span>Eliminar todas</span>
+                              </button>
+                              
                               <Link
                                 to="/messages"
-                                className="block w-full py-1.5 px-3 text-xs text-center text-cyan-300 hover:text-cyan-100 hover:bg-white/5 rounded-lg transition-colors"
-                                onClick={() => setShowNotifications(false)}
+                                className="py-1.5 px-3 text-xs text-center text-cyan-300 hover:text-cyan-100 hover:bg-white/5 rounded-lg transition-colors"
+                                onClick={() => handleCloseNotifications()}
                               >
-                                View all messages
+                                Ver todos los mensajes
                               </Link>
                             </div>
                           </div>

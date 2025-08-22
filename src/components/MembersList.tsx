@@ -204,7 +204,7 @@ export function MembersList({
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-sky-700" />
-              <h2 className="text-sky-900 font-semibold">Members ({members.length})</h2>
+              <h2 className="text-sky-900 font-semibold">Hallers ({members.length})</h2>
             </div>
             <button 
               onClick={onClose}

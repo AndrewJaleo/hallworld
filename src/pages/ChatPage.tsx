@@ -21,7 +21,7 @@ interface Message {
   sender_email?: string;
   read_at?: string | null;
   is_buzz?: boolean;
-  image_url?: string | null;
+  sender_avatar?: string;
 }
 
 interface ChatUser {
@@ -244,6 +244,27 @@ export function ChatPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [showImagePreview, setShowImagePreview] = useState<boolean>(false);
   const [previewedImage, setPreviewedImage] = useState<string>("");
+
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+  
+  // Función para alternar la expansión del mensaje
+  const toggleMessageExpansion = (messageId: string) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  // Función para truncar texto
+  const truncateText = (text: string, maxLength: number = 200) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
 
   const checkBuzzLimit = async (userId: string) => {
     try {
@@ -643,7 +664,6 @@ export function ChatPage() {
             created_at,
             read_at,
             is_buzz,
-            image_url
           `)
           .eq("chat_id", id)
           .order("created_at", { ascending: true });
@@ -651,33 +671,50 @@ export function ChatPage() {
         if (messagesError) throw messagesError;
 
         // Get all unique sender IDs
-        const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
-
+        // const senderIds = [...new Set(messagesData.map(msg => msg.sender_id))];
+        const senderIds = [...new Set([...messagesData.map(msg => msg.sender_id), userId])];
         // Fetch profiles for all senders in a single query
         const { data: profilesData, error: profilesError } = await supabase
           .from("profiles")
-          .select("id, email")
+          .select("id, email, avatar_url")
           .in("id", senderIds);
 
         if (profilesError) throw profilesError;
 
-        // Create a map of user IDs to emails for quick lookup
-        const userEmailMap = profilesData.reduce((map, profile) => {
-          map[profile.id] = profile.email;
-          return map;
-        }, {} as Record<string, string>);
+        const userProfileMap: Record<string, any> = {};
 
-        // Format messages with sender email
-        const formattedMessages = messagesData.map((msg) => ({
-          id: msg.id,
-          content: msg.content,
-          sender_id: msg.sender_id,
-          created_at: msg.created_at,
-          read_at: msg.read_at,
-          is_buzz: msg.is_buzz,
-          image_url: msg.image_url,
-          sender_email: userEmailMap[msg.sender_id] || ""
-        }));
+        profilesData?.forEach((profile: any) => {
+          // Store the full profile in our map
+          userProfileMap[profile.id] = profile;
+        });
+
+        console.log("User profile map:", userProfileMap);
+
+        // Format messages with sender email and avatar
+        const formattedMessages = messagesData.map((msg) => {
+          // Get the sender profile from our map
+          const senderProfile = userProfileMap[msg.sender_id];
+
+          // If sender profile is not found, log a warning
+          if (!senderProfile) {
+            console.warn(`Sender profile not found for message ${msg.id} with sender ID ${msg.sender_id}`);
+          }
+
+          // If we have the sender profile, use it; otherwise, use empty values
+          const senderEmail = senderProfile?.email || "";
+          const senderAvatar = senderProfile?.avatar_url || "";
+
+          return {
+            id: msg.id,
+            content: msg.content,
+            sender_id: msg.sender_id,
+            created_at: msg.created_at,
+            read_at: msg.read_at,
+            is_buzz: msg.is_buzz,
+            sender_email: senderEmail,
+            sender_avatar: senderAvatar
+          };
+        });
 
         setMessages(formattedMessages);
 
@@ -733,7 +770,7 @@ export function ChatPage() {
           // Get sender email
           const { data: senderData, error: senderError } = await supabase
             .from("profiles")
-            .select("email")
+            .select("email, avatar_url")
             .eq("id", payload.new.sender_id)
             .single();
 
@@ -748,9 +785,9 @@ export function ChatPage() {
             sender_id: payload.new.sender_id,
             created_at: payload.new.created_at,
             read_at: payload.new.read_at,
-            is_buzz: Boolean(payload.new.is_buzz),  // Convertir explícitamente a booleano
-            image_url: payload.new.image_url,
-            sender_email: senderData?.email || ""
+            is_buzz: Boolean(payload.new.is_buzz),
+            sender_email: senderData?.email || "",
+            sender_avatar: senderData?.avatar_url || ""
           };
 
           setMessages((prev) => [...prev, newMsg]);
@@ -826,6 +863,15 @@ export function ChatPage() {
     if (!newMessage.trim()) return;
 
     try {
+      // Get current user's avatar
+      const { data: currentUserProfile, error: currentUserError } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", userId)
+        .single();
+
+      const currentUserAvatar = currentUserProfile?.avatar_url || "";
+
       // Create a temporary ID for optimistic UI update
       const tempId = `temp-${Date.now()}`;
 
@@ -835,7 +881,8 @@ export function ChatPage() {
         content: newMessage,
         sender_id: userId,
         created_at: new Date().toISOString(),
-        sender_email: userEmail
+        sender_email: userEmail,
+        sender_avatar: currentUserAvatar
       };
 
       setMessages(prev => [...prev, tempMessage]);
@@ -868,7 +915,8 @@ export function ChatPage() {
             sender_id: data[0].sender_id,
             created_at: data[0].created_at,
             read_at: data[0].read_at,
-            sender_email: userEmail
+            sender_email: userEmail,
+            sender_avatar: currentUserAvatar
           } as Message : msg)
         );
       }
@@ -979,7 +1027,7 @@ export function ChatPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-3 flex items-center gap-3 z-10 sticky top-24 w-full"
+            className="overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-3 flex items-center gap-3 z-10 relative top-24 w-full h-16 flex-shrink-0"
           >
             {/* Prismatic edge effect */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
@@ -987,12 +1035,12 @@ export function ChatPage() {
             <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
             <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
 
-            <button
+            {/* <button
               onClick={goBack}
               className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
             >
               <ArrowLeft className="w-5 h-5 text-cyan-300" />
-            </button>
+            </button> */}
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium border border-cyan-500/20 shadow-md">
@@ -1099,7 +1147,7 @@ export function ChatPage() {
                     className="w-full"
                   >
                     <div
-                      className={`relative overflow-hidden w-full rounded-[24px] p-3 shadow-[0_4px_15px_rgba(31,38,135,0.15)] bg-gradient-to-r ${senderColor} text-white border border-cyan-500/20`}
+                      className={`relative break-words whitespace-pre-wrap overflow-hidden w-full rounded-[24px] p-3 shadow-[0_4px_15px_rgba(31,38,135,0.15)] bg-gradient-to-r ${senderColor} text-white border border-cyan-500/20`}
                     >
                       {/* Prismatic edge effect */}
                       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
@@ -1107,11 +1155,19 @@ export function ChatPage() {
                       <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
                       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
 
-                      <div className="flex items-center mb-1">
+                                            <div className="flex items-center mb-1">
                         <div className="flex-shrink-0 mr-2">
-                          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
-                            {message.sender_id === userId ? userEmail.charAt(0).toUpperCase() : message.sender_email?.charAt(0).toUpperCase() || "?"}
-                          </div>
+                          {message.sender_avatar ? (
+                            <img
+                              src={message.sender_avatar}
+                              alt={(message.sender_email || "").split('@')[0]}
+                              className="w-6 h-6 rounded-full object-cover border border-white/20 shadow-md"
+                            />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
+                              {message.sender_id === userId ? userEmail.charAt(0).toUpperCase() : message.sender_email?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
                         </div>
                         <span className="text-xs font-medium text-white">
                           {message.sender_id === userId ? "You" : message.sender_email?.split('@')[0] || "Unknown"}
@@ -1127,6 +1183,7 @@ export function ChatPage() {
                           )}
                         </div>
                       </div>
+
 
                       {/* Contenido del mensaje */}
                       <div className="text-sm">
@@ -1150,7 +1207,19 @@ export function ChatPage() {
                         )}
 
                         {/* Texto del mensaje */}
-                        {message.content}
+                        {message.content.length > 200 ? (
+                          <>
+                            {expandedMessages.has(message.id) ? message.content : truncateText(message.content)}
+                            <button
+                              onClick={() => toggleMessageExpansion(message.id)}
+                              className="ml-2 text-xs text-white/70 hover:text-white underline"
+                            >
+                              {expandedMessages.has(message.id) ? 'Mostrar menos' : 'Mostrar más'}
+                            </button>
+                          </>
+                        ) : (
+                          message.content
+                        )}
                       </div>
                     </div>
                   </motion.div>

@@ -5,6 +5,8 @@ import { Send, ArrowLeft, Paperclip, MoreVertical, Users, MessageSquare, X, User
 import { supabase } from "../lib/supabase";
 import { useMediaQuery } from 'react-responsive';
 import { MembersList } from '../components/MembersList';
+import { HallSelector } from '../components/HallSelector';
+import ScrollToBottom from 'react-scroll-to-bottom';
 
 interface Message {
   id: string;
@@ -129,14 +131,9 @@ function MemberModal({
                 </div>
 
                 {/* Name */}
-                <h3 className="text-xl font-semibold text-cyan-300 mb-1">
+                <h3 className="text-xl font-semibold text-cyan-300 mb-6">
                   {member.email.split('@')[0]}
                 </h3>
-
-                {/* Email */}
-                <p className="text-cyan-400 mb-6">
-                  {member.email}
-                </p>
 
                 {/* Actions */}
                 <div className="flex gap-3 w-full">
@@ -190,6 +187,38 @@ export function GroupChatPage() {
   // Add state for selected member
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
+
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Agregar esta función
+  const scrollToLastMessage = () => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  };
+
+  // Función para alternar la expansión del mensaje
+  const toggleMessageExpansion = (messageId: string) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      return newSet;
+    });
+  };
+
+  // Función para truncar texto
+  const truncateText = (text: string, maxLength: number = 200) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   // Debug: Log members whenever they change
   useEffect(() => {
     console.log("Members state updated:", members);
@@ -225,6 +254,12 @@ export function GroupChatPage() {
       authListener?.subscription.unsubscribe();
     };
   }, [navigate]);
+
+  useEffect(() => {
+    if (!isLoading && messages.length > 0) {
+      scrollToLastMessage();
+    }
+  }, [isLoading, messages.length]);
 
   // Fetch group chat data and messages
   useEffect(() => {
@@ -350,7 +385,7 @@ export function GroupChatPage() {
         let membersData = null;
         let membersError = null;
 
-        if (memberIds.length > 0) {
+                if (memberIds.length > 0) {
           const response = await supabase
             .from("profiles")
             .select("id, email, avatar_url")
@@ -558,12 +593,32 @@ export function GroupChatPage() {
   }, [id, isAuthenticated, navigate, userId, userEmail]);
 
   // Scroll to bottom when messages change
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages]);
+
+  // Modificar el useEffect del scroll
+  // useEffect(() => {
+  //   if (!isInitialLoad) {
+  //     scrollToBottom();
+  //   }
+  // }, [messages, isInitialLoad]);
+
+  // Agregar este useEffect para marcar cuando termina la carga inicial
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!isLoading && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
+  }, [isLoading, isInitialLoad]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Usar setTimeout para asegurar que el DOM se haya actualizado
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ 
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 200);
   };
 
   // Add handlers for member actions
@@ -645,6 +700,11 @@ export function GroupChatPage() {
     navigate({ to: `/profile/${memberId}` });
   };
 
+  // Add handler for hall change
+  const handleHallChange = (hallId: string) => {
+    navigate({ to: `/group-chat/${hallId}` });
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !userId) return;
@@ -686,11 +746,6 @@ export function GroupChatPage() {
 
       // Add the temporary message to the UI immediately
       setMessages(prev => [...prev, tempMessage]);
-
-      // Scroll to bottom after adding the temporary message
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
 
       // Insert the message into the group_messages table
       const { data, error } = await supabase.from("group_messages").insert({
@@ -760,7 +815,7 @@ export function GroupChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex flex-col fixed inset-0">
+    <div className="min-h-screen bg-gradient-to-b from-cyan-900 via-blue-950 to-indigo-950 flex flex-col">
       {/* Member Modal */}
       {selectedMember && (
         <MemberModal
@@ -772,14 +827,73 @@ export function GroupChatPage() {
         />
       )}
 
-      <div className="flex flex-row items-start gap-2 mt-24 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex-1 flex flex-col">
-          <div className="max-w-4xl w-full flex flex-col h-[calc(100vh-10px)]">
-            {/* Chat Header */}
+      {/* Fixed Header - debajo del header principal */}
+      <div className="fixed top-14 left-0 right-0 z-40 pb-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 pt-10">
+          <div className="flex flex-row gap-4">
+            {/* Chat Header Container */}
+            <div className="flex-1">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-3 flex items-center gap-3"
+              >
+                {/* Prismatic edge effect */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+
+                {/* Hall Selector */}
+                {userId && (
+                  <HallSelector
+                    currentHallId={id}
+                    userId={userId}
+                    isMobile={isMobile}
+                    onHallChange={handleHallChange}
+                  />
+                )}
+
+                {/* Only show the members toggle button on mobile */}
+                {isMobile && (
+                  <button
+                    onClick={() => setShowMembers(!showMembers)}
+                    className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto"
+                  >
+                    <Users className="w-5 h-5 text-cyan-300" />
+                  </button>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Members List Header - Desktop */}
+            {!isMobile && (
+              <div className="w-1/4">
+                <div className="relative h-full justify-center content-center justify-items-center overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-3">
+                  {/* Prismatic edge effect */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+
+                  <h3 className="font-semibold text-cyan-300 text-center text-lg">Hallers ({members.length})</h3>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - con padding-top para el header fijo y padding-bottom para el input */}
+      <div className="flex flex-row flex-1 mt-5 pt-44 max-w-screen lg:max-w-7xl mx-auto w-full px-2 sm:px-6 lg:px-8">
+        {/* Messages Container */}
+        <div className="h-[65vh] flex-1 flex flex-col">
+          <div className="lg:max-w-4xl max-w-full w-[96vw] flex flex-col h-full mx-auto">
+            {/* Messages Box - Encapsulado en una caja */}
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 0 }}
               animate={{ opacity: 1, y: 0 }}
-              className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-3 flex items-center gap-3 z-10 sticky top-24 w-full"
+              className="flex-1 relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] flex flex-col"
             >
               {/* Prismatic edge effect */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
@@ -787,161 +901,103 @@ export function GroupChatPage() {
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
 
-              <button
-                onClick={goBack}
-                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
-              >
-                <ArrowLeft className="w-5 h-5 text-cyan-300" />
-              </button>
+              {/* Messages Content - con altura específica que deja espacio para el input */}
+              <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4" style={{ maxHeight: 'calc(100vh - 254px)' }}>
+                <div className="space-y-1 mb-4">
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-28">
+                      <div className="animate-pulse text-cyan-400">Loading messages...</div>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center py-10 text-cyan-400">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mx-auto mb-3 border border-cyan-500/20 shadow-md">
+                        <MessageSquare className="w-8 h-8 text-white" />
+                      </div>
+                      <p className="font-medium text-cyan-300 text-lg">No messages yet</p>
+                      <p className="text-sm mt-1 text-cyan-400">Start the conversation!</p>
+                    </div>
+                  ) : (
+                    messages.map((message) => {
+                      // Generate a consistent color based on the sender's ID
+                      const colorOptions = [
+                        "from-pink-500 to-rose-500",
+                        "from-orange-500 to-amber-500",
+                        "from-green-500 to-emerald-500",
+                        "from-teal-500 to-cyan-500",
+                        "from-blue-500 to-indigo-500",
+                        "from-indigo-500 to-purple-500",
+                        "from-purple-500 to-fuchsia-500",
+                        "from-rose-500 to-pink-500"
+                      ];
 
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-medium border border-cyan-500/20 shadow-md">
-                  {groupInfo.name?.charAt(0).toUpperCase() || "G"}
-                </div>
-                <div>
-                  <h2 className="font-semibold text-cyan-300">
-                    {groupInfo.name || "Loading..."}
-                  </h2>
-                  <p className="text-xs text-cyan-400">
-                    {isLoading ? "Loading..." : `${members.length} members`}
-                  </p>
+                      // Use the sender ID to deterministically select a color
+                      const colorIndex = message.sender_id ?
+                        message.sender_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length : 0;
+
+                      const senderColor = colorOptions[colorIndex];
+
+                      return (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0, y: 0 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="w-full"
+                        >
+                          <div
+                            className={`relative overflow-hidden w-full rounded-[24px] p-3 shadow-[0_4px_15px_rgba(31,38,135,0.15)] bg-gradient-to-r ${senderColor} text-white border border-white/20`}
+                          >
+                            {/* Prismatic edge effect */}
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
+                            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
+                            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
+                            <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
+
+                            <div className="flex items-center text-wrap mb-0">
+                              <div className="flex-shrink-0 text-wrap mr-2">
+                                {message.sender_avatar ? (
+                                  <img
+                                    src={message.sender_avatar}
+                                    alt={(message.sender_email || "").split('@')[0]}
+                                    className="w-6 h-6 text-wrap rounded-full object-cover border border-white/20 shadow-md"
+                                  />
+                                ) : (
+                                  <div className=" text-wrap w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
+                                    {(message.sender_email || "").charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                              </div>
+                              <span className="text-xs text-wrap font-medium text-white">
+                                {message.sender_id === userId ? "You" : (message.sender_email || "").split('@')[0]}
+                              </span>
+                              <span className="text-xs text-wrap ml-auto text-white/70">
+                                {formatTime(message.created_at)}
+                              </span>
+                            </div>
+                            {/* <div className="text-sm break-words whitespace-pre-wrap">{message.content}</div> */}
+                            <div className="text-sm break-words whitespace-pre-wrap">
+                              {message.content.length > 200 ? (
+                                <>
+                                  {expandedMessages.has(message.id) ? message.content : truncateText(message.content)}
+                                  <button
+                                    onClick={() => toggleMessageExpansion(message.id)}
+                                    className="ml-2 text-xs text-white/70 hover:text-white underline"
+                                  >
+                                    {expandedMessages.has(message.id) ? 'Mostrar menos' : 'Mostrar más'}
+                                  </button>
+                                </>
+                              ) : (
+                                message.content
+                              )}
+                            </div>
+                          </div>
+                          <div ref={messagesEndRef} />
+                        </motion.div>
+                      );
+                    })
+                  )}
+                  {/* Referencia para el scroll automático */}
                 </div>
               </div>
-
-              {/* Only show the members toggle button on mobile */}
-              {isMobile && (
-                <button
-                  onClick={() => setShowMembers(!showMembers)}
-                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)] ml-auto"
-                >
-                  <Users className="w-5 h-5 text-cyan-300" />
-                </button>
-              )}
-            </motion.div>
-
-            {/* Chat Messages */}
-            <div className="flex-grow overflow-y-auto p-4 w-full pb-20 flex flex-col space-y-1">
-              {isLoading ? (
-                <div className="flex justify-center items-center h-32">
-                  <div className="animate-pulse text-cyan-400">Loading messages...</div>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="text-center py-10 text-cyan-400 relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-8">
-                  {/* Prismatic edge effect */}
-                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center mx-auto mb-3 border border-cyan-500/20 shadow-md">
-                    <MessageSquare className="w-8 h-8 text-white" />
-                  </div>
-                  <p className="font-medium text-cyan-300 text-lg">No messages yet</p>
-                  <p className="text-sm mt-1 text-cyan-400">Start the conversation!</p>
-                </div>
-              ) : (
-                messages.map((message) => {
-                  // Generate a consistent color based on the sender's ID
-                  const colorOptions = [
-                    "from-pink-500 to-rose-500",
-                    "from-orange-500 to-amber-500",
-                    "from-green-500 to-emerald-500",
-                    "from-teal-500 to-cyan-500",
-                    "from-blue-500 to-indigo-500",
-                    "from-indigo-500 to-purple-500",
-                    "from-purple-500 to-fuchsia-500",
-                    "from-rose-500 to-pink-500"
-                  ];
-
-                  // Use the sender ID to deterministically select a color
-                  const colorIndex = message.sender_id ?
-                    message.sender_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colorOptions.length : 0;
-
-                  const senderColor = colorOptions[colorIndex];
-
-                  return (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="w-full"
-                    >
-                      <div
-                        className={`relative overflow-hidden w-full rounded-[24px] p-3 shadow-[0_4px_15px_rgba(31,38,135,0.15)] bg-gradient-to-r ${senderColor} text-white border border-white/20`}
-                      >
-                        {/* Prismatic edge effect */}
-                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent opacity-70" />
-                        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50" />
-                        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-white/70 to-transparent opacity-70" />
-                        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/50 to-transparent opacity-50" />
-
-                        <div className="flex items-center mb-1">
-                          <div className="flex-shrink-0 mr-2">
-                            {message.sender_avatar ? (
-                              <img
-                                src={message.sender_avatar}
-                                alt={(message.sender_email || "").split('@')[0]}
-                                className="w-6 h-6 rounded-full object-cover border border-white/20 shadow-md"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-medium border border-white/20 shadow-md">
-                                {(message.sender_email || "").charAt(0).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-xs font-medium text-white">
-                            {message.sender_id === userId ? "You" : (message.sender_email || "").split('@')[0]}
-                          </span>
-                          <span className="text-xs ml-auto text-white/70">
-                            {formatTime(message.created_at)}
-                          </span>
-                        </div>
-                        <div className="text-sm">{message.content}</div>
-                      </div>
-                    </motion.div>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Message Input */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="px-0 md:pb-0 pb-9 md:mb-0 mb-20 mt-10 sticky md:bottom-10 bottom-20 mx-auto w-full z-50"
-            >
-              <form onSubmit={handleSendMessage} className="relative overflow-hidden rounded-full bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-2 flex gap-2">
-                {/* Prismatic edge effect */}
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-
-                <button
-                  type="button"
-                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
-                >
-                  <Paperclip className="w-5 h-5 text-cyan-300" />
-                </button>
-
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="bg-transparent flex-grow px-4 py-2 outline-none text-cyan-100 placeholder:text-cyan-500"
-                />
-
-                <button
-                  type="submit"
-                  disabled={!newMessage.trim()}
-                  className={`relative overflow-hidden rounded-full ${!newMessage.trim() ? "bg-cyan-800/30 opacity-50" : "bg-gradient-to-r from-cyan-500 to-blue-500"
-                    } p-3 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
-                >
-                  <Send className={`w-5 h-5 ${!newMessage.trim() ? "text-cyan-300" : "text-white"}`} />
-                </button>
-              </form>
             </motion.div>
           </div>
         </div>
@@ -951,20 +1007,16 @@ export function GroupChatPage() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="w-1/4 h-fit sticky top-24"
+            className="w-1/4 ml-4"
           >
-            <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 min-h-[200px] max-h-[calc(100vh-96px)] flex flex-col">
+            <div className="relative overflow-hidden rounded-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 h-auto flex flex-col">
               {/* Prismatic edge effect */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
               <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
               <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
 
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-cyan-300">Members ({members.length})</h3>
-              </div>
-
-              <div className="flex-grow overflow-y-auto space-y-3">
+              <div className="flex-1 overflow-y-auto space-y-1">
                 {members.map((member) => (
                   <div
                     key={member.id}
@@ -981,66 +1033,9 @@ export function GroupChatPage() {
                       {member.email.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-cyan-300 truncate">{member.email}</p>
+                      <p className="font-medium text-cyan-300 truncate">{member.email.split('@')[0]}</p>
                       <p className="text-xs text-cyan-400">
-                        {member.id === userId ? "You" : "Member"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Members List - Mobile (toggleable) */}
-        {isMobile && showMembers && (
-          <motion.div
-            initial={{ opacity: 0, y: "100%" }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: "100%" }}
-            className="fixed inset-0 z-50 p-4 flex items-end"
-          >
-            <div className="relative overflow-hidden rounded-t-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 min-h-[300px] max-h-[80vh] w-full flex flex-col">
-              {/* Prismatic edge effect */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
-              <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
-              <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-
-              {/* Drag indicator */}
-              <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-4"></div>
-
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-cyan-300">Members ({members.length})</h3>
-                <button
-                  onClick={() => setShowMembers(false)}
-                  className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
-                >
-                  <X className="w-5 h-5 text-cyan-300" />
-                </button>
-              </div>
-
-              <div className="flex-grow overflow-y-auto space-y-3">
-                {members.map((member) => (
-                  <div
-                    key={member.id}
-                    onClick={() => handleMemberClick(member)}
-                    className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)] cursor-pointer hover:bg-cyan-700/30 transition-colors"
-                  >
-                    {/* Prismatic edge effect */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                    <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
-                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
-                    <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
-
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
-                      {member.email.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-cyan-300 truncate">{member.email}</p>
-                      <p className="text-xs text-cyan-400">
-                        {member.id === userId ? "You" : "Member"}
+                        {member.id === userId ? "You" : "Haller"}
                       </p>
                     </div>
                   </div>
@@ -1050,6 +1045,105 @@ export function GroupChatPage() {
           </motion.div>
         )}
       </div>
+
+      {/* Fixed Message Input - en la parte inferior */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-1">
+        <div className="max-w-4xl mx-auto">
+          <motion.form
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            onSubmit={handleSendMessage}
+            className="relative overflow-hidden rounded-full bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-2 lg:mb-10 mb-2 flex gap-2"
+          >
+            {/* Prismatic edge effect */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+            <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+
+            <button
+              type="button"
+              className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)] hover:bg-cyan-700/30 transition-colors"
+            >
+              <Paperclip className="w-5 h-5 text-cyan-300" />
+            </button>
+
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type a message..."
+              className="bg-transparent flex-grow px-4 py-2 outline-none text-cyan-100 placeholder:text-cyan-500"
+            />
+
+            <button
+              type="submit"
+              disabled={!newMessage.trim()}
+              className={`relative overflow-hidden rounded-full ${!newMessage.trim() ? "bg-cyan-800/30 opacity-50" : "bg-gradient-to-r from-cyan-500 to-blue-500"
+                } p-3 border border-cyan-500/20 shadow-[0_2px_5px_rgba(31,38,135,0.1)]`}
+            >
+              <Send className={`w-5 h-5 ${!newMessage.trim() ? "text-cyan-300" : "text-white"}`} />
+            </button>
+          </motion.form>
+        </div>
+      </div>
+
+      {/* Members List - Mobile (toggleable) */}
+      {isMobile && showMembers && (
+        <motion.div
+          initial={{ opacity: 0, y: "100%" }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: "100%" }}
+          className="fixed inset-0 z-50 p-4 flex items-end"
+        >
+          <div className="relative overflow-hidden rounded-t-[32px] bg-cyan-900/20 backdrop-blur-xl border border-cyan-500/20 shadow-[0_4px_15px_rgba(31,38,135,0.15),0_0_10px_rgba(6,182,212,0.2)] p-4 min-h-[300px] max-h-[80vh] w-full flex flex-col">
+            {/* Prismatic edge effect */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+            <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+            <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+
+            {/* Drag indicator */}
+            <div className="w-12 h-1 bg-white/30 rounded-full mx-auto mb-4"></div>
+
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-cyan-300">Hallers ({members.length})</h3>
+              <button
+                onClick={() => setShowMembers(false)}
+                className="relative overflow-hidden rounded-full bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-2 shadow-[0_2px_5px_rgba(31,38,135,0.1)]"
+              >
+                <X className="w-5 h-5 text-cyan-300" />
+              </button>
+            </div>
+
+            <div className="flex-grow overflow-y-auto space-y-1">
+              {members.map((member) => (
+                <div
+                  key={member.id}
+                  onClick={() => handleMemberClick(member)}
+                  className="relative overflow-hidden rounded-2xl bg-cyan-800/30 backdrop-blur-md border border-cyan-500/20 p-3 flex items-center gap-3 shadow-[0_2px_5px_rgba(31,38,135,0.1)] cursor-pointer hover:bg-cyan-700/30 transition-colors"
+                >
+                  {/* Prismatic edge effect */}
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent opacity-50" />
+                  <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-300/70 to-transparent opacity-70" />
+                  <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-cyan-300/50 to-transparent opacity-50" />
+
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-600 flex items-center justify-center text-white font-semibold border border-white/20 shadow-md">
+                    {member.email.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-cyan-300 truncate">{member.email.split('@')[0]}</p>
+                    <p className="text-xs text-cyan-400">
+                      {member.id === userId ? "You" : "Haller"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
-} 
+}
